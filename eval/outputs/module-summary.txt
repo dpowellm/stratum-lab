@@ -9,17 +9,18 @@ Doc:    Stratum Lab — Behavioral scan infrastructure for AI agent repos.
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\cli.py
-Lines:  132
+Lines:  189
 Doc:    Main CLI entry point for stratum-lab pipeline.
-Deps:   click, pathlib, rich, stratum_lab
-  Functions (7):
+Deps:   click, json, pathlib, rich, stratum_lab
+  Functions (8):
     main() (line 10): Stratum Lab — Behavioral scan infrastructure for AI agent repos.
     select() (line 21): Phase 1: Select repos from 50k structural scan output.
     execute() (line 40): Phase 2: Execute selected repos in sandboxed containers.
     collect() (line 53): Phase 3: Parse raw event files into structured run records.
     overlay() (line 67): Phase 4: Merge behavioral data onto structural graphs.
     knowledge() (line 80): Build cross-repo pattern knowledge base from enriched graphs.
-    pipeline() (line 95): Run the full pipeline: select -> execute -> collect -> overlay -> knowledge.
+    query() (line 97): Query the behavioral dataset with a structural graph to predict risks.
+    pipeline() (line 152): Run the full pipeline: select -> execute -> collect -> overlay -> knowledge.
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\collection\__init__.py
@@ -111,7 +112,7 @@ Doc:    Knowledge Base — cross-repo pattern extraction and taxonomy analysis.
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\knowledge\cli.py
-Lines:  299
+Lines:  323
 Doc:    CLI runner for the Knowledge Base build phase.
 Deps:   __future__, json, pathlib, rich, stratum_lab, time, typing
   Functions (1):
@@ -195,23 +196,76 @@ Deps:   __future__, collections, json, pathlib, rich, stratum_lab, time, typing
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\overlay\edges.py
-Lines:  331
+Lines:  353
 Doc:    Emergent and dead edge detection.
 Deps:   __future__, collections, stratum_lab, typing
   Functions (3):
     detect_emergent_edges() (line 20): Find runtime interactions with no corresponding structural edge.
     detect_dead_edges() (line 110): Find structural edges that were never traversed at runtime.
-    classify_edge_significance() (line 175): Classify the significance of an emergent edge.
+    classify_edge_significance() (line 197): Classify the significance of an emergent edge.
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\overlay\enricher.py
-Lines:  622
+Lines:  1363
 Doc:    Graph enrichment engine.
 Deps:   __future__, collections, math, numpy, stratum_lab, typing
   Functions (3):
-    compute_node_behavioral_overlay() (line 22): Compute behavioral statistics for one structural node.
-    compute_edge_behavioral_overlay() (line 311): Compute behavioral statistics for one structural edge.
-    enrich_graph() (line 426): Enrich a structural graph with behavioral data from runtime events.
+    compute_node_behavioral_overlay() (line 50): Compute behavioral statistics for one structural node.
+    compute_edge_behavioral_overlay() (line 376): Compute behavioral statistics for one structural edge.
+    enrich_graph() (line 485): Enrich a structural graph with behavioral data from runtime events.
+
+------------------------------------------------------------------------------
+Module: stratum_lab\overlay\taxonomy_confirmation.py
+Lines:  230
+Doc:    Taxonomy precondition confirmation module.
+Deps:   __future__, collections, typing
+  Functions (1):
+    confirm_taxonomy_preconditions() (line 168): Confirm or deny taxonomy preconditions using runtime behavioral data.
+
+------------------------------------------------------------------------------
+Module: stratum_lab\query\__init__.py
+Lines:  1
+Doc:    Product query layer — matches structural graphs against the behavioral dataset.
+
+------------------------------------------------------------------------------
+Module: stratum_lab\query\fingerprint.py
+Lines:  858
+Doc:    Structural fingerprint computation for graph similarity matching.
+Deps:   __future__, collections, hashlib, json, numpy, stratum_lab, typing
+  Functions (3):
+    compute_graph_fingerprint() (line 52): Compute a structural fingerprint from an enriched graph.
+    normalize_feature_vector() (line 260): Normalize a feature vector to [0, 1] using stored min/max constants.
+    compute_normalization_constants() (line 298): Compute per-feature min/max from a collection of fingerprints.
+
+------------------------------------------------------------------------------
+Module: stratum_lab\query\matcher.py
+Lines:  663
+Doc:    Pattern matcher — matches a customer's graph fingerprint against the behavioral dataset.
+Deps:   __future__, dataclasses, json, numpy, pathlib, typing
+  Classes (1):
+    class Match (line 27): A single match result pairing a fingerprint to a known pattern.
+  Functions (2):
+    cosine_similarity() (line 42): Compute cosine similarity between two vectors.
+    match_against_dataset() (line 458): Find the closest patterns in the knowledge base for a given fingerprint.
+
+------------------------------------------------------------------------------
+Module: stratum_lab\query\predictor.py
+Lines:  761
+Doc:    Risk predictor — produces risk predictions from matched patterns.
+Deps:   __future__, dataclasses, json, pathlib, stratum_lab, typing
+  Classes (2):
+    class PredictedRisk (line 24): A single predicted risk tied to a taxonomy precondition.
+    class RiskPrediction (line 41): Aggregate risk prediction for a structural graph.
+  Functions (1):
+    predict_risks() (line 564): Combine structural analysis with behavioral predictions.
+
+------------------------------------------------------------------------------
+Module: stratum_lab\query\report.py
+Lines:  246
+Doc:    Risk report generation.
+Deps:   __future__, json, typing
+  Functions (1):
+    generate_risk_report() (line 13): Generate the customer-facing risk report.
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\selection\__init__.py
@@ -372,10 +426,332 @@ Lines:  12
 Doc:    Auto-load stratum patcher at Python startup.
 Deps:   stratum_patcher
 
+------------------------------------------------------------------------------
+Module: tests\__init__.py
+Lines:  0
+
+------------------------------------------------------------------------------
+Module: tests\conftest.py
+Lines:  243
+Deps:   collections, pytest
+  Functions (3):
+    sample_structural_graph() (line 5): A 4-agent crewAI system with tools, data stores, external services, and guardrails.
+    sample_events() (line 43): Generate events for 3 runs covering all event types.
+    sample_run_records() (line 227): Build run records from sample events, with events attached.
+
+------------------------------------------------------------------------------
+Module: tests\test_fingerprint.py
+Lines:  411
+Doc:    Tests for graph fingerprinting.
+Deps:   pytest, stratum_lab
+  Classes (3):
+    class TestComputeGraphFingerprint (line 202): Tests for compute_graph_fingerprint.
+      .test_returns_feature_vector_of_length_20() (line 205): The fingerprint must contain a feature_vector list of exactly 20 floats.
+      .test_returns_expected_top_level_keys() (line 215): The fingerprint dict must have the documented top-level keys.
+      .test_deterministic_same_graph() (line 229): Calling compute_graph_fingerprint twice on the same graph must
+      .test_different_graphs_produce_different_fingerprints() (line 240): Two structurally different graphs must produce different
+      .test_structural_metrics_counts_match_graph() (line 252): Structural metrics should reflect the actual node/edge counts.
+      .test_motifs_detected() (line 264): The sample graph should trigger at least the
+      .test_topology_hash_is_hex_sha256() (line 274): topology_hash must be a valid 64-character hex string (SHA-256).
+    class TestNormalizeFeatureVector (line 289): Tests for normalize_feature_vector.
+      .test_normalized_values_in_0_1() (line 292): Every element of the normalized vector must be in [0, 1].
+      .test_zero_range_maps_to_zero() (line 308): When min == max for a feature, the normalized value should be 0.0.
+      .test_exact_min_maps_to_zero() (line 318): A value equal to the minimum should normalize to 0.0.
+      .test_exact_max_maps_to_one() (line 328): A value equal to the maximum should normalize to 1.0.
+      .test_values_clamped_above_max() (line 338): Values above max should be clamped to 1.0.
+      .test_values_clamped_below_min() (line 348): Values below min should be clamped to 0.0.
+    class TestComputeNormalizationConstants (line 363): Tests for compute_normalization_constants.
+      .test_returns_min_max_for_each_feature() (line 366): The result should have an entry for each of the 20 feature indices,
+      .test_single_fingerprint_min_equals_max() (line 383): With only one fingerprint, min and max should be equal for every feature.
+      .test_empty_list_returns_empty_dict() (line 393): An empty list of fingerprints should return an empty dict.
+      .test_min_max_reflect_actual_extremes() (line 398): The min/max should reflect the actual minimum and maximum values
+  Functions (19):
+    sample_structural_graph() (line 15): A representative structural graph with 10 nodes and 10 edges.
+    minimal_graph() (line 165): A minimal graph with 2 agents and 1 edge -- structurally distinct
+    test_returns_feature_vector_of_length_20() (line 205): The fingerprint must contain a feature_vector list of exactly 20 floats.
+    test_returns_expected_top_level_keys() (line 215): The fingerprint dict must have the documented top-level keys.
+    test_deterministic_same_graph() (line 229): Calling compute_graph_fingerprint twice on the same graph must
+    test_different_graphs_produce_different_fingerprints() (line 240): Two structurally different graphs must produce different
+    test_structural_metrics_counts_match_graph() (line 252): Structural metrics should reflect the actual node/edge counts.
+    test_motifs_detected() (line 264): The sample graph should trigger at least the
+    test_topology_hash_is_hex_sha256() (line 274): topology_hash must be a valid 64-character hex string (SHA-256).
+    test_normalized_values_in_0_1() (line 292): Every element of the normalized vector must be in [0, 1].
+    test_zero_range_maps_to_zero() (line 308): When min == max for a feature, the normalized value should be 0.0.
+    test_exact_min_maps_to_zero() (line 318): A value equal to the minimum should normalize to 0.0.
+    test_exact_max_maps_to_one() (line 328): A value equal to the maximum should normalize to 1.0.
+    test_values_clamped_above_max() (line 338): Values above max should be clamped to 1.0.
+    test_values_clamped_below_min() (line 348): Values below min should be clamped to 0.0.
+    test_returns_min_max_for_each_feature() (line 366): The result should have an entry for each of the 20 feature indices,
+    test_single_fingerprint_min_equals_max() (line 383): With only one fingerprint, min and max should be equal for every feature.
+    test_empty_list_returns_empty_dict() (line 393): An empty list of fingerprints should return an empty dict.
+    test_min_max_reflect_actual_extremes() (line 398): The min/max should reflect the actual minimum and maximum values
+
+------------------------------------------------------------------------------
+Module: tests\test_overlay.py
+Lines:  310
+Doc:    Tests validating overlay bug fixes from Part 1 and Part 2 features.
+Deps:   pytest, stratum_lab
+  Classes (14):
+    class TestCapabilityNodesGetBehavioralData (line 8): Bug fix 1A: capability nodes should have non-zero behavioral data.
+      .test_capability_node_activation_count() (line 11): (no docstring)
+      .test_capability_node_llm() (line 16): (no docstring)
+    class TestDataStoreNodesGetBehavioralData (line 22): Bug fix 1A: data store nodes should have non-zero data.
+      .test_data_store_activation() (line 25): (no docstring)
+    class TestExternalServiceNodesGetData (line 31): (no docstring)
+      .test_external_node_activation() (line 32): (no docstring)
+    class TestGuardrailNodesGetData (line 38): (no docstring)
+      .test_guardrail_activation() (line 39): (no docstring)
+      .test_guardrail_effectiveness() (line 44): (no docstring)
+    class TestActivationRateIs0To1 (line 52): Bug fix 1C: activation_rate should be 0.0-1.0.
+      .test_node_activation_rate_range() (line 55): (no docstring)
+      .test_edge_activation_rate_range() (line 61): (no docstring)
+    class TestDecisionBehaviorPopulated (line 68): Bug fix 1D: decision_behavior should be populated for nodes with decision.made events.
+      .test_decision_behavior_not_none() (line 71): (no docstring)
+    class TestStructuralPredictionMatch (line 79): Bug fix 1E: structural_prediction_match should be populated.
+      .test_prediction_match_on_error_node() (line 82): (no docstring)
+    class TestErrorPropagationThroughEdges (line 90): Bug fix 1F: error propagation should update edge error_crossings.
+      .test_at_least_one_edge_has_error_crossings() (line 93): (no docstring)
+    class TestEdgeTraversalCounts (line 103): Bug fix 1B: edges should have non-zero traversal when events reference them.
+      .test_delegation_edges_traversed() (line 106): (no docstring)
+      .test_uses_edges_traversed() (line 111): (no docstring)
+    class TestUnmappedEventsZero (line 117): All event types exercised should result in 0 unmapped events.
+      .test_unmapped_node_events_zero() (line 120): (no docstring)
+    class TestDeterminismMetrics (line 130): Part 2A: determinism metrics should be present on enriched nodes.
+      .test_determinism_present_on_active_nodes() (line 133): (no docstring)
+      .test_same_input_consistency_high_for_identical_runs() (line 142): Runs 000 and 001 use same input_hash and have identical events, so consistency should be 1.0.
+      .test_same_input_path_consistency_high() (line 149): Same-input runs have identical activation counts, so path consistency should be 1.0.
+      .test_cross_input_variance_low_for_uniform_behavior() (line 156): All runs activate the same nodes equally, so cross-input variance should be low.
+      .test_determinism_none_for_single_run() (line 163): With only 1 run, determinism should be None.
+    class TestExecutionPaths (line 185): Part 2B: execution paths and path analysis should be present.
+      .test_execution_paths_present() (line 188): (no docstring)
+      .test_execution_path_has_run_id() (line 193): (no docstring)
+      .test_execution_path_steps_have_edge_fields() (line 199): (no docstring)
+      .test_execution_paths_non_empty_for_edge_events() (line 209): Runs with delegation/tool/data events should produce non-empty execution paths.
+    class TestPathAnalysis (line 216): Part 2B: path analysis aggregate should be computed.
+      .test_path_analysis_present() (line 219): (no docstring)
+      .test_distinct_paths_at_least_one() (line 228): (no docstring)
+      .test_dominant_path_frequency_in_range() (line 233): (no docstring)
+    class TestFailureImpact (line 243): Part 2C: failure_impact should appear on capability nodes with failures.
+      .test_no_failure_impact_when_no_failures() (line 246): Sample events have no tool failures, so failure_impact should not be present.
+      .test_failure_impact_present_when_failures_exist() (line 253): Build events with tool failures and verify failure_impact is populated.
+  Functions (28):
+    test_capability_node_activation_count() (line 11): (no docstring)
+    test_capability_node_llm() (line 16): (no docstring)
+    test_data_store_activation() (line 25): (no docstring)
+    test_external_node_activation() (line 32): (no docstring)
+    test_guardrail_activation() (line 39): (no docstring)
+    test_guardrail_effectiveness() (line 44): (no docstring)
+    test_node_activation_rate_range() (line 55): (no docstring)
+    test_edge_activation_rate_range() (line 61): (no docstring)
+    test_decision_behavior_not_none() (line 71): (no docstring)
+    test_prediction_match_on_error_node() (line 82): (no docstring)
+    test_at_least_one_edge_has_error_crossings() (line 93): (no docstring)
+    test_delegation_edges_traversed() (line 106): (no docstring)
+    test_uses_edges_traversed() (line 111): (no docstring)
+    test_unmapped_node_events_zero() (line 120): (no docstring)
+    test_determinism_present_on_active_nodes() (line 133): (no docstring)
+    test_same_input_consistency_high_for_identical_runs() (line 142): Runs 000 and 001 use same input_hash and have identical events, so consistency should be 1.0.
+    test_same_input_path_consistency_high() (line 149): Same-input runs have identical activation counts, so path consistency should be 1.0.
+    test_cross_input_variance_low_for_uniform_behavior() (line 156): All runs activate the same nodes equally, so cross-input variance should be low.
+    test_determinism_none_for_single_run() (line 163): With only 1 run, determinism should be None.
+    test_execution_paths_present() (line 188): (no docstring)
+    test_execution_path_has_run_id() (line 193): (no docstring)
+    test_execution_path_steps_have_edge_fields() (line 199): (no docstring)
+    test_execution_paths_non_empty_for_edge_events() (line 209): Runs with delegation/tool/data events should produce non-empty execution paths.
+    test_path_analysis_present() (line 219): (no docstring)
+    test_distinct_paths_at_least_one() (line 228): (no docstring)
+    test_dominant_path_frequency_in_range() (line 233): (no docstring)
+    test_no_failure_impact_when_no_failures() (line 246): Sample events have no tool failures, so failure_impact should not be present.
+    test_failure_impact_present_when_failures_exist() (line 253): Build events with tool failures and verify failure_impact is populated.
+
+------------------------------------------------------------------------------
+Module: tests\test_patchers.py
+Lines:  819
+Doc:    Unit tests for stratum_patcher monkey-patching modules.
+Deps:   __future__, builtins, collections, importlib, json, openai, os, pathlib, pytest, requests, stratum_patcher, sys, tempfile, types, unittest
+  Classes (24):
+    class TestEventLogger (line 83): Tests for the EventLogger singleton and log_event method.
+      .setup_method() (line 86): (no docstring)
+      .teardown_method() (line 94): (no docstring)
+      .test_singleton_identity() (line 104): (no docstring)
+      .test_log_event_returns_event_id() (line 110): (no docstring)
+      .test_log_event_writes_valid_jsonl() (line 115): (no docstring)
+      .test_log_event_with_all_optional_fields() (line 125): (no docstring)
+      .test_run_id_and_repo_id_from_env() (line 157): (no docstring)
+      .test_generate_node_id() (line 168): (no docstring)
+      .test_make_node() (line 173): (no docstring)
+      .test_hash_content() (line 178): (no docstring)
+      .test_get_data_shape() (line 187): (no docstring)
+    class TestOpenAIPatch (line 200): Test that openai_patch wraps the modern completions API correctly.
+      .setup_method() (line 203): (no docstring)
+      .teardown_method() (line 211): (no docstring)
+      .test_openai_patch_wraps_create() (line 282): (no docstring)
+      .test_openai_patch_emits_events() (line 296): (no docstring)
+      .test_openai_patch_parent_event_chain() (line 327): (no docstring)
+    class TestGenericPatch (line 352): Test generic_patch: requests wrapping and builtins.open wrapping.
+      .setup_method() (line 355): (no docstring)
+      .teardown_method() (line 363): (no docstring)
+      .test_generic_patch_module_loads() (line 373): Verify the generic_patch module can be imported without error.
+      .test_requests_wrapping() (line 379): Verify that requests.get/post get wrapped if requests is available.
+      .test_builtins_open_wrapping() (line 395): Verify that builtins.open is wrapped.
+      .test_excepthook_wrapping() (line 402): Verify that sys.excepthook is wrapped.
+      .test_file_open_under_app_emits_event() (line 409): Opening a file under /app/ should emit a file.read or file.write event.
+      .test_domain_extraction() (line 425): Test the _domain_only helper.
+    class TestCrewAIPatch (line 436): Test crewai_patch: verify patch() is callable and module loads cleanly.
+      .setup_method() (line 439): (no docstring)
+      .teardown_method() (line 447): (no docstring)
+      .test_crewai_patch_loads() (line 457): (no docstring)
+      .test_crewai_wrapper_functions_exist() (line 463): (no docstring)
+      .test_crewai_kickoff_wrapper_emits_events() (line 470): Simulate what the wrapper does without needing actual crewai.
+    class TestLangGraphPatch (line 502): Test langgraph_patch module.
+      .setup_method() (line 505): (no docstring)
+      .teardown_method() (line 513): (no docstring)
+      .test_langgraph_patch_loads() (line 523): (no docstring)
+      .test_langgraph_wrapper_functions_exist() (line 529): (no docstring)
+      .test_langgraph_invoke_wrapper_emits_events() (line 537): Simulate what the invoke wrapper does.
+    class TestAutoGenPatch (line 566): Test autogen_patch module.
+      .setup_method() (line 569): (no docstring)
+      .teardown_method() (line 577): (no docstring)
+      .test_autogen_patch_loads() (line 587): (no docstring)
+      .test_autogen_wrapper_functions_exist() (line 593): (no docstring)
+      .test_autogen_receive_wrapper_emits_events() (line 600): Simulate what the receive wrapper does.
+    class TestAnthropicPatch (line 637): Test anthropic_patch module.
+      .setup_method() (line 640): (no docstring)
+      .teardown_method() (line 648): (no docstring)
+      .test_anthropic_patch_loads() (line 658): (no docstring)
+      .test_translate_messages_basic() (line 663): Test the Anthropic->OpenAI message translation.
+      .test_translate_messages_with_tool_use() (line 681): Test tool_use content block translation.
+      .test_translate_tools() (line 707): Test Anthropic tool definition -> OpenAI tool format.
+      .test_translate_response_to_anthropic() (line 727): Test OpenAI response -> Anthropic response translation.
+    class TestCrossPatcherIntegration (line 763): Test that multiple patchers can coexist and all write to the same JSONL.
+      .setup_method() (line 766): (no docstring)
+      .teardown_method() (line 774): (no docstring)
+      .test_multiple_event_types_in_single_file() (line 784): Log events from different conceptual patchers to the same file.
+    class MockMessage (line 228): (no docstring)
+    class MockChoice (line 233): (no docstring)
+    class MockUsage (line 238): (no docstring)
+    class MockResponse (line 243): (no docstring)
+    class Completions (line 249): (no docstring)
+      .create() (line 251): (no docstring)
+    class AsyncCompletions (line 254): (no docstring)
+      .create() (line 256): (no docstring)
+    class Chat (line 259): (no docstring)
+    class OpenAI (line 262): (no docstring)
+    class FakeCrew (line 475): (no docstring)
+      .kickoff() (line 481): (no docstring)
+    class FakeGraph (line 541): (no docstring)
+      .invoke() (line 545): (no docstring)
+    class FakeAgent (line 604): (no docstring)
+      .receive() (line 607): (no docstring)
+    class FakeSender (line 610): (no docstring)
+    class MockMsg (line 731): (no docstring)
+    class MockChoice (line 735): (no docstring)
+    class MockUsage (line 739): (no docstring)
+    class MockResp (line 743): (no docstring)
+  Functions (54):
+    setup_method() (line 86): (no docstring)
+    teardown_method() (line 94): (no docstring)
+    test_singleton_identity() (line 104): (no docstring)
+    test_log_event_returns_event_id() (line 110): (no docstring)
+    test_log_event_writes_valid_jsonl() (line 115): (no docstring)
+    test_log_event_with_all_optional_fields() (line 125): (no docstring)
+    test_run_id_and_repo_id_from_env() (line 157): (no docstring)
+    test_generate_node_id() (line 168): (no docstring)
+    test_make_node() (line 173): (no docstring)
+    test_hash_content() (line 178): (no docstring)
+    test_get_data_shape() (line 187): (no docstring)
+    setup_method() (line 203): (no docstring)
+    teardown_method() (line 211): (no docstring)
+    test_openai_patch_wraps_create() (line 282): (no docstring)
+    test_openai_patch_emits_events() (line 296): (no docstring)
+    test_openai_patch_parent_event_chain() (line 327): (no docstring)
+    setup_method() (line 355): (no docstring)
+    teardown_method() (line 363): (no docstring)
+    test_generic_patch_module_loads() (line 373): Verify the generic_patch module can be imported without error.
+    test_requests_wrapping() (line 379): Verify that requests.get/post get wrapped if requests is available.
+    test_builtins_open_wrapping() (line 395): Verify that builtins.open is wrapped.
+    test_excepthook_wrapping() (line 402): Verify that sys.excepthook is wrapped.
+    test_file_open_under_app_emits_event() (line 409): Opening a file under /app/ should emit a file.read or file.write event.
+    test_domain_extraction() (line 425): Test the _domain_only helper.
+    setup_method() (line 439): (no docstring)
+    teardown_method() (line 447): (no docstring)
+    test_crewai_patch_loads() (line 457): (no docstring)
+    test_crewai_wrapper_functions_exist() (line 463): (no docstring)
+    test_crewai_kickoff_wrapper_emits_events() (line 470): Simulate what the wrapper does without needing actual crewai.
+    setup_method() (line 505): (no docstring)
+    teardown_method() (line 513): (no docstring)
+    test_langgraph_patch_loads() (line 523): (no docstring)
+    test_langgraph_wrapper_functions_exist() (line 529): (no docstring)
+    test_langgraph_invoke_wrapper_emits_events() (line 537): Simulate what the invoke wrapper does.
+    setup_method() (line 569): (no docstring)
+    teardown_method() (line 577): (no docstring)
+    test_autogen_patch_loads() (line 587): (no docstring)
+    test_autogen_wrapper_functions_exist() (line 593): (no docstring)
+    test_autogen_receive_wrapper_emits_events() (line 600): Simulate what the receive wrapper does.
+    setup_method() (line 640): (no docstring)
+    teardown_method() (line 648): (no docstring)
+    test_anthropic_patch_loads() (line 658): (no docstring)
+    test_translate_messages_basic() (line 663): Test the Anthropic->OpenAI message translation.
+    test_translate_messages_with_tool_use() (line 681): Test tool_use content block translation.
+    test_translate_tools() (line 707): Test Anthropic tool definition -> OpenAI tool format.
+    test_translate_response_to_anthropic() (line 727): Test OpenAI response -> Anthropic response translation.
+    setup_method() (line 766): (no docstring)
+    teardown_method() (line 774): (no docstring)
+    test_multiple_event_types_in_single_file() (line 784): Log events from different conceptual patchers to the same file.
+    create() (line 251): (no docstring)
+    create() (line 256): (no docstring)
+    kickoff() (line 481): (no docstring)
+    invoke() (line 545): (no docstring)
+    receive() (line 607): (no docstring)
+
+------------------------------------------------------------------------------
+Module: tests\test_query.py
+Lines:  777
+Doc:    Tests for the product query layer (Part 3).
+Deps:   json, pathlib, pytest, stratum_lab, tempfile
+  Classes (4):
+    class TestMatchAgainstDataset (line 463): Tests for match_against_dataset.
+      .test_match_returns_motif_matches() (line 466): A graph containing the shared_state_without_arbitration motif
+      .test_match_returns_similarity_matches() (line 484): Structural similarity matches should be present and ranked in
+      .test_match_returns_list_of_match_objects() (line 500): All returned items should be Match dataclass instances.
+      .test_match_overall_sorted_by_score() (line 511): The full match list should be sorted by similarity_score descending.
+    class TestPredictRisks (line 523): Tests for predict_risks.
+      .test_predict_risks_non_empty() (line 526): predict_risks should return at least 1 predicted risk when the
+      .test_predict_overall_risk_score_in_range() (line 541): The overall_risk_score must be in the range [0, 100].
+      .test_predict_returns_risk_prediction_dataclass() (line 553): The return value must be a RiskPrediction dataclass with the
+      .test_predict_risks_have_remediation() (line 571): Each predicted risk that has KB data should carry a non-empty
+      .test_predict_positive_signals_for_guardrail() (line 589): The sample graph has a guardrail node, so positive signals should
+      .test_predict_dataset_coverage() (line 606): dataset_coverage should report on preconditions queried vs. found.
+    class TestGenerateRiskReport (line 627): Tests for generate_risk_report.
+      .test_report_json_valid() (line 640): generate_risk_report with format='json' should return a dict
+      .test_report_markdown_valid() (line 673): generate_risk_report with format='markdown' should return a
+      .test_report_markdown_contains_risk_info() (line 689): The markdown report should contain information about the predicted
+      .test_report_json_risk_details_match_prediction() (line 701): The number of risk_details entries in the JSON report should equal
+    class TestEndToEndQueryFlow (line 719): End-to-end: synthetic structural graph -> fingerprint -> match ->
+      .test_end_to_end_query_flow() (line 724): Run the full query pipeline and verify that each stage produces
+  Functions (17):
+    synthetic_kb() (line 18): Create a temporary knowledge-base directory populated with the JSON
+    sample_structural_graph() (line 297): A structural graph that triggers the shared_state_without_arbitration
+    test_match_returns_motif_matches() (line 466): A graph containing the shared_state_without_arbitration motif
+    test_match_returns_similarity_matches() (line 484): Structural similarity matches should be present and ranked in
+    test_match_returns_list_of_match_objects() (line 500): All returned items should be Match dataclass instances.
+    test_match_overall_sorted_by_score() (line 511): The full match list should be sorted by similarity_score descending.
+    test_predict_risks_non_empty() (line 526): predict_risks should return at least 1 predicted risk when the
+    test_predict_overall_risk_score_in_range() (line 541): The overall_risk_score must be in the range [0, 100].
+    test_predict_returns_risk_prediction_dataclass() (line 553): The return value must be a RiskPrediction dataclass with the
+    test_predict_risks_have_remediation() (line 571): Each predicted risk that has KB data should carry a non-empty
+    test_predict_positive_signals_for_guardrail() (line 589): The sample graph has a guardrail node, so positive signals should
+    test_predict_dataset_coverage() (line 606): dataset_coverage should report on preconditions queried vs. found.
+    test_report_json_valid() (line 640): generate_risk_report with format='json' should return a dict
+    test_report_markdown_valid() (line 673): generate_risk_report with format='markdown' should return a
+    test_report_markdown_contains_risk_info() (line 689): The markdown report should contain information about the predicted
+    test_report_json_risk_details_match_prediction() (line 701): The number of risk_details entries in the JSON report should equal
+    test_end_to_end_query_flow() (line 724): Run the full query pipeline and verify that each stage produces
+
 ==============================================================================
 TOTALS
 ==============================================================================
-  Modules:    36
-  Lines:      9564
-  Functions:  103 (public only)
-  Classes:    17
+  Modules:    48
+  Lines:      15727
+  Functions:  233 (public only)
+  Classes:    65

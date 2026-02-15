@@ -134,17 +134,29 @@ def detect_dead_edges(
 
     # Build set of runtime source->target pairs
     runtime_pairs: set[tuple[str, str]] = set()
+    # Also track single-endpoint events with their resolved node IDs
+    # so edges like filtered_by/guarded_by can be matched when events
+    # only carry a source_node (e.g. guardrail.triggered).
+    runtime_single_nodes: set[str] = set()
+    _SINGLE_ENDPOINT_EDGE_TYPES = frozenset({"guarded_by", "filtered_by"})
+
     for event in runtime_interactions:
         source_node = event.get("source_node")
         target_node = event.get("target_node")
-        if not source_node or not target_node:
-            continue
 
-        source_id = _resolve_node_id(source_node, structural_nodes)
-        target_id = _resolve_node_id(target_node, structural_nodes)
-
-        if source_id and target_id:
-            runtime_pairs.add((source_id, target_id))
+        if source_node and target_node:
+            source_id = _resolve_node_id(source_node, structural_nodes)
+            target_id = _resolve_node_id(target_node, structural_nodes)
+            if source_id and target_id:
+                runtime_pairs.add((source_id, target_id))
+        elif source_node:
+            source_id = _resolve_node_id(source_node, structural_nodes)
+            if source_id:
+                runtime_single_nodes.add(source_id)
+        elif target_node:
+            target_id = _resolve_node_id(target_node, structural_nodes)
+            if target_id:
+                runtime_single_nodes.add(target_id)
 
     # Find structural edges whose source->target was never observed
     dead_edges: list[dict[str, Any]] = []
@@ -153,17 +165,27 @@ def detect_dead_edges(
         source = edge_data.get("source", "")
         target = edge_data.get("target", "")
 
-        if (source, target) not in runtime_pairs:
-            possible_reasons = _infer_dead_reasons(edge_data, total_runs)
-            dead_edges.append({
-                "edge_id": edge_id,
-                "dead": True,
-                "runs_observed": total_runs,
-                "possible_reasons": possible_reasons,
-                "source": source,
-                "target": target,
-                "edge_type": edge_data.get("edge_type", "unknown"),
-            })
+        if (source, target) in runtime_pairs:
+            continue
+
+        # For edge types like guarded_by/filtered_by, events may only carry
+        # one endpoint.  Consider the edge alive if either endpoint appeared
+        # in a single-endpoint event.
+        edge_type = edge_data.get("edge_type", "unknown")
+        if edge_type in _SINGLE_ENDPOINT_EDGE_TYPES:
+            if source in runtime_single_nodes or target in runtime_single_nodes:
+                continue
+
+        possible_reasons = _infer_dead_reasons(edge_data, total_runs)
+        dead_edges.append({
+            "edge_id": edge_id,
+            "dead": True,
+            "runs_observed": total_runs,
+            "possible_reasons": possible_reasons,
+            "source": source,
+            "target": target,
+            "edge_type": edge_type,
+        })
 
     return dead_edges
 

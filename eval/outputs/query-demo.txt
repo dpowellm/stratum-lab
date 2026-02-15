@@ -1,0 +1,759 @@
+================================================================================
+STRATUM QUERY DEMO — FULL PRODUCT FLOW
+================================================================================
+
+Knowledge base: 30 enriched repos, 4 patterns
+Customer graph: customer_repo (crewai)
+  Nodes: 8
+  Edges: 9
+  Preconditions: ['shared_state_no_arbitration', 'no_timeout_on_delegation', 'unhandled_tool_failure']
+
+================================================================================
+(a) GRAPH FINGERPRINT
+================================================================================
+  feature_vector (20 elements):
+    [ 0] 4.000000
+    [ 1] 2.000000
+    [ 2] 1.000000
+    [ 3] 1.000000
+    [ 4] 0.000000
+    [ 5] 9.000000
+    [ 6] 4.000000
+    [ 7] 4.000000
+    [ 8] 0.000000
+    [ 9] 0.000000
+    [10] 2.000000
+    [11] 1.000000
+    [12] 0.000000
+    [13] 2.222222
+    [14] 0.142857
+    [15] 0.029762
+    [16] 0.000000
+    [17] 1.000000
+    [18] 2.000000
+    [19] 0.000000
+
+  motifs: ['linear_delegation_chain', 'shared_state_without_arbitration', 'trust_boundary_crossing']
+  topology_hash: e21f5535fccb2c73d91aa3f0e135764f92a35075da7ff1c7488ad7a5e6120286
+
+  node_type_distribution: {
+    "agent": 0.5,
+    "capability": 0.25,
+    "data_store": 0.125,
+    "external": 0.125
+}
+
+  edge_type_distribution: {
+    "delegates_to": 0.3333,
+    "uses": 0.2222,
+    "writes_to": 0.2222,
+    "reads_from": 0.1111,
+    "calls": 0.1111
+}
+
+  structural_metrics: {
+    "agent_count": 4,
+    "capability_count": 2,
+    "data_store_count": 1,
+    "external_service_count": 1,
+    "guardrail_count": 0,
+    "total_edges": 9,
+    "delegation_depth_max": 4.0,
+    "delegation_depth_mean": 4.0,
+    "control_coverage_ratio": 0.0,
+    "observability_coverage_ratio": 0.0,
+    "shared_state_writer_count": 2,
+    "trust_boundary_crossing_count": 1,
+    "feedback_loop_count": 0,
+    "hub_spoke_ratio": 2.2222,
+    "betweenness_centrality_max": 0.1429,
+    "betweenness_centrality_mean": 0.0298,
+    "error_propagation_path_count": 0,
+    "irreversible_capability_count": 1,
+    "agent_to_capability_ratio": 2.0,
+    "has_human_checkpoint": 0
+}
+
+================================================================================
+(b) TOP 5 PATTERN MATCHES
+================================================================================
+
+  Match 1:
+    pattern_name:      trust_boundary_crossing
+    pattern_id:        pat_trust_boundary_crossing_4aa47e8cbfc0
+    similarity_score:  1.0000
+    match_type:        exact_motif
+    matched_repos:     30
+    behavioral_summary: {
+      "failure_rate": 0.5,
+      "confidence_interval_95": [
+            0.3315,
+            0.6685
+      ],
+      "sample_size": 30,
+      "failure_modes": {
+            "propagate": 13,
+            "retry": 11,
+            "fallback": 8,
+            "ignore": 6
+      },
+      "avg_error_rate": 0.2623,
+      "risk_level": "medium",
+      "framework_comparison": {
+            "frameworks_compared": [
+                  "autogen",
+                  "crewai",
+                  "langgraph"
+            ],
+            "per_framework": {
+                  "crewai": {
+                        "repos_count": 10,
+                        "failure_rate": 0.5
+                  },
+                  "langgraph": {
+                        "repos_count": 10,
+                        "failure_rate": 0.5
+                  },
+                  "autogen": {
+                        "repos_count": 10,
+                        "failure_rate": 0.5
+                  }
+            }
+      }
+}
+
+  Match 2:
+    pattern_name:      linear_delegation_chain
+    pattern_id:        pat_linear_delegation_chain_0c5aec845910
+    similarity_score:  1.0000
+    match_type:        exact_motif
+    matched_repos:     22
+    behavioral_summary: {
+      "failure_rate": 0.3182,
+      "confidence_interval_95": [
+            0.1636,
+            0.5268
+      ],
+      "sample_size": 22,
+      "failure_modes": {
+            "retry": 6,
+            "fallback": 5,
+            "propagate": 5,
+            "ignore": 3
+      },
+      "avg_error_rate": 0.4005,
+      "risk_level": "low",
+      "fragility": {
+            "position": "chain_node",
+            "sensitivity_score": 0.1159,
+            "avg_tool_failure_rate": 0.1209
+      },
+      "framework_comparison": {
+            "frameworks_compared": [
+                  "autogen",
+                  "crewai",
+                  "langgraph"
+            ],
+            "per_framework": {
+                  "crewai": {
+                        "repos_count": 7,
+                        "failure_rate": 0.2857
+                  },
+                  "langgraph": {
+                        "repos_count": 7,
+                        "failure_rate": 0.2857
+                  },
+                  "autogen": {
+                        "repos_count": 8,
+                        "failure_rate": 0.375
+                  }
+            }
+      }
+}
+
+  Match 3:
+    pattern_name:      shared_state_without_arbitration
+    pattern_id:        pat_shared_state_without_arbitration_8a1886c55ae2
+    similarity_score:  1.0000
+    match_type:        exact_motif
+    matched_repos:     10
+    behavioral_summary: {
+      "failure_rate": 0.5,
+      "confidence_interval_95": [
+            0.2366,
+            0.7634
+      ],
+      "sample_size": 10,
+      "failure_modes": {
+            "propagate": 6,
+            "retry": 4,
+            "fallback": 2
+      },
+      "avg_error_rate": 0.1932,
+      "risk_level": "low"
+}
+
+  Match 4:
+    pattern_name:      structural_match_unknown
+    pattern_id:        sim_unknown
+    similarity_score:  0.9239
+    match_type:        structural_similarity
+    matched_repos:     1
+
+  Match 5:
+    pattern_name:      linear_pipeline
+    pattern_id:        archetype_linear_pipeline
+    similarity_score:  0.7333
+    match_type:        archetype
+    matched_repos:     22
+    behavioral_summary: {
+      "archetype": "linear_pipeline",
+      "prevalence_rate": 0.7333,
+      "avg_failure_rate": 0.3182,
+      "total_sample_size": 22,
+      "patterns_count": 1,
+      "fragility": {
+            "position": "chain_node",
+            "sensitivity_score": 0.1159,
+            "avg_tool_failure_rate": 0.1209
+      }
+}
+
+================================================================================
+(c) PREDICTED RISKS
+================================================================================
+
+  overall_risk_score: 18.9
+  archetype:         generic
+  archetype_prevalence: 0.00
+
+  Predicted risks (3):
+
+    no_timeout_on_delegation: No Timeout On Delegation
+      manifestation_probability: 0.5000
+      confidence_interval:       (0.268, 0.732)
+      sample_size:               14
+      severity_when_manifested:  medium
+      fragility_flag:            False
+      behavioral_description:    In 50.0% of repos with this structural pattern (n=14), the precondition manifested as a medium-severity failure, typically contained within the affected subsystem. 5 similar repo(s) in the dataset showed comparable structural characteristics.
+      remediation:               Configure explicit timeouts on every delegation edge. Use a circuit-breaker pattern so that a stalled downstream agent does not block the entire pipeline indefinitely.
+
+    unhandled_tool_failure: Unhandled Tool Failure
+      manifestation_probability: 0.4000
+      confidence_interval:       (0.1982, 0.6425)
+      sample_size:               15
+      severity_when_manifested:  medium
+      fragility_flag:            False
+      behavioral_description:    In 40.0% of repos with this structural pattern (n=15), the precondition manifested as a medium-severity failure, typically contained within the affected subsystem.
+      remediation:               Wrap every tool call in a try/catch with a defined fallback strategy (retry with backoff, degrade gracefully, or escalate to a human). Log tool failures for observability.
+
+    shared_state_no_arbitration: Shared State No Arbitration
+      manifestation_probability: 0.3750
+      confidence_interval:       (0.1848, 0.6136)
+      sample_size:               16
+      severity_when_manifested:  medium
+      fragility_flag:            False
+      behavioral_description:    In 37.5% of repos with this structural pattern (n=16), the precondition manifested as a medium-severity failure, typically contained within the affected subsystem. 5 similar repo(s) in the dataset showed comparable structural characteristics.
+      remediation:               Add write arbitration (mutex, queue, or optimistic locking) to every shared data store that receives writes from multiple agents. Consider an event-sourced architecture where each agent appends events rather than mutating state directly.
+
+  Positive signals (4):
+    + Error handling strategy defined — agents have explicit error handling configured
+    + Circuit breakers configured — external calls have circuit-breaker protection
+    + Retry strategy configured — transient failures will be retried automatically
+    + Rate limiting in place — agents cannot overwhelm downstream services
+
+  Structural-only risks (0):
+
+  Dataset coverage: {
+    "preconditions_queried": 3,
+    "preconditions_with_data": 3,
+    "preconditions_without_data": [],
+    "total_sample_size": 45,
+    "patterns_in_kb": 4
+}
+
+================================================================================
+(d) FULL RISK REPORT (JSON)
+================================================================================
+{
+  "executive_summary": {
+    "archetype": "generic",
+    "archetype_prevalence": 0.0,
+    "overall_risk_score": 18.89,
+    "risk_level": "LOW",
+    "top_risks": [
+      {
+        "precondition_id": "no_timeout_on_delegation",
+        "name": "No Timeout On Delegation",
+        "probability": 0.5,
+        "severity": "medium"
+      },
+      {
+        "precondition_id": "unhandled_tool_failure",
+        "name": "Unhandled Tool Failure",
+        "probability": 0.4,
+        "severity": "medium"
+      },
+      {
+        "precondition_id": "shared_state_no_arbitration",
+        "name": "Shared State No Arbitration",
+        "probability": 0.375,
+        "severity": "medium"
+      }
+    ],
+    "positive_signals": [
+      "Error handling strategy defined \u2014 agents have explicit error handling configured",
+      "Circuit breakers configured \u2014 external calls have circuit-breaker protection",
+      "Retry strategy configured \u2014 transient failures will be retried automatically",
+      "Rate limiting in place \u2014 agents cannot overwhelm downstream services"
+    ]
+  },
+  "risk_details": [
+    {
+      "precondition_id": "no_timeout_on_delegation",
+      "precondition_name": "No Timeout On Delegation",
+      "manifestation_probability": 0.5,
+      "confidence_interval": [
+        0.268,
+        0.732
+      ],
+      "sample_size": 14,
+      "severity_when_manifested": "medium",
+      "behavioral_description": "In 50.0% of repos with this structural pattern (n=14), the precondition manifested as a medium-severity failure, typically contained within the affected subsystem. 5 similar repo(s) in the dataset showed comparable structural characteristics.",
+      "structural_evidence": [
+        "Exact motif 'trust_boundary_crossing' found in 30 repo(s)",
+        "Exact motif 'linear_delegation_chain' found in 22 repo(s)",
+        "Exact motif 'shared_state_without_arbitration' found in 10 repo(s)",
+        "High structural similarity (0.92) to known pattern 'structural_match_unknown'",
+        "Archetype 'linear_pipeline' matches 22 repo(s)"
+      ],
+      "similar_repo_outcomes": [
+        {
+          "repo_id": "dataset_repo_005",
+          "pattern_name": "linear_delegation_chain",
+          "failure_rate": 0.3182,
+          "sample_size": 22
+        },
+        {
+          "repo_id": "dataset_repo_007",
+          "pattern_name": "linear_delegation_chain",
+          "failure_rate": 0.3182,
+          "sample_size": 22
+        },
+        {
+          "repo_id": "dataset_repo_022",
+          "pattern_name": "linear_delegation_chain",
+          "failure_rate": 0.3182,
+          "sample_size": 22
+        },
+        {
+          "repo_id": "dataset_repo_025",
+          "pattern_name": "linear_delegation_chain",
+          "failure_rate": 0.3182,
+          "sample_size": 22
+        },
+        {
+          "repo_id": "dataset_repo_027",
+          "pattern_name": "linear_delegation_chain",
+          "failure_rate": 0.3182,
+          "sample_size": 22
+        }
+      ],
+      "fragility_flag": false,
+      "remediation": "Configure explicit timeouts on every delegation edge. Use a circuit-breaker pattern so that a stalled downstream agent does not block the entire pipeline indefinitely."
+    },
+    {
+      "precondition_id": "unhandled_tool_failure",
+      "precondition_name": "Unhandled Tool Failure",
+      "manifestation_probability": 0.4,
+      "confidence_interval": [
+        0.1982,
+        0.6425
+      ],
+      "sample_size": 15,
+      "severity_when_manifested": "medium",
+      "behavioral_description": "In 40.0% of repos with this structural pattern (n=15), the precondition manifested as a medium-severity failure, typically contained within the affected subsystem.",
+      "structural_evidence": [
+        "Exact motif 'trust_boundary_crossing' found in 30 repo(s)",
+        "Exact motif 'linear_delegation_chain' found in 22 repo(s)",
+        "Exact motif 'shared_state_without_arbitration' found in 10 repo(s)",
+        "High structural similarity (0.92) to known pattern 'structural_match_unknown'",
+        "Archetype 'linear_pipeline' matches 22 repo(s)"
+      ],
+      "similar_repo_outcomes": [],
+      "fragility_flag": false,
+      "remediation": "Wrap every tool call in a try/catch with a defined fallback strategy (retry with backoff, degrade gracefully, or escalate to a human). Log tool failures for observability."
+    },
+    {
+      "precondition_id": "shared_state_no_arbitration",
+      "precondition_name": "Shared State No Arbitration",
+      "manifestation_probability": 0.375,
+      "confidence_interval": [
+        0.1848,
+        0.6136
+      ],
+      "sample_size": 16,
+      "severity_when_manifested": "medium",
+      "behavioral_description": "In 37.5% of repos with this structural pattern (n=16), the precondition manifested as a medium-severity failure, typically contained within the affected subsystem. 5 similar repo(s) in the dataset showed comparable structural characteristics.",
+      "structural_evidence": [
+        "Exact motif 'trust_boundary_crossing' found in 30 repo(s)",
+        "Exact motif 'linear_delegation_chain' found in 22 repo(s)",
+        "Exact motif 'shared_state_without_arbitration' found in 10 repo(s)",
+        "High structural similarity (0.92) to known pattern 'structural_match_unknown'",
+        "Archetype 'linear_pipeline' matches 22 repo(s)"
+      ],
+      "similar_repo_outcomes": [
+        {
+          "repo_id": "dataset_repo_024",
+          "pattern_name": "shared_state_without_arbitration",
+          "failure_rate": 0.5,
+          "sample_size": 10
+        },
+        {
+          "repo_id": "dataset_repo_012",
+          "pattern_name": "shared_state_without_arbitration",
+          "failure_rate": 0.5,
+          "sample_size": 10
+        },
+        {
+          "repo_id": "dataset_repo_015",
+          "pattern_name": "shared_state_without_arbitration",
+          "failure_rate": 0.5,
+          "sample_size": 10
+        },
+        {
+          "repo_id": "dataset_repo_018",
+          "pattern_name": "shared_state_without_arbitration",
+          "failure_rate": 0.5,
+          "sample_size": 10
+        },
+        {
+          "repo_id": "dataset_repo_006",
+          "pattern_name": "shared_state_without_arbitration",
+          "failure_rate": 0.5,
+          "sample_size": 10
+        }
+      ],
+      "fragility_flag": false,
+      "remediation": "Add write arbitration (mutex, queue, or optimistic locking) to every shared data store that receives writes from multiple agents. Consider an event-sourced architecture where each agent appends events rather than mutating state directly."
+    }
+  ],
+  "structural_only_risks": [],
+  "architecture_analysis": {
+    "node_count": 8,
+    "edge_count": 9,
+    "node_type_distribution": {
+      "agent": 4,
+      "capability": 2,
+      "data_store": 1,
+      "external": 1
+    },
+    "fingerprint": {
+      "repo_id": "customer_repo",
+      "framework": "crewai",
+      "taxonomy_preconditions": [
+        "shared_state_no_arbitration",
+        "no_timeout_on_delegation",
+        "unhandled_tool_failure"
+      ],
+      "nodes": {
+        "agent_manager": {
+          "structural": {
+            "node_type": "agent",
+            "name": "Manager"
+          },
+          "behavioral": null
+        },
+        "agent_researcher": {
+          "structural": {
+            "node_type": "agent",
+            "name": "Researcher",
+            "error_handling": {
+              "strategy": "fail_silent"
+            }
+          },
+          "behavioral": null
+        },
+        "agent_writer": {
+          "structural": {
+            "node_type": "agent",
+            "name": "Writer"
+          },
+          "behavioral": null
+        },
+        "agent_reviewer": {
+          "structural": {
+            "node_type": "agent",
+            "name": "Reviewer"
+          },
+          "behavioral": null
+        },
+        "cap_web_search": {
+          "structural": {
+            "node_type": "capability",
+            "name": "WebSearch",
+            "kind": "tool"
+          },
+          "behavioral": null
+        },
+        "cap_llm_call": {
+          "structural": {
+            "node_type": "capability",
+            "name": "LLMCall",
+            "kind": "llm"
+          },
+          "behavioral": null
+        },
+        "ds_shared_memory": {
+          "structural": {
+            "node_type": "data_store",
+            "name": "SharedMemory"
+          },
+          "behavioral": null
+        },
+        "ext_web_api": {
+          "structural": {
+            "node_type": "external",
+            "name": "WebAPI"
+          },
+          "behavioral": null
+        }
+      },
+      "edges": {
+        "e1": {
+          "structural": {
+            "edge_type": "delegates_to",
+            "source": "agent_manager",
+            "target": "agent_researcher"
+          }
+        },
+        "e2": {
+          "structural": {
+            "edge_type": "delegates_to",
+            "source": "agent_researcher",
+            "target": "agent_writer"
+          }
+        },
+        "e3": {
+          "structural": {
+            "edge_type": "delegates_to",
+            "source": "agent_writer",
+            "target": "agent_reviewer"
+          }
+        },
+        "e4": {
+          "structural": {
+            "edge_type": "uses",
+            "source": "agent_researcher",
+            "target": "cap_web_search"
+          }
+        },
+        "e5": {
+          "structural": {
+            "edge_type": "uses",
+            "source": "agent_researcher",
+            "target": "cap_llm_call"
+          }
+        },
+        "e6": {
+          "structural": {
+            "edge_type": "writes_to",
+            "source": "agent_researcher",
+            "target": "ds_shared_memory"
+          }
+        },
+        "e7": {
+          "structural": {
+            "edge_type": "writes_to",
+            "source": "agent_writer",
+            "target": "ds_shared_memory"
+          }
+        },
+        "e8": {
+          "structural": {
+            "edge_type": "reads_from",
+            "source": "agent_reviewer",
+            "target": "ds_shared_memory"
+          }
+        },
+        "e9": {
+          "structural": {
+            "edge_type": "calls",
+            "source": "cap_web_search",
+            "target": "ext_web_api"
+          }
+        }
+      }
+    }
+  },
+  "benchmark_comparison": {
+    "archetype": "generic",
+    "archetype_prevalence_pct": 0.0,
+    "framework_comparison": {
+      "linear_delegation_chain": {
+        "frameworks_compared": [
+          "autogen",
+          "crewai",
+          "langgraph"
+        ],
+        "per_framework": {
+          "crewai": {
+            "repos_count": 7,
+            "failure_rate": 0.2857
+          },
+          "langgraph": {
+            "repos_count": 7,
+            "failure_rate": 0.2857
+          },
+          "autogen": {
+            "repos_count": 8,
+            "failure_rate": 0.375
+          }
+        }
+      },
+      "trust_boundary_crossing": {
+        "frameworks_compared": [
+          "autogen",
+          "crewai",
+          "langgraph"
+        ],
+        "per_framework": {
+          "crewai": {
+            "repos_count": 10,
+            "failure_rate": 0.5
+          },
+          "langgraph": {
+            "repos_count": 10,
+            "failure_rate": 0.5
+          },
+          "autogen": {
+            "repos_count": 10,
+            "failure_rate": 0.5
+          }
+        }
+      }
+    }
+  },
+  "dataset_coverage": {
+    "preconditions_queried": 3,
+    "preconditions_with_data": 3,
+    "preconditions_without_data": [],
+    "total_sample_size": 45,
+    "patterns_in_kb": 4
+  },
+  "methodology": {
+    "dataset_description": "Behavioral analysis of open-source AI agent repositories",
+    "total_sample_across_risks": 45,
+    "confidence_level": "95% Wilson score intervals",
+    "manifestation_probability_definition": "The fraction of repos with this structural precondition where the corresponding failure mode was observed at runtime."
+  }
+}
+
+================================================================================
+(e) RISK REPORT (MARKDOWN)
+================================================================================
+# Stratum Risk Report
+
+## Executive Summary
+
+**Architecture Type:** generic
+**Prevalence in Ecosystem:** 0.0%
+**Overall Risk Score:** 18.9 / 100 (LOW)
+
+### Top Risks
+
+1. **No Timeout On Delegation** -- P(manifestation) = 50%, severity: medium
+2. **Unhandled Tool Failure** -- P(manifestation) = 40%, severity: medium
+3. **Shared State No Arbitration** -- P(manifestation) = 38%, severity: medium
+
+### Positive Signals
+
+- Error handling strategy defined — agents have explicit error handling configured
+- Circuit breakers configured — external calls have circuit-breaker protection
+- Retry strategy configured — transient failures will be retried automatically
+- Rate limiting in place — agents cannot overwhelm downstream services
+
+## Risk Details
+
+### no_timeout_on_delegation: No Timeout On Delegation
+
+- **Manifestation Probability:** 50% (95% CI: [27%, 73%])
+- **Sample Size:** 14 repos
+- **Severity When Manifested:** medium
+
+> In 50.0% of repos with this structural pattern (n=14), the precondition manifested as a medium-severity failure, typically contained within the affected subsystem. 5 similar repo(s) in the dataset showed comparable structural characteristics.
+
+**Structural Evidence:**
+- `Exact motif 'trust_boundary_crossing' found in 30 repo(s)`
+- `Exact motif 'linear_delegation_chain' found in 22 repo(s)`
+- `Exact motif 'shared_state_without_arbitration' found in 10 repo(s)`
+- `High structural similarity (0.92) to known pattern 'structural_match_unknown'`
+- `Archetype 'linear_pipeline' matches 22 repo(s)`
+
+**Remediation:** Configure explicit timeouts on every delegation edge. Use a circuit-breaker pattern so that a stalled downstream agent does not block the entire pipeline indefinitely.
+
+### unhandled_tool_failure: Unhandled Tool Failure
+
+- **Manifestation Probability:** 40% (95% CI: [20%, 64%])
+- **Sample Size:** 15 repos
+- **Severity When Manifested:** medium
+
+> In 40.0% of repos with this structural pattern (n=15), the precondition manifested as a medium-severity failure, typically contained within the affected subsystem.
+
+**Structural Evidence:**
+- `Exact motif 'trust_boundary_crossing' found in 30 repo(s)`
+- `Exact motif 'linear_delegation_chain' found in 22 repo(s)`
+- `Exact motif 'shared_state_without_arbitration' found in 10 repo(s)`
+- `High structural similarity (0.92) to known pattern 'structural_match_unknown'`
+- `Archetype 'linear_pipeline' matches 22 repo(s)`
+
+**Remediation:** Wrap every tool call in a try/catch with a defined fallback strategy (retry with backoff, degrade gracefully, or escalate to a human). Log tool failures for observability.
+
+### shared_state_no_arbitration: Shared State No Arbitration
+
+- **Manifestation Probability:** 38% (95% CI: [18%, 61%])
+- **Sample Size:** 16 repos
+- **Severity When Manifested:** medium
+
+> In 37.5% of repos with this structural pattern (n=16), the precondition manifested as a medium-severity failure, typically contained within the affected subsystem. 5 similar repo(s) in the dataset showed comparable structural characteristics.
+
+**Structural Evidence:**
+- `Exact motif 'trust_boundary_crossing' found in 30 repo(s)`
+- `Exact motif 'linear_delegation_chain' found in 22 repo(s)`
+- `Exact motif 'shared_state_without_arbitration' found in 10 repo(s)`
+- `High structural similarity (0.92) to known pattern 'structural_match_unknown'`
+- `Archetype 'linear_pipeline' matches 22 repo(s)`
+
+**Remediation:** Add write arbitration (mutex, queue, or optimistic locking) to every shared data store that receives writes from multiple agents. Consider an event-sourced architecture where each agent appends events rather than mutating state directly.
+
+## Architecture Analysis
+
+- **Nodes:** 8
+- **Edges:** 9
+- agent: 4
+- capability: 2
+- data_store: 1
+- external: 1
+
+## Benchmark Comparison
+
+Architecture type **generic** is found in **0.0%** of the ecosystem.
+
+**Framework-specific data:**
+
+- linear_delegation_chain: failure rate = N/A
+- trust_boundary_crossing: failure rate = N/A
+
+## Methodology
+
+- Behavioral analysis of open-source AI agent repositories
+- Total sample across all risks: 45
+- Confidence intervals: 95% Wilson score intervals
+- The fraction of repos with this structural precondition where the corresponding failure mode was observed at runtime.
+
+---
+*Generated by Stratum Lab*
+
+================================================================================
+QUERY DEMO COMPLETE
+================================================================================

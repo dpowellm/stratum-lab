@@ -3,19 +3,19 @@
 ================================================================================
 
 --- agent_researcher (Researcher) ---
-  activation_count : 9
-  activation_rate  : 3.0
+  activation_count : 12
+  activation_rate  : 1.0
   throughput       : {
-  "tasks_received": 9,
+  "tasks_received": 12,
   "completed": 9,
   "failed": 1,
-  "failure_rate": 0.1111
+  "failure_rate": 0.0833
 }
   latency          : {
   "p50": 350.0,
   "p95": 800.0,
   "p99": 800.0,
-  "variance": 64999.95,
+  "variance": 64999.93,
   "sample_count": 9
 }
   error_behavior   : {
@@ -27,9 +27,9 @@
   "observed_error_handling": [
     "retry"
   ],
-  "structural_prediction_match": null
+  "structural_prediction_match": true
 }
-  decision_behavior: None
+  decision_behavior: {'decisions_made': 3, 'decision_entropy': 0.9183, 'consistency_across_same_input': 0.0, 'consistency_across_diff_input': 0.6666666666666666, 'confidence_mean': 0.88, 'confidence_variance': 0.0006}
   model_sensitivity: {
   "tool_call_failures": 0,
   "tool_call_failure_rate": 0.0,
@@ -42,15 +42,20 @@
   "avg_llm_calls": 1.0,
   "avg_iterations": 1.0
 }
+  determinism      : {
+  "same_input_activation_consistency": null,
+  "same_input_path_consistency": null,
+  "cross_input_variance": 0.0
+}
 
 --- agent_writer (Writer) ---
-  activation_count : 6
-  activation_rate  : 2.0
+  activation_count : 9
+  activation_rate  : 1.0
   throughput       : {
-  "tasks_received": 6,
+  "tasks_received": 9,
   "completed": 6,
   "failed": 2,
-  "failure_rate": 0.3333
+  "failure_rate": 0.2222
 }
   latency          : {
   "p50": 375.0,
@@ -83,12 +88,17 @@
   "avg_llm_calls": 0.0,
   "avg_iterations": 1.0
 }
+  determinism      : {
+  "same_input_activation_consistency": null,
+  "same_input_path_consistency": null,
+  "cross_input_variance": 0.0
+}
 
 --- agent_reviewer (Reviewer) ---
-  activation_count : 7
-  activation_rate  : 2.3333
+  activation_count : 10
+  activation_rate  : 1.0
   throughput       : {
-  "tasks_received": 7,
+  "tasks_received": 10,
   "completed": 7,
   "failed": 0,
   "failure_rate": 0.0
@@ -97,7 +107,7 @@
   "p50": 280.0,
   "p95": 400.0,
   "p99": 400.0,
-  "variance": 9012.24,
+  "variance": 9012.28,
   "sample_count": 7
 }
   error_behavior   : {
@@ -122,22 +132,27 @@
   "avg_llm_calls": 1.0,
   "avg_iterations": 1.0
 }
+  determinism      : {
+  "same_input_activation_consistency": null,
+  "same_input_path_consistency": null,
+  "cross_input_variance": 0.1414
+}
 
 --- cap_web_search_tool (WebSearch) ---
-  activation_count : 0
-  activation_rate  : 0.0
+  activation_count : 7
+  activation_rate  : 1.0
   throughput       : {
-  "tasks_received": 0,
-  "completed": 0,
+  "tasks_received": 7,
+  "completed": 4,
   "failed": 0,
   "failure_rate": 0.0
 }
   latency          : {
-  "p50": 0.0,
-  "p95": 0.0,
-  "p99": 0.0,
-  "variance": 0.0,
-  "sample_count": 0
+  "p50": 200.0,
+  "p95": 200.0,
+  "p99": 200.0,
+  "variance": 1200.01,
+  "sample_count": 4
 }
   error_behavior   : {
   "errors_occurred": 0,
@@ -157,26 +172,31 @@
 }
   resource_usage   : {
   "avg_tokens": 0.0,
-  "avg_tool_calls": 0.0,
+  "avg_tool_calls": 1.33,
   "avg_llm_calls": 0.0,
   "avg_iterations": 0.0
+}
+  determinism      : {
+  "same_input_activation_consistency": null,
+  "same_input_path_consistency": null,
+  "cross_input_variance": 0.202
 }
 
 --- cap_file_writer_tool (FileWriter) ---
-  activation_count : 0
-  activation_rate  : 0.0
+  activation_count : 3
+  activation_rate  : 1.0
   throughput       : {
-  "tasks_received": 0,
-  "completed": 0,
+  "tasks_received": 3,
+  "completed": 3,
   "failed": 0,
   "failure_rate": 0.0
 }
   latency          : {
-  "p50": 0.0,
-  "p95": 0.0,
-  "p99": 0.0,
+  "p50": 150.0,
+  "p95": 150.0,
+  "p99": 150.0,
   "variance": 0.0,
-  "sample_count": 0
+  "sample_count": 3
 }
   error_behavior   : {
   "errors_occurred": 0,
@@ -196,9 +216,14 @@
 }
   resource_usage   : {
   "avg_tokens": 0.0,
-  "avg_tool_calls": 0.0,
+  "avg_tool_calls": 1.0,
   "avg_llm_calls": 0.0,
   "avg_iterations": 0.0
+}
+  determinism      : {
+  "same_input_activation_consistency": null,
+  "same_input_path_consistency": null,
+  "cross_input_variance": 0.0
 }
 
 --- cap_summarize_tool (Summarize) ---
@@ -239,22 +264,27 @@
   "avg_llm_calls": 0.0,
   "avg_iterations": 0.0
 }
+  determinism      : {
+  "same_input_activation_consistency": null,
+  "same_input_path_consistency": null,
+  "cross_input_variance": 0.0
+}
 
 --- cap_llm_call (LLMCall) ---
-  activation_count : 0
-  activation_rate  : 0.0
+  activation_count : 3
+  activation_rate  : 1.0
   throughput       : {
-  "tasks_received": 0,
-  "completed": 0,
+  "tasks_received": 3,
+  "completed": 3,
   "failed": 0,
   "failure_rate": 0.0
 }
   latency          : {
-  "p50": 0.0,
-  "p95": 0.0,
-  "p99": 0.0,
+  "p50": 350.0,
+  "p95": 350.0,
+  "p99": 350.0,
   "variance": 0.0,
-  "sample_count": 0
+  "sample_count": 3
 }
   error_behavior   : {
   "errors_occurred": 0,
@@ -273,27 +303,32 @@
   "quality_dependent": false
 }
   resource_usage   : {
-  "avg_tokens": 0.0,
+  "avg_tokens": 850.0,
   "avg_tool_calls": 0.0,
-  "avg_llm_calls": 0.0,
+  "avg_llm_calls": 1.0,
   "avg_iterations": 0.0
+}
+  determinism      : {
+  "same_input_activation_consistency": null,
+  "same_input_path_consistency": null,
+  "cross_input_variance": 0.0
 }
 
 --- cap_review_call (ReviewCall) ---
-  activation_count : 0
-  activation_rate  : 0.0
+  activation_count : 3
+  activation_rate  : 1.0
   throughput       : {
-  "tasks_received": 0,
-  "completed": 0,
+  "tasks_received": 3,
+  "completed": 3,
   "failed": 0,
   "failure_rate": 0.0
 }
   latency          : {
-  "p50": 0.0,
-  "p95": 0.0,
-  "p99": 0.0,
+  "p50": 280.0,
+  "p95": 280.0,
+  "p99": 280.0,
   "variance": 0.0,
-  "sample_count": 0
+  "sample_count": 3
 }
   error_behavior   : {
   "errors_occurred": 0,
@@ -312,17 +347,22 @@
   "quality_dependent": false
 }
   resource_usage   : {
-  "avg_tokens": 0.0,
+  "avg_tokens": 900.0,
   "avg_tool_calls": 0.0,
-  "avg_llm_calls": 0.0,
+  "avg_llm_calls": 1.0,
   "avg_iterations": 0.0
+}
+  determinism      : {
+  "same_input_activation_consistency": null,
+  "same_input_path_consistency": null,
+  "cross_input_variance": 0.0
 }
 
 --- ds_shared_memory (SharedMemory) ---
-  activation_count : 0
-  activation_rate  : 0.0
+  activation_count : 9
+  activation_rate  : 1.0
   throughput       : {
-  "tasks_received": 0,
+  "tasks_received": 9,
   "completed": 0,
   "failed": 0,
   "failure_rate": 0.0
@@ -355,13 +395,18 @@
   "avg_tool_calls": 0.0,
   "avg_llm_calls": 0.0,
   "avg_iterations": 0.0
+}
+  determinism      : {
+  "same_input_activation_consistency": null,
+  "same_input_path_consistency": null,
+  "cross_input_variance": 0.0
 }
 
 --- ext_web_api (WebAPI) ---
-  activation_count : 0
-  activation_rate  : 0.0
+  activation_count : 3
+  activation_rate  : 1.0
   throughput       : {
-  "tasks_received": 0,
+  "tasks_received": 3,
   "completed": 0,
   "failed": 0,
   "failure_rate": 0.0
@@ -395,6 +440,95 @@
   "avg_llm_calls": 0.0,
   "avg_iterations": 0.0
 }
+  determinism      : {
+  "same_input_activation_consistency": null,
+  "same_input_path_consistency": null,
+  "cross_input_variance": 0.0
+}
+
+--- guard_output (OutputGuard) ---
+  activation_count : 3
+  activation_rate  : 1.0
+  throughput       : {
+  "tasks_received": 3,
+  "completed": 0,
+  "failed": 0,
+  "failure_rate": 0.0
+}
+  latency          : {
+  "p50": 0.0,
+  "p95": 0.0,
+  "p99": 0.0,
+  "variance": 0.0,
+  "sample_count": 0
+}
+  error_behavior   : {
+  "errors_occurred": 0,
+  "propagated_downstream": 0,
+  "swallowed": 0,
+  "propagation_rate": 0.0,
+  "default_values_used": 0,
+  "observed_error_handling": [],
+  "structural_prediction_match": null
+}
+  decision_behavior: None
+  model_sensitivity: {
+  "tool_call_failures": 0,
+  "tool_call_failure_rate": 0.0,
+  "retry_activations": 0,
+  "quality_dependent": false
+}
+  resource_usage   : {
+  "avg_tokens": 0.0,
+  "avg_tool_calls": 0.0,
+  "avg_llm_calls": 0.0,
+  "avg_iterations": 0.0
+}
+  guardrail_eff    : {
+  "trigger_count": 3,
+  "prevented_action_count": 1,
+  "bypass_count": 1,
+  "retry_count": 1,
+  "avg_latency_impact_ms": 3.5,
+  "false_positive_indicators": 0
+}
+  determinism      : {
+  "same_input_activation_consistency": null,
+  "same_input_path_consistency": null,
+  "cross_input_variance": 0.0
+}
+
+================================================================================
+(f) EXECUTION PATHS & PATH ANALYSIS
+================================================================================
+  Runs with paths: 3
+  Run run_000: 17 edge traversals
+    e3: agent_researcher -> cap_web_search_tool (uses)
+    e3: agent_researcher -> cap_web_search_tool (uses)
+    e10: cap_web_search_tool -> ext_web_api (calls)
+    e5: agent_researcher -> cap_llm_call (uses)
+    e5: agent_researcher -> cap_llm_call (uses)
+    ... and 12 more
+  Run run_001: 17 edge traversals
+    e3: agent_researcher -> cap_web_search_tool (uses)
+    e3: agent_researcher -> cap_web_search_tool (uses)
+    e10: cap_web_search_tool -> ext_web_api (calls)
+    e5: agent_researcher -> cap_llm_call (uses)
+    e5: agent_researcher -> cap_llm_call (uses)
+    ... and 12 more
+  Run run_002: 17 edge traversals
+    e3: agent_researcher -> cap_web_search_tool (uses)
+    e3: agent_researcher -> cap_web_search_tool (uses)
+    e10: cap_web_search_tool -> ext_web_api (calls)
+    e5: agent_researcher -> cap_llm_call (uses)
+    e5: agent_researcher -> cap_llm_call (uses)
+    ... and 12 more
+
+  Path analysis:
+    distinct_paths:          1
+    dominant_path_frequency: 1.0
+    path_divergence_points:  []
+    conditional_edges:       0
 
 ================================================================================
 (b) PER-EDGE BEHAVIORAL ANNOTATIONS
@@ -402,7 +536,7 @@
 
 --- e1: agent_researcher -> agent_writer (delegates_to) ---
   traversal_count : 6
-  activation_rate : 2.0
+  activation_rate : 1.0
   never_activated : False
   data_flow       : {
   "avg_data_size_bytes": 0.0,
@@ -418,7 +552,7 @@
 
 --- e2: agent_writer -> agent_reviewer (delegates_to) ---
   traversal_count : 6
-  activation_rate : 2.0
+  activation_rate : 1.0
   never_activated : False
   data_flow       : {
   "avg_data_size_bytes": 0.0,
@@ -434,7 +568,7 @@
 
 --- e3: agent_researcher -> cap_web_search_tool (uses) ---
   traversal_count : 6
-  activation_rate : 2.0
+  activation_rate : 1.0
   never_activated : False
   data_flow       : {
   "avg_data_size_bytes": 0.0,
@@ -450,7 +584,7 @@
 
 --- e4: agent_writer -> cap_file_writer_tool (uses) ---
   traversal_count : 6
-  activation_rate : 2.0
+  activation_rate : 1.0
   never_activated : False
   data_flow       : {
   "avg_data_size_bytes": 0.0,
@@ -466,7 +600,7 @@
 
 --- e5: agent_researcher -> cap_llm_call (uses) ---
   traversal_count : 6
-  activation_rate : 2.0
+  activation_rate : 1.0
   never_activated : False
   data_flow       : {
   "avg_data_size_bytes": 0.0,
@@ -482,7 +616,7 @@
 
 --- e6: agent_reviewer -> cap_review_call (uses) ---
   traversal_count : 6
-  activation_rate : 2.0
+  activation_rate : 1.0
   never_activated : False
   data_flow       : {
   "avg_data_size_bytes": 0.0,
@@ -513,18 +647,20 @@
   latency_contribution_ms: 0.0
 
 --- e8: agent_writer -> ds_shared_memory (writes_to) ---
-  traversal_count : 3
+  traversal_count : 4
   activation_rate : 1.0
   never_activated : False
   data_flow       : {
   "avg_data_size_bytes": 1024.0,
   "schema_mismatch_count": 0,
-  "null_data_count": 3
+  "null_data_count": 4
 }
   error_crossings : {
-  "errors_traversed": 0,
-  "error_types": [],
-  "downstream_impact": 0
+  "errors_traversed": 1,
+  "error_types": [
+    "propagated_failure"
+  ],
+  "downstream_impact": 1
 }
   latency_contribution_ms: 0.0
 
@@ -545,13 +681,13 @@
   latency_contribution_ms: 0.0
 
 --- e10: cap_web_search_tool -> ext_web_api (calls) ---
-  traversal_count : 0
-  activation_rate : 0.0
-  never_activated : True
+  traversal_count : 3
+  activation_rate : 1.0
+  never_activated : False
   data_flow       : {
   "avg_data_size_bytes": 0.0,
   "schema_mismatch_count": 0,
-  "null_data_count": 0
+  "null_data_count": 3
 }
   error_crossings : {
   "errors_traversed": 0,
@@ -559,6 +695,22 @@
   "downstream_impact": 0
 }
   latency_contribution_ms: 0.0
+
+--- e11: agent_writer -> guard_output (filtered_by) ---
+  traversal_count : 3
+  activation_rate : 1.0
+  never_activated : False
+  data_flow       : {
+  "avg_data_size_bytes": 0.0,
+  "schema_mismatch_count": 0,
+  "null_data_count": 3
+}
+  error_crossings : {
+  "errors_traversed": 0,
+  "error_types": [],
+  "downstream_impact": 0
+}
+  latency_contribution_ms: 3.5
 
 ================================================================================
 (c) EMERGENT EDGES
@@ -581,15 +733,12 @@
 ================================================================================
 (d) DEAD EDGES
 ================================================================================
-
-  e10: cap_web_search_tool -> ext_web_api (calls)
-    runs_observed   : 3
-    possible_reasons: ['input_dependent']
+  (none detected)
 
 ================================================================================
 (e) STRUCTURAL PREDICTION MATCH FLAGS
 ================================================================================
-  agent_researcher                errors=  1  prediction_match=None
+  agent_researcher                errors=  1  prediction_match=True
   agent_writer                    errors=  2  prediction_match=None
   agent_reviewer                  errors=  0  prediction_match=None
   cap_web_search_tool             errors=  0  prediction_match=None
@@ -599,13 +748,14 @@
   cap_review_call                 errors=  0  prediction_match=None
   ds_shared_memory                errors=  0  prediction_match=None
   ext_web_api                     errors=  0  prediction_match=None
+  guard_output                    errors=  0  prediction_match=None
 
 ================================================================================
 UNMAPPED EVENTS
 ================================================================================
 {
   "node_events": 0,
-  "edge_events": 4
+  "edge_events": 0
 }
 
 Done.

@@ -25,7 +25,6 @@ import time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from stratum_lab.overlay.enricher import enrich_graph
-from stratum_lab.overlay.edges import detect_emergent_edges, detect_dead_edges
 
 # =========================================================================
 # 1. Synthetic structural graph
@@ -40,6 +39,7 @@ structural_graph: dict = {
             "name": "Researcher",
             "source_file": "agents.py",
             "line_number": 10,
+            "error_handling": {"strategy": "retry"},
         },
         "agent_writer": {
             "node_type": "agent",
@@ -86,6 +86,11 @@ structural_graph: dict = {
             "node_type": "external",
             "name": "WebAPI",
         },
+        "guard_output": {
+            "node_type": "guardrail",
+            "name": "OutputGuard",
+            "kind": "output_validation",
+        },
     },
     "edges": {
         "e1": {"edge_type": "delegates_to", "source": "agent_researcher", "target": "agent_writer"},
@@ -98,6 +103,7 @@ structural_graph: dict = {
         "e8": {"edge_type": "writes_to", "source": "agent_writer", "target": "ds_shared_memory"},
         "e9": {"edge_type": "reads_from", "source": "agent_reviewer", "target": "ds_shared_memory"},
         "e10": {"edge_type": "calls", "source": "cap_web_search_tool", "target": "ext_web_api"},
+        "e11": {"edge_type": "filtered_by", "source": "agent_writer", "target": "guard_output"},
     },
 }
 
@@ -269,7 +275,12 @@ def _error_event(
                 "event_type": "error.propagated",
                 "timestamp_ns": _ts(offset_ms + 5),
                 "source_node": _source(agent_name),
-                "payload": {"error_handling": error_handling},
+                "payload": {
+                    "error_handling": error_handling,
+                    "error_type": "propagated_failure",
+                    "propagation_path": [agent_name, "SharedMemory"],
+                    "downstream_impact": True,
+                },
             }
         )
     return events
@@ -299,6 +310,67 @@ def _read_event(agent_name: str, ds_name: str, offset_ms: int) -> list[dict]:
             "source_node": _source(agent_name, "agent"),
             "target_node": _source(ds_name, "data_store"),
             "payload": {},
+        },
+    ]
+
+
+def _external_call_event(
+    cap_name: str, ext_name: str, offset_ms: int,
+) -> list[dict]:
+    """Emit an external.call event (capability -> external service)."""
+    return [
+        {
+            "event_id": _eid(),
+            "event_type": "external.call",
+            "timestamp_ns": _ts(offset_ms),
+            "source_node": _source(cap_name, "capability"),
+            "target_node": _source(ext_name, "external"),
+            "payload": {},
+        },
+    ]
+
+
+def _decision_event(
+    agent_name: str, offset_ms: int,
+    option_hash: str = "opt_a", confidence: float = 0.85,
+    input_hash: str = "inp_001",
+) -> list[dict]:
+    """Emit a decision.made event."""
+    return [
+        {
+            "event_id": _eid(),
+            "event_type": "decision.made",
+            "timestamp_ns": _ts(offset_ms),
+            "source_node": _source(agent_name),
+            "payload": {
+                "selected_option_hash": option_hash,
+                "confidence": confidence,
+                "input_hash": input_hash,
+            },
+        },
+    ]
+
+
+def _guardrail_event(
+    guardrail_name: str, offset_ms: int,
+    action_prevented: bool = False,
+    bypassed: bool = False,
+    retry_triggered: bool = False,
+    latency_ms: float = 3.0,
+) -> list[dict]:
+    """Emit a guardrail.triggered event."""
+    return [
+        {
+            "event_id": _eid(),
+            "event_type": "guardrail.triggered",
+            "timestamp_ns": _ts(offset_ms),
+            "source_node": _source(guardrail_name, "guardrail"),
+            "payload": {
+                "action_prevented": action_prevented,
+                "bypassed": bypassed,
+                "retry_triggered": retry_triggered,
+                "latency_ms": latency_ms,
+            },
         },
     ]
 
@@ -347,6 +419,26 @@ def build_run_events(run_index: int) -> list[dict]:
                           input_tokens=800, output_tokens=100)
     events += _read_event("Reviewer", "SharedMemory", base + 1900)
 
+    # ---- External call (WebSearch -> WebAPI) ----
+    events += _external_call_event("WebSearch", "WebAPI", base + 260)
+
+    # ---- Decision event (Researcher decides) ----
+    option = "opt_a" if run_index < 2 else "opt_b"
+    events += _decision_event(
+        "Researcher", base + 750,
+        option_hash=option, confidence=0.85 + run_index * 0.03,
+        input_hash="inp_001",
+    )
+
+    # ---- Guardrail check (Writer -> OutputGuard) ----
+    events += _guardrail_event(
+        "OutputGuard", base + 1400,
+        action_prevented=(run_index == 0),
+        bypassed=(run_index == 1),
+        retry_triggered=(run_index == 2),
+        latency_ms=2.5 + run_index,
+    )
+
     # ---- Run-specific variations ----
     if run_index == 1:
         # Run 1: Researcher encounters an error that is retried
@@ -386,28 +478,11 @@ enriched = enrich_graph(structural_graph, run_records)
 
 
 # =========================================================================
-# 5. Detect emergent and dead edges
+# 5. Emergent and dead edges (now computed by enrich_graph)
 # =========================================================================
 
-# Filter to events with both source_node and target_node (interaction events)
-interaction_events = [
-    e for e in all_events_for_edge_detection
-    if e.get("source_node") and e.get("target_node")
-]
-
-emergent = detect_emergent_edges(
-    structural_graph["edges"],
-    interaction_events,
-    structural_graph["nodes"],
-    total_runs=3,
-)
-
-dead = detect_dead_edges(
-    structural_graph["edges"],
-    interaction_events,
-    total_runs=3,
-    structural_nodes=structural_graph["nodes"],
-)
+emergent = enriched["emergent_edges"]
+dead = enriched["dead_edges"]
 
 
 # =========================================================================
@@ -433,6 +508,33 @@ for node_id, node_data in enriched["nodes"].items():
     print(f"  decision_behavior: {behavioral['decision_behavior']}")
     print(f"  model_sensitivity: {pretty(behavioral['model_sensitivity'])}")
     print(f"  resource_usage   : {pretty(behavioral['resource_usage'])}")
+    if behavioral.get("guardrail_effectiveness"):
+        print(f"  guardrail_eff    : {pretty(behavioral['guardrail_effectiveness'])}")
+    if behavioral.get("determinism"):
+        print(f"  determinism      : {pretty(behavioral['determinism'])}")
+
+print("\n" + "=" * 80)
+print("(f) EXECUTION PATHS & PATH ANALYSIS")
+print("=" * 80)
+if enriched.get("execution_paths"):
+    print(f"  Runs with paths: {len(enriched['execution_paths'])}")
+    for ep in enriched["execution_paths"]:
+        steps = ep["execution_path"]
+        print(f"  Run {ep['run_id']}: {len(steps)} edge traversals")
+        for step in steps[:5]:
+            print(f"    {step['edge_id']}: {step['source']} -> {step['target']} ({step['edge_type']})")
+        if len(steps) > 5:
+            print(f"    ... and {len(steps) - 5} more")
+else:
+    print("  (no execution paths)")
+
+if enriched.get("path_analysis"):
+    pa = enriched["path_analysis"]
+    print(f"\n  Path analysis:")
+    print(f"    distinct_paths:          {pa['distinct_paths']}")
+    print(f"    dominant_path_frequency: {pa['dominant_path_frequency']}")
+    print(f"    path_divergence_points:  {pa['path_divergence_points']}")
+    print(f"    conditional_edges:       {len(pa.get('conditional_edge_activation_rates', {}))}")
 
 print("\n" + "=" * 80)
 print("(b) PER-EDGE BEHAVIORAL ANNOTATIONS")

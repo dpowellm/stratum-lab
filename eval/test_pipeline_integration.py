@@ -431,6 +431,68 @@ def main():
     print(f"\n  -> Saved knowledge base to {kb_dir}")
 
     # =====================================================================
+    # PHASE 6: QUERY LAYER
+    # =====================================================================
+    print(f"\n{SEPARATOR}")
+    print("PHASE 6: QUERY LAYER")
+    print(SEPARATOR)
+
+    from stratum_lab.query.fingerprint import compute_graph_fingerprint, compute_normalization_constants
+    from stratum_lab.query.matcher import match_against_dataset
+    from stratum_lab.query.predictor import predict_risks
+    from stratum_lab.query.report import generate_risk_report
+
+    # Use the first enriched graph as a "customer" structural graph
+    if enriched_graphs:
+        customer_graph = enriched_graphs[0]
+
+        # Compute fingerprint
+        fp = compute_graph_fingerprint(customer_graph)
+        print(f"  Customer graph fingerprint:")
+        print(f"    feature_vector length: {len(fp['feature_vector'])}")
+        print(f"    motifs:               {fp['motifs']}")
+        print(f"    topology_hash:        {fp['topology_hash'][:16]}...")
+        print(f"    structural_metrics:   {json.dumps(fp['structural_metrics'], indent=4)}")
+
+        # Build dataset fingerprints + normalization constants
+        dataset_fps = {}
+        all_fps = []
+        for eg in enriched_graphs[1:]:
+            eg_fp = compute_graph_fingerprint(eg)
+            dataset_fps[eg["repo_id"]] = eg_fp
+            all_fps.append(eg_fp)
+
+        norm_constants = compute_normalization_constants(all_fps + [fp])
+
+        # Save fingerprints + normalization to kb
+        with open(os.path.join(kb_dir, "fingerprints.json"), "w") as f:
+            json.dump(dataset_fps, f, indent=2, default=str)
+        with open(os.path.join(kb_dir, "normalization.json"), "w") as f:
+            json.dump(norm_constants, f, indent=2, default=str)
+
+        # Match against dataset
+        matches = match_against_dataset(fp, kb_dir, top_k=5)
+        print(f"\n  Top matches ({len(matches)}):")
+        for m in matches[:5]:
+            print(f"    {m.pattern_name}: score={m.similarity_score:.3f}, "
+                  f"type={m.match_type}, repos={m.matched_repos}")
+
+        # Predict risks
+        preconditions = customer_graph.get("taxonomy_preconditions", [])
+        prediction = predict_risks(customer_graph, matches, preconditions, kb_dir)
+        print(f"\n  Risk prediction:")
+        print(f"    overall_risk_score: {prediction.overall_risk_score:.1f}")
+        print(f"    predicted_risks:   {len(prediction.predicted_risks)}")
+        print(f"    positive_signals:  {len(prediction.positive_signals)}")
+        for risk in prediction.predicted_risks[:3]:
+            print(f"      {risk.precondition_id}: P={risk.manifestation_probability:.2f}, "
+                  f"severity={risk.severity_when_manifested}")
+
+        # Generate report
+        report = generate_risk_report(prediction, customer_graph, output_format="json")
+        print(f"\n  Risk report generated: {len(json.dumps(report))} chars (JSON)")
+
+    # =====================================================================
     # SUMMARY
     # =====================================================================
     print(f"\n{SEPARATOR}")
@@ -441,8 +503,9 @@ def main():
     print(f"  Phase 3 (Collection):   {len(all_run_records)} run records, {len(repo_aggregates)} repo aggregates")
     print(f"  Phase 4 (Overlay):      {len(enriched_graphs)} enriched graphs, {total_emergent} emergent edges, {total_dead} dead edges")
     print(f"  Phase 5 (Knowledge):    {len(patterns)} patterns, {len(present)} taxonomy entries, {len(novel)} novel, {len(fragility)} fragility entries")
+    print(f"  Phase 6 (Query):        fingerprint + {len(matches) if enriched_graphs else 0} matches + risk prediction + report")
     print(f"\n  All outputs saved to: {tmpdir}")
-    print(f"\n  RESULT: ALL PHASES COMPLETED SUCCESSFULLY")
+    print(f"\n  RESULT: ALL 6 PHASES COMPLETED SUCCESSFULLY")
 
     # Cleanup
     shutil.rmtree(tmpdir, ignore_errors=True)

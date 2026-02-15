@@ -67,9 +67,9 @@
 
   TIMESTAMP ORDERING CHECK
   ------------------------------------------------------------
-  [+] run-001: timestamps are ordered (span: 45.1ms)
-  [+] run-002: timestamps are ordered (span: 48.3ms)
-  [+] run-003: timestamps are ordered (span: 45.4ms)
+  [+] run-001: timestamps are ordered (span: 60.7ms)
+  [+] run-002: timestamps are ordered (span: 48.1ms)
+  [+] run-003: timestamps are ordered (span: 51.0ms)
 
   RUN ISOLATION CHECK
   ------------------------------------------------------------

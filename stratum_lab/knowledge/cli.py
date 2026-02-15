@@ -280,6 +280,29 @@ def run_knowledge_build(enriched_dir: str, output_dir: str) -> None:
     _write_json(fragility_map, output_path / "fragility_map.json")
     console.print(f"  Mapped [bold]{len(fragility_map)}[/bold] fragility entries")
 
+    # 7. Compute and store graph fingerprints for similarity search
+    console.print("\n[bold]Computing graph fingerprints...[/bold]")
+    try:
+        from stratum_lab.query.fingerprint import (
+            compute_graph_fingerprint,
+            compute_normalization_constants,
+        )
+        fingerprints: dict[str, Any] = {}
+        for graph in enriched_graphs:
+            repo_id = graph.get("repo_id", "unknown")
+            structural = graph.get("structural", graph)
+            fingerprints[repo_id] = compute_graph_fingerprint(structural)
+
+        _write_json(fingerprints, output_path / "fingerprints.json")
+
+        norm_constants = compute_normalization_constants(list(fingerprints.values()))
+        _write_json(norm_constants, output_path / "normalization.json")
+        console.print(
+            f"  Stored [bold]{len(fingerprints)}[/bold] fingerprints + normalization constants"
+        )
+    except Exception as exc:
+        console.print(f"  [yellow]Warning: fingerprint computation failed: {exc}[/yellow]")
+
     elapsed = time.perf_counter() - start
 
     # Print summary
@@ -295,5 +318,6 @@ def run_knowledge_build(enriched_dir: str, output_dir: str) -> None:
     console.print(
         f"  Files: patterns.json, taxonomy_probabilities.json, "
         f"structural_correlations.json, novel_patterns.json, "
-        f"framework_comparisons.json, fragility_map.json"
+        f"framework_comparisons.json, fragility_map.json, "
+        f"fingerprints.json, normalization.json"
     )

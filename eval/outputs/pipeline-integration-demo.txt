@@ -1,4 +1,4 @@
-Working directory: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_q_btleul
+Working directory: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_yn7n4osm
 
 ==============================================================================
 PHASE 1: REPO SELECTION
@@ -10,7 +10,7 @@ PHASE 1: REPO SELECTION
   Avg structural:    28.02
   Avg runnability:   28.5
 
-  -> Saved selection to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_q_btleul\selection.json
+  -> Saved selection to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_yn7n4osm\selection.json
 
 ==============================================================================
 PHASE 2: EXECUTION HARNESS (MOCKED)
@@ -20,7 +20,7 @@ PHASE 2: EXECUTION HARNESS (MOCKED)
   Total runs:        30
   Total events:      1132
 
-  -> Saved 30 JSONL files to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_q_btleul\raw_events
+  -> Saved 30 JSONL files to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_yn7n4osm\raw_events
 
 ==============================================================================
 PHASE 3: DATA COLLECTION
@@ -56,14 +56,14 @@ PHASE 4: GRAPH OVERLAY
     Dead edges:      1
     Node agent_agent_0:
       activation_count:    6
-      activation_rate:     2.0
+      activation_rate:     1.0
       failure_rate:        0.0
     Node agent_agent_1:
       activation_count:    3
       activation_rate:     1.0
       failure_rate:        0.0
 
-  -> Saved 10 enriched graphs to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_q_btleul\enriched_graphs
+  -> Saved 10 enriched graphs to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_yn7n4osm\enriched_graphs
 
 ==============================================================================
 PHASE 5: KNOWLEDGE BASE
@@ -76,7 +76,7 @@ PHASE 5: KNOWLEDGE BASE
     no_timeout_on_delegation: P(manifest)=1.0, CI=[0.6457, 1.0], n=7
 
   Novel patterns:    2
-    repo_028: anomaly_score=2.62, dim=avg_latency_p50
+    repo_019: anomaly_score=2.91, dim=avg_latency_p50
     repo_022: anomaly_score=2.33, dim=avg_failure_rate
 
   Framework comparisons: 1
@@ -87,7 +87,49 @@ PHASE 5: KNOWLEDGE BASE
     chain_node: sensitivity=0.0000, repos=10
     leaf_node: sensitivity=0.0000, repos=10
 
-  -> Saved knowledge base to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_q_btleul\knowledge_base
+  -> Saved knowledge base to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_yn7n4osm\knowledge_base
+
+==============================================================================
+PHASE 6: QUERY LAYER
+==============================================================================
+  Customer graph fingerprint:
+    feature_vector length: 20
+    motifs:               ['linear_delegation_chain']
+    topology_hash:        3704ffa59280971a...
+    structural_metrics:   {
+    "agent_count": 5,
+    "capability_count": 0,
+    "data_store_count": 0,
+    "external_service_count": 0,
+    "guardrail_count": 0,
+    "total_edges": 5,
+    "delegation_depth_max": 5.0,
+    "delegation_depth_mean": 5.0,
+    "control_coverage_ratio": 0.0,
+    "observability_coverage_ratio": 0.0,
+    "shared_state_writer_count": 0,
+    "trust_boundary_crossing_count": 0,
+    "feedback_loop_count": 1,
+    "hub_spoke_ratio": 1.0,
+    "betweenness_centrality_max": 0.5,
+    "betweenness_centrality_mean": 0.5,
+    "error_propagation_path_count": 0,
+    "irreversible_capability_count": 0,
+    "agent_to_capability_ratio": 0.0,
+    "has_human_checkpoint": 0
+}
+
+  Top matches (3):
+    linear_delegation_chain: score=1.000, type=exact_motif, repos=10
+    structural_match_unknown: score=1.000, type=structural_similarity, repos=1
+    linear_pipeline: score=1.000, type=archetype, repos=9
+
+  Risk prediction:
+    overall_risk_score: 0.0
+    predicted_risks:   0
+    positive_signals:  3
+
+  Risk report generated: 11426 chars (JSON)
 
 ==============================================================================
 PIPELINE INTEGRATION SUMMARY
@@ -97,7 +139,8 @@ PIPELINE INTEGRATION SUMMARY
   Phase 3 (Collection):   30 run records, 10 repo aggregates
   Phase 4 (Overlay):      10 enriched graphs, 0 emergent edges, 10 dead edges
   Phase 5 (Knowledge):    1 patterns, 2 taxonomy entries, 2 novel, 3 fragility entries
+  Phase 6 (Query):        fingerprint + 3 matches + risk prediction + report
 
-  All outputs saved to: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_q_btleul
+  All outputs saved to: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_yn7n4osm
 
-  RESULT: ALL PHASES COMPLETED SUCCESSFULLY
+  RESULT: ALL 6 PHASES COMPLETED SUCCESSFULLY

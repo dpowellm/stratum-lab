@@ -87,6 +87,63 @@ def knowledge(enriched_dir, output_dir):
 
 
 @main.command()
+@click.argument("structural_graph", type=click.Path(exists=True))
+@click.option("--knowledge-base", "-kb", type=click.Path(exists=True), required=True,
+              help="Path to knowledge base directory.")
+@click.option("--output-format", type=click.Choice(["json", "markdown"]), default="json",
+              help="Output format.")
+@click.option("--output", "-o", type=click.Path(), default=None,
+              help="Output file path (stdout if not specified).")
+def query(structural_graph, knowledge_base, output_format, output):
+    """Query the behavioral dataset with a structural graph to predict risks."""
+    import json
+    from pathlib import Path
+
+    from stratum_lab.query.fingerprint import compute_graph_fingerprint
+    from stratum_lab.query.matcher import match_against_dataset
+    from stratum_lab.query.predictor import predict_risks
+    from stratum_lab.query.report import generate_risk_report
+
+    # Load structural graph
+    with open(structural_graph, "r", encoding="utf-8") as f:
+        graph = json.load(f)
+
+    # Compute fingerprint
+    fingerprint = compute_graph_fingerprint(graph)
+
+    # Match against dataset
+    kb_path = Path(knowledge_base)
+    matches = match_against_dataset(fingerprint, kb_path)
+
+    # Extract taxonomy preconditions from graph
+    preconditions = list(graph.get("taxonomy_preconditions", []))
+    for node_data in graph.get("nodes", {}).values():
+        structural = node_data.get("structural", node_data)
+        for pc in structural.get("taxonomy_preconditions", []):
+            if pc not in preconditions:
+                preconditions.append(pc)
+
+    # Predict risks
+    prediction = predict_risks(graph, matches, preconditions, kb_path)
+
+    # Generate report
+    report = generate_risk_report(prediction, graph, output_format)
+
+    # Output
+    if output:
+        with open(output, "w", encoding="utf-8") as f:
+            if isinstance(report, dict):
+                json.dump(report, f, indent=2, default=str)
+            else:
+                f.write(report)
+    else:
+        if isinstance(report, dict):
+            click.echo(json.dumps(report, indent=2, default=str))
+        else:
+            click.echo(report)
+
+
+@main.command()
 @click.argument("input_dir", type=click.Path(exists=True))
 @click.option("--vllm-url", default="http://host.docker.internal:8000/v1",
               help="vLLM endpoint URL.")

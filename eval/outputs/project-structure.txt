@@ -1,50 +1,59 @@
-.
-├── .git
-├── Dockerfile
-├── eval
-│   ├── outputs
-│   │   ├── project-structure.txt
-├── pyproject.toml
-├── stratum_lab
-│   ├── __init__.py
-│   ├── cli.py
-│   ├── collection
-│   │   ├── __init__.py
-│   │   ├── cli.py
-│   │   ├── parser.py
-│   ├── config.py
-│   ├── harness
-│   │   ├── __init__.py
-│   │   ├── cli.py
-│   │   ├── container.py
-│   │   ├── input_generator.py
-│   │   ├── orchestrator.py
-│   ├── knowledge
-│   │   ├── __init__.py
-│   │   ├── cli.py
-│   │   ├── fragility.py
-│   │   ├── patterns.py
-│   │   ├── taxonomy.py
-│   ├── models.py
-│   ├── node_ids.py
-│   ├── overlay
-│   │   ├── __init__.py
-│   │   ├── cli.py
-│   │   ├── edges.py
-│   │   ├── enricher.py
-│   ├── selection
-│   │   ├── __init__.py
-│   │   ├── cli.py
-│   │   ├── scorer.py
-│   │   ├── selector.py
-├── stratum_patcher
-│   ├── __init__.py
-│   ├── anthropic_patch.py
-│   ├── autogen_patch.py
-│   ├── crewai_patch.py
-│   ├── event_logger.py
-│   ├── generic_patch.py
-│   ├── langgraph_patch.py
-│   ├── openai_patch.py
-│   ├── runner.py
-│   ├── sitecustomize.py
+./eval/test_event_schema.py
+./eval/test_failure_classification.py
+./eval/test_graph_overlay.py
+./eval/test_input_generator.py
+./eval/test_knowledge_base.py
+./eval/test_module_summary.py
+./eval/test_patchers.py
+./eval/test_pipeline_integration.py
+./eval/test_query_demo.py
+./eval/test_repo_selection.py
+./eval/test_synthetic_execution.py
+./stratum_lab/__init__.py
+./stratum_lab/cli.py
+./stratum_lab/collection/__init__.py
+./stratum_lab/collection/cli.py
+./stratum_lab/collection/parser.py
+./stratum_lab/config.py
+./stratum_lab/harness/__init__.py
+./stratum_lab/harness/cli.py
+./stratum_lab/harness/container.py
+./stratum_lab/harness/input_generator.py
+./stratum_lab/harness/orchestrator.py
+./stratum_lab/knowledge/__init__.py
+./stratum_lab/knowledge/cli.py
+./stratum_lab/knowledge/fragility.py
+./stratum_lab/knowledge/patterns.py
+./stratum_lab/knowledge/taxonomy.py
+./stratum_lab/models.py
+./stratum_lab/node_ids.py
+./stratum_lab/overlay/__init__.py
+./stratum_lab/overlay/cli.py
+./stratum_lab/overlay/edges.py
+./stratum_lab/overlay/enricher.py
+./stratum_lab/overlay/taxonomy_confirmation.py
+./stratum_lab/query/__init__.py
+./stratum_lab/query/fingerprint.py
+./stratum_lab/query/matcher.py
+./stratum_lab/query/predictor.py
+./stratum_lab/query/report.py
+./stratum_lab/selection/__init__.py
+./stratum_lab/selection/cli.py
+./stratum_lab/selection/scorer.py
+./stratum_lab/selection/selector.py
+./stratum_patcher/__init__.py
+./stratum_patcher/anthropic_patch.py
+./stratum_patcher/autogen_patch.py
+./stratum_patcher/crewai_patch.py
+./stratum_patcher/event_logger.py
+./stratum_patcher/generic_patch.py
+./stratum_patcher/langgraph_patch.py
+./stratum_patcher/openai_patch.py
+./stratum_patcher/runner.py
+./stratum_patcher/sitecustomize.py
+./tests/__init__.py
+./tests/conftest.py
+./tests/test_fingerprint.py
+./tests/test_overlay.py
+./tests/test_patchers.py
+./tests/test_query.py

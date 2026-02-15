@@ -1,16 +1,11 @@
 FROM python:3.11-slim
 
 # Base dependencies that most agent frameworks need
-RUN pip install --no-cache-dir \
-    openai \
-    anthropic \
-    langchain-core \
-    crewai \
-    autogen-agentchat \
-    requests \
-    httpx \
-    pydantic \
-    aiohttp
+RUN pip install --no-cache-dir --break-system-packages \
+    openai anthropic langchain-core crewai \
+    autogen-agentchat pyautogen \
+    requests httpx pydantic aiohttp \
+    python-dotenv pyyaml
 
 # Stratum instrumentation (injected, not part of the repo)
 COPY stratum_patcher/ /opt/stratum/stratum_patcher/
