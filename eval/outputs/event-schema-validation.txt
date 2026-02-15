@@ -1,6 +1,6 @@
 ========================================================================
   STRATUM EVENT SCHEMA VALIDATION
-  Events file: C:\Users\dpowe\AppData\Local\Temp\stratum_schema_test_do2g3aaf.jsonl
+  Events file: C:\Users\dpowe\AppData\Local\Temp\stratum_schema_test_q2c71urf.jsonl
   Total events emitted: 21
 ========================================================================
 
@@ -8,13 +8,16 @@
   [+] execution.end         PASS  all checks passed
   [+] agent.task_start      PASS  all checks passed
   [+] agent.task_end        PASS  all checks passed
+      semantic fields: output_hash, output_type, output_size_bytes, classification_fields (4/4)
   [+] delegation.initiated  PASS  all checks passed
+      semantic fields: context_hash, context_type, context_source_node, has_classification_dependency (4/5)
   [+] delegation.completed  PASS  all checks passed
   [+] tool.invoked          PASS  all checks passed
   [+] tool.completed        PASS  all checks passed
   [+] tool.call_failure     PASS  all checks passed
   [+] llm.call_start        PASS  all checks passed
   [+] llm.call_end          PASS  all checks passed
+      semantic fields: output_hash, output_type, output_size_bytes, output_structure, classification_fields (5/5)
   [+] data.read             PASS  all checks passed
   [+] data.write            PASS  all checks passed
   [+] error.occurred        PASS  all checks passed

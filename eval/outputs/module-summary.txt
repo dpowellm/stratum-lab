@@ -9,7 +9,7 @@ Doc:    Stratum Lab — Behavioral scan infrastructure for AI agent repos.
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\cli.py
-Lines:  395
+Lines:  497
 Doc:    Main CLI entry point for stratum-lab pipeline.
 Deps:   click, collections, csv, json, pathlib, rich, stratum_lab
   Functions (9):
@@ -20,9 +20,9 @@ Deps:   click, collections, csv, json, pathlib, rich, stratum_lab
     overlay() (line 70): Phase 4: Merge behavioral data onto structural graphs.
     knowledge() (line 83): Build cross-repo pattern knowledge base from enriched graphs.
     query() (line 100): Query the behavioral dataset with a structural graph to predict risks.
-    pipeline() (line 167): Run the full pipeline: select -> execute -> collect -> overlay -> knowledge -> reports.
-    validate_ids() (line 372): Validate node ID compatibility between structural scan and patcher.
-  Click options (28):
+    pipeline() (line 175): Run the full pipeline: triage -> probe -> select -> execute -> collect -> overlay -> knowledge -> reports.
+    validate_ids() (line 426): Validate node ID compatibility between structural scan and patcher.
+  Click options (30):
     -o/--output: Output selection file path.
     -n/--target: Target number of repos to select.
     --min-runnability: Minimum runnability score filter.
@@ -49,6 +49,8 @@ Deps:   click, collections, csv, json, pathlib, rich, stratum_lab
     --max-instrumentation-failure-rate: Abort if instrumentation failure rate exceeds this in pilot.
     --max-model-failure-rate: Abort if model failure rate exceeds this in pilot.
     --enterprise-outreach: Run enterprise classification + contact extraction + outreach queue generation.
+    --probe-batch-size: int
+    --probe-timeout: Probe timeout in seconds.
     --graph-json: click
     --events-dir: click
 
@@ -122,7 +124,7 @@ Deps:   __future__, hashlib, json, openai, pathlib, re, rich, stratum_lab, typin
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\harness\orchestrator.py
-Lines:  560
+Lines:  647
 Doc:    Main orchestrator for Phase 2 execution.
 Deps:   __future__, asyncio, concurrent, csv, datetime, json, logging, pathlib, rich, shutil, stratum_lab, threading, time, typing, uuid
   Classes (2):
@@ -132,13 +134,27 @@ Deps:   __future__, asyncio, concurrent, csv, datetime, json, logging, pathlib, 
     class Orchestrator (line 88): Schedules and executes container runs for all selected repos.
       .run() (line 145): Execute all selected repos and return collected results.
       .execute_repo() (line 254): Execute a single run for a repo.
-      .classify_status() (line 329): Determine execution status from exit code, events, and errors.
-  Functions (5):
+      .resolve_entry_point() (line 329): Resolve the best entry point for a repo.
+      .classify_status() (line 357): Determine execution status from exit code, events, and errors.
+      .classify_status_detailed() (line 437): Classify execution outcome with detailed breakdown (Issue 23).
+  Functions (7):
     record() (line 48): Record a latency sample.
     avg_last_window() (line 54): Return average latency over the last window_seconds.
     run() (line 145): Execute all selected repos and return collected results.
     execute_repo() (line 254): Execute a single run for a repo.
-    classify_status() (line 329): Determine execution status from exit code, events, and errors.
+    resolve_entry_point() (line 329): Resolve the best entry point for a repo.
+    classify_status() (line 357): Determine execution status from exit code, events, and errors.
+    classify_status_detailed() (line 437): Classify execution outcome with detailed breakdown (Issue 23).
+
+------------------------------------------------------------------------------
+Module: stratum_lab\harness\run_scheduler.py
+Lines:  97
+Doc:    Adaptive run scheduling.
+Deps:   __future__, typing
+  Functions (3):
+    compute_run_count() (line 22): Determine how many runs this repo needs.
+    plan_adaptive_runs() (line 53): Plan the run schedule for a repo.
+    compute_budget() (line 84): Compute total run budget for a set of repos.
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\knowledge\__init__.py
@@ -152,6 +168,15 @@ Doc:    CLI runner for the Knowledge Base build phase.
 Deps:   __future__, json, pathlib, rich, stratum_lab, time, typing
   Functions (1):
     run_knowledge_build() (line 194): Build the cross-repo pattern knowledge base.
+
+------------------------------------------------------------------------------
+Module: stratum_lab\knowledge\dataset_quality.py
+Lines:  145
+Doc:    Dataset quality validation.
+Deps:   __future__, math, typing
+  Functions (2):
+    wilson_ci_width() (line 13): Wilson score CI width at 95% confidence for proportion p with sample n.
+    validate_dataset_quality() (line 24): Validate dataset meets quality requirements.
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\knowledge\fragility.py
@@ -403,6 +428,16 @@ Deps:   __future__, json, pathlib, rich, stratum_lab, time, typing
     run_selection() (line 110): Load structural scans, score, select, and write output JSON.
 
 ------------------------------------------------------------------------------
+Module: stratum_lab\selection\power_optimizer.py
+Lines:  314
+Doc:    Statistical power-aware selection.
+Deps:   __future__, collections, math, typing
+  Functions (3):
+    compute_marginal_value() (line 79): Compute the marginal value of adding this repo to the current selection.
+    select_power_optimized() (line 161): Select repos to maximize statistical power across all claims.
+    validate_composition() (line 252): Validate that the selected dataset meets composition requirements.
+
+------------------------------------------------------------------------------
 Module: stratum_lab\selection\scorer.py
 Lines:  220
 Doc:    Scoring functions for repo selection.
@@ -417,12 +452,38 @@ Deps:   __future__, stratum_lab, typing
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\selection\selector.py
-Lines:  339
+Lines:  347
 Doc:    Selection algorithm for Phase 1 repo selection.
 Deps:   __future__, collections, stratum_lab, typing
   Functions (2):
     select_repos() (line 38): Apply the constrained greedy selection algorithm.
     score_and_select() (line 244): End-to-end: score raw structural scan dicts, then select.
+
+------------------------------------------------------------------------------
+Module: stratum_lab\triage\__init__.py
+Lines:  1
+Doc:    Phase 0: Pre-execution triage — static analysis of execution viability.
+
+------------------------------------------------------------------------------
+Module: stratum_lab\triage\probe.py
+Lines:  194
+Doc:    Probe execution — lightweight viability test.
+Deps:   __future__, dataclasses, enum, typing
+  Classes (2):
+    class ProbeResult (line 20): (no docstring)
+    class ProbeOutcome (line 30): (no docstring)
+  Functions (2):
+    run_probe() (line 41): Run a single probe execution against a repo.
+    probe_batch() (line 160): Probe a batch of repos and return viability results.
+
+------------------------------------------------------------------------------
+Module: stratum_lab\triage\static_analyzer.py
+Lines:  334
+Doc:    Static execution viability analysis.
+Deps:   __future__, typing
+  Functions (2):
+    analyze_static_viability() (line 52): Analyze a structural scan result for execution viability.
+    triage_batch() (line 292): Run static analysis on all repos and return summary.
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\validation\__init__.py
@@ -551,13 +612,13 @@ Deps:   __future__, functools, langgraph, stratum_patcher, time, typing
 
 ------------------------------------------------------------------------------
 Module: stratum_patcher\openai_patch.py
-Lines:  398
+Lines:  443
 Doc:    Monkey-patch for the OpenAI Python client.
 Deps:   __future__, functools, json, openai, os, stratum_patcher, time, typing
   Functions (3):
-    patch() (line 310): Apply monkey-patches to the openai module.  Idempotent.
-    wrapper() (line 139): (no docstring)
-    wrapper() (line 239): (no docstring)
+    patch() (line 355): Apply monkey-patches to the openai module.  Idempotent.
+    wrapper() (line 174): (no docstring)
+    wrapper() (line 279): (no docstring)
 
 ------------------------------------------------------------------------------
 Module: stratum_patcher\runner.py
@@ -968,7 +1029,7 @@ Deps:   json, pathlib, pytest, stratum_lab, tempfile
 ==============================================================================
 TOTALS
 ==============================================================================
-  Modules:    61
-  Lines:      19232
-  Functions:  284 (public only)
-  Classes:    84
+  Modules:    67
+  Lines:      20559
+  Functions:  298 (public only)
+  Classes:    86

@@ -164,16 +164,52 @@ def query(structural_graph, knowledge_base, output_format, output):
               help="Abort if model failure rate exceeds this in pilot.")
 @click.option("--enterprise-outreach", is_flag=True, default=False,
               help="Run enterprise classification + contact extraction + outreach queue generation.")
+@click.option("--triage/--no-triage", default=True,
+              help="Run Phase 0 static triage before selection.")
+@click.option("--probe/--no-probe", default=True,
+              help="Run Phase 0.5 probe execution before selection.")
+@click.option("--probe-batch-size", default=5000, type=int,
+              help="Max repos to probe (from triage pool).")
+@click.option("--probe-timeout", default=30, type=int,
+              help="Probe timeout in seconds.")
 def pipeline(input_dir, vllm_url, concurrent, max_concurrent, timeout,
              pilot, pilot_size, max_instrumentation_failure_rate, max_model_failure_rate,
-             enterprise_outreach):
-    """Run the full pipeline: select -> execute -> collect -> overlay -> knowledge -> reports."""
+             enterprise_outreach, triage, probe, probe_batch_size, probe_timeout):
+    """Run the full pipeline: triage -> probe -> select -> execute -> collect -> overlay -> knowledge -> reports."""
     import json
     from pathlib import Path
     from rich.console import Console
 
     console = Console()
     data_dir = Path("data")
+
+    # Phase 0: Static Triage
+    if triage:
+        console.print("[bold]Phase 0: Static Triage[/bold]")
+        from stratum_lab.triage.static_analyzer import triage_batch
+        # Load structural scans from input_dir
+        structural_scans = _load_structural_scans(input_dir)
+        triage_results = triage_batch(structural_scans)
+        qualified = (
+            triage_results["likely_runnable"]
+            + triage_results["needs_probe"][:probe_batch_size]
+        )
+        console.print(
+            f"  {triage_results['total_analyzed']} scanned -> "
+            f"{len(qualified)} qualified for probing"
+        )
+    else:
+        qualified = None  # Will use normal selection flow
+
+    # Phase 0.5: Probe Execution
+    if probe and qualified is not None:
+        console.print("[bold]Phase 0.5: Probe Execution[/bold]")
+        from stratum_lab.triage.probe import probe_batch as run_probe_batch
+        probe_results = run_probe_batch(qualified, timeout=probe_timeout)
+        console.print(
+            f"  {probe_results['total_probed']} probed -> "
+            f"{probe_results['passed']} passed ({probe_results['pass_rate']:.0%})"
+        )
 
     console.print("[bold]Phase 1: Repo Selection[/bold]")
     from stratum_lab.selection.cli import run_selection
@@ -238,6 +274,24 @@ def pipeline(input_dir, vllm_url, concurrent, max_concurrent, timeout,
     )
     console.print(f"  Reports generated: {report_summary['reports_generated']}")
     console.print(f"  Errors: {report_summary['errors']}")
+
+    console.print("\n[bold]Phase 6.5: Dataset Quality Validation[/bold]")
+    from stratum_lab.knowledge.dataset_quality import validate_dataset_quality
+    # Load enriched graphs and run records for quality check
+    enriched_graph_list = _load_enriched_graphs(enriched_dir)
+    run_record_list = _load_run_records(data_dir / "execution_metadata" / "runs.json")
+    quality = validate_dataset_quality(enriched_graph_list, run_record_list, {})
+    console.print(f"  Verdict: {quality['verdict']}")
+    console.print(
+        f"  Usable runs: {quality['usable_runs']}/{quality['total_runs']} "
+        f"({quality['usable_run_rate']:.0%})"
+    )
+    claims_met = sum(
+        1 for c in quality["per_claim_quality"].values() if c.get("sufficient", False)
+    )
+    console.print(
+        f"  Claims supported: {claims_met}/{len(quality['per_claim_quality'])}"
+    )
 
     if enterprise_outreach:
         console.print("\n[bold]Phase 1.5: GitHub Metadata Enrichment[/bold]")
@@ -389,6 +443,54 @@ def validate_ids(repo_path, graph_json, events_dir):
             click.echo(f"    unmapped: {nid}")
     else:
         click.echo("\n✓ COMPATIBLE: all behavioral node IDs map to structural graph nodes.")
+
+
+def _load_structural_scans(input_dir: str) -> list:
+    """Load structural scan JSON files from a directory."""
+    import json
+    from pathlib import Path
+
+    scans = []
+    for p in Path(input_dir).glob("*.json"):
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                scans.append(json.load(f))
+        except Exception:
+            pass
+    return scans
+
+
+def _load_enriched_graphs(enriched_dir: str) -> list:
+    """Load enriched graph JSON files from a directory."""
+    import json
+    from pathlib import Path
+
+    graphs = []
+    for p in Path(enriched_dir).glob("*_enriched.json"):
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                graphs.append(json.load(f))
+        except Exception:
+            pass
+    return graphs
+
+
+def _load_run_records(runs_file) -> list:
+    """Load run records from a JSON file."""
+    import json
+    from pathlib import Path
+
+    path = Path(runs_file)
+    if not path.exists():
+        return []
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, list):
+            return data
+        return data.get("records", data.get("runs", []))
+    except Exception:
+        return []
 
 
 if __name__ == "__main__":

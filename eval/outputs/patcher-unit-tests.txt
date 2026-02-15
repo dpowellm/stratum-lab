@@ -23,7 +23,7 @@ tests/test_patchers.py::TestEventLogger::test_capture_output_signature_routing P
 tests/test_patchers.py::TestEventLogger::test_capture_output_signature_scored PASSED [ 32%]
 tests/test_patchers.py::TestEventLogger::test_capture_output_signature_structured_json PASSED [ 34%]
 tests/test_patchers.py::TestOpenAIPatch::test_openai_patch_wraps_create PASSED [ 36%]
-tests/test_patchers.py::TestOpenAIPatch::test_openai_patch_emits_events PASSED [ 39%]
+tests/test_patchers.py::TestOpenAIPatch::test_openai_patch_emits_events FAILED [ 39%]
 tests/test_patchers.py::TestOpenAIPatch::test_openai_patch_semantic_fields PASSED [ 41%]
 tests/test_patchers.py::TestOpenAIPatch::test_openai_patch_parent_event_chain PASSED [ 43%]
 tests/test_patchers.py::TestGenericPatch::test_generic_patch_module_loads PASSED [ 45%]
@@ -53,12 +53,22 @@ tests/test_patchers.py::TestLangChainChatModelPatch::test_langchain_chat_model_g
 tests/test_patchers.py::TestBareHTTPOpenAIPatch::test_bare_http_openai_detection PASSED [ 97%]
 tests/test_patchers.py::TestBareHTTPOpenAIPatch::test_bare_http_openai_emits_events PASSED [100%]
 
+================================== FAILURES ===================================
+_______________ TestOpenAIPatch.test_openai_patch_emits_events ________________
+tests\test_patchers.py:376: in test_openai_patch_emits_events
+    assert payload.get("model_requested") == "test-model"
+E   AssertionError: assert 'Qwen/Qwen2.5-72B-Instruct' == 'test-model'
+E     
+E     - test-model
+E     + Qwen/Qwen2.5-72B-Instruct
 ============================== warnings summary ===============================
 tests/test_patchers.py::TestAsyncOpenAIPatch::test_async_openai_patch
   C:\Users\dpowe\OneDrive\Documents\Coding Projects\stratum-observability\stratum-lab\tests\test_patchers.py:1003: DeprecationWarning: There is no current event loop
     result = asyncio.get_event_loop().run_until_complete(_call_async())
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-======================== 46 passed, 1 warning in 3.82s ========================
+=========================== short test summary info ===========================
+FAILED tests/test_patchers.py::TestOpenAIPatch::test_openai_patch_emits_events
+=================== 1 failed, 45 passed, 1 warning in 2.21s ===================
 
 

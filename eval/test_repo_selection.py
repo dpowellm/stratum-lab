@@ -86,8 +86,11 @@ def _generate_synthetic_repos(count: int = 50, seed: int = 42) -> list[dict]:
                 "type": rng.choice(["delegates_to", "sends_to", "calls"]),
             })
 
-        # Generate taxonomy preconditions (0-10)
-        num_preconditions = rng.randint(0, 10)
+        # Ensure ~20% of repos have 0-1 preconditions (control-eligible)
+        if i % 5 == 0:
+            num_preconditions = rng.randint(0, 1)
+        else:
+            num_preconditions = rng.randint(2, 10)
         preconditions = rng.sample(precondition_pool, min(num_preconditions, len(precondition_pool)))
 
         # Risk surface
@@ -270,6 +273,10 @@ def main() -> None:
     if treatment_repos:
         avg_prec_t = sum(len(r.get("taxonomy_preconditions", [])) for r in treatment_repos) / len(treatment_repos)
         print(f"  avg preconditions (treatment): {avg_prec_t:.1f}")
+
+    # Verification checks
+    print(f"  [{'+'if len(control_repos) > 0 else '-'}] Control group non-empty: {len(control_repos)} repos")
+    print(f"  [{'+'if len(treatment_repos) > len(control_repos) else '-'}] Treatment > control: {len(treatment_repos)} > {len(control_repos)}")
     print()
 
     # -----------------------------------------------------------------

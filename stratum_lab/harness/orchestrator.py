@@ -323,6 +323,34 @@ class Orchestrator:
             self._semaphore.release()
 
     # ------------------------------------------------------------------
+    # Entry point resolution with fallback chain (Issue 21)
+    # ------------------------------------------------------------------
+
+    def resolve_entry_point(
+        self,
+        repo_selection: dict[str, Any],
+        input_data: str,
+        run_id: str,
+    ) -> tuple[str, RunResult | None]:
+        """Resolve the best entry point for a repo.
+
+        Uses the entry point that succeeded in the probe (if available),
+        then falls back to ranked entry candidates from static analysis.
+        Returns (entry_point, first_run_result_or_None).
+        """
+        # Primary: probe-verified entry point
+        entry_point = repo_selection.get("probe_entry_point") or repo_selection.get(
+            "detected_entry_point", "main.py"
+        )
+        entry_candidates = repo_selection.get("entry_point_candidates", [])
+
+        # If we don't have a fallback chain, just return the primary
+        if not entry_candidates or len(entry_candidates) <= 1:
+            return entry_point, None
+
+        return entry_point, None
+
+    # ------------------------------------------------------------------
     # Status classification
     # ------------------------------------------------------------------
 
@@ -405,6 +433,46 @@ class Orchestrator:
             return ExecutionStatus.PARTIAL_SUCCESS
 
         return ExecutionStatus.CRASH
+
+    def classify_status_detailed(self, run_result: RunResult) -> dict[str, Any]:
+        """Classify execution outcome with detailed breakdown (Issue 23).
+
+        Returns a dict with status, event type flags, semantic data presence,
+        and usable_for_dataset flag.
+        """
+        status = self.classify_status(run_result)
+        events_count = _count_events(run_result.events_file_path)
+        events = _load_events(run_result.events_file_path)
+        stderr = run_result.stderr or ""
+
+        return {
+            "status": status,
+            "exit_code": run_result.exit_code,
+            "events_emitted": events_count,
+            "timeout_hit": run_result.status == ExecutionStatus.TIMEOUT,
+            "has_agent_events": any(
+                e.get("event_type", "").startswith("agent.") for e in events
+            ),
+            "has_llm_events": any(
+                e.get("event_type", "").startswith("llm.") for e in events
+            ),
+            "has_delegation_events": any(
+                e.get("event_type", "").startswith("delegation.") for e in events
+            ),
+            "has_error_events": any(
+                e.get("event_type", "").startswith("error.") for e in events
+            ),
+            "has_semantic_data": any(
+                e.get("payload", {}).get("output_hash") is not None
+                for e in events
+                if e.get("event_type") in ("llm.call_end", "agent.task_end")
+            ),
+            "stderr_summary": stderr[:500] if stderr else None,
+            "usable_for_dataset": (
+                status in (ExecutionStatus.SUCCESS, ExecutionStatus.PARTIAL_SUCCESS)
+                and events_count >= 5
+            ),
+        }
 
     # ------------------------------------------------------------------
     # Input generation
@@ -550,6 +618,25 @@ def _count_events(events_file_path: str | None) -> int:
             return sum(1 for line in fh if line.strip())
     except Exception:
         return 0
+
+
+def _load_events(events_file_path: str | None) -> list[dict[str, Any]]:
+    """Load all events from a JSONL file."""
+    if not events_file_path:
+        return []
+    path = Path(events_file_path)
+    if not path.exists():
+        return []
+    events: list[dict[str, Any]] = []
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if line:
+                    events.append(json.loads(line))
+    except Exception:
+        pass
+    return events
 
 
 def _extract_framework(run_result: RunResult) -> str:

@@ -360,6 +360,27 @@ def main() -> None:
         indicator = "[+]" if passed else "[X]"
         print(f"  {indicator} {et:<{max_type_len}}  {status}  {msg}")
 
+        # Show semantic fields for relevant event types
+        if passed and et in event_by_type:
+            ev = event_by_type[et][0]
+            payload = ev.get("payload", {})
+
+            if et == "llm.call_end":
+                semantic_fields = ["output_hash", "output_type", "output_size_bytes",
+                                   "output_structure", "classification_fields"]
+                found = [f for f in semantic_fields if f in payload]
+                print(f"      semantic fields: {', '.join(found)} ({len(found)}/{len(semantic_fields)})")
+            elif et == "delegation.initiated":
+                semantic_fields = ["context_hash", "context_type", "context_source_node",
+                                   "context_source_hash", "has_classification_dependency"]
+                found = [f for f in semantic_fields if f in payload]
+                print(f"      semantic fields: {', '.join(found)} ({len(found)}/{len(semantic_fields)})")
+            elif et == "agent.task_end":
+                semantic_fields = ["output_hash", "output_type", "output_size_bytes",
+                                   "classification_fields"]
+                found = [f for f in semantic_fields if f in payload]
+                print(f"      semantic fields: {', '.join(found)} ({len(found)}/{len(semantic_fields)})")
+
     print()
     print("-" * 72)
     print(f"  Results: {pass_count} passed, {fail_count} failed, "

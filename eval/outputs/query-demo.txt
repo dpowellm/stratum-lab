@@ -352,31 +352,31 @@ Customer graph: customer_repo (crewai)
       ],
       "similar_repo_outcomes": [
         {
-          "repo_id": "dataset_repo_027",
+          "repo_id": "dataset_repo_025",
           "pattern_name": "linear_delegation_chain",
           "failure_rate": 0.3182,
           "sample_size": 22
         },
         {
-          "repo_id": "dataset_repo_017",
+          "repo_id": "dataset_repo_005",
+          "pattern_name": "linear_delegation_chain",
+          "failure_rate": 0.3182,
+          "sample_size": 22
+        },
+        {
+          "repo_id": "dataset_repo_011",
+          "pattern_name": "linear_delegation_chain",
+          "failure_rate": 0.3182,
+          "sample_size": 22
+        },
+        {
+          "repo_id": "dataset_repo_014",
           "pattern_name": "linear_delegation_chain",
           "failure_rate": 0.3182,
           "sample_size": 22
         },
         {
           "repo_id": "dataset_repo_007",
-          "pattern_name": "linear_delegation_chain",
-          "failure_rate": 0.3182,
-          "sample_size": 22
-        },
-        {
-          "repo_id": "dataset_repo_013",
-          "pattern_name": "linear_delegation_chain",
-          "failure_rate": 0.3182,
-          "sample_size": 22
-        },
-        {
-          "repo_id": "dataset_repo_009",
           "pattern_name": "linear_delegation_chain",
           "failure_rate": 0.3182,
           "sample_size": 22
@@ -427,31 +427,31 @@ Customer graph: customer_repo (crewai)
       ],
       "similar_repo_outcomes": [
         {
+          "repo_id": "dataset_repo_018",
+          "pattern_name": "shared_state_without_arbitration",
+          "failure_rate": 0.5,
+          "sample_size": 10
+        },
+        {
+          "repo_id": "dataset_repo_000",
+          "pattern_name": "shared_state_without_arbitration",
+          "failure_rate": 0.5,
+          "sample_size": 10
+        },
+        {
+          "repo_id": "dataset_repo_009",
+          "pattern_name": "shared_state_without_arbitration",
+          "failure_rate": 0.5,
+          "sample_size": 10
+        },
+        {
           "repo_id": "dataset_repo_027",
           "pattern_name": "shared_state_without_arbitration",
           "failure_rate": 0.5,
           "sample_size": 10
         },
         {
-          "repo_id": "dataset_repo_003",
-          "pattern_name": "shared_state_without_arbitration",
-          "failure_rate": 0.5,
-          "sample_size": 10
-        },
-        {
-          "repo_id": "dataset_repo_015",
-          "pattern_name": "shared_state_without_arbitration",
-          "failure_rate": 0.5,
-          "sample_size": 10
-        },
-        {
-          "repo_id": "dataset_repo_021",
-          "pattern_name": "shared_state_without_arbitration",
-          "failure_rate": 0.5,
-          "sample_size": 10
-        },
-        {
-          "repo_id": "dataset_repo_024",
+          "repo_id": "dataset_repo_012",
           "pattern_name": "shared_state_without_arbitration",
           "failure_rate": 0.5,
           "sample_size": 10

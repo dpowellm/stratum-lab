@@ -1,99 +1,100 @@
-./.gitignore
-./.pytest_cache/.gitignore
-./.pytest_cache/CACHEDIR.TAG
-./.pytest_cache/README.md
-./.pytest_cache/v/cache/lastfailed
-./.pytest_cache/v/cache/nodeids
-./Dockerfile
-./eval/outputs/dockerfile
-./eval/outputs/event-schema-validation.txt
-./eval/outputs/failure-classification-demo.txt
-./eval/outputs/graph-overlay-demo.txt
-./eval/outputs/input-generator-demo.txt
-./eval/outputs/knowledge-base-demo.txt
-./eval/outputs/module-summary.txt
-./eval/outputs/patcher-unit-tests.txt
-./eval/outputs/pipeline-integration-demo.txt
-./eval/outputs/project-structure.txt
-./eval/outputs/query-demo.txt
-./eval/outputs/repo-selection-demo.txt
-./eval/outputs/synthetic-execution-demo.txt
-./eval/test_event_schema.py
-./eval/test_failure_classification.py
-./eval/test_graph_overlay.py
-./eval/test_input_generator.py
-./eval/test_knowledge_base.py
-./eval/test_module_summary.py
-./eval/test_patchers.py
-./eval/test_pipeline_integration.py
-./eval/test_query_demo.py
-./eval/test_repo_selection.py
-./eval/test_synthetic_execution.py
-./pyproject.toml
-./stratum_lab.egg-info/dependency_links.txt
-./stratum_lab.egg-info/entry_points.txt
-./stratum_lab.egg-info/PKG-INFO
-./stratum_lab.egg-info/requires.txt
-./stratum_lab.egg-info/SOURCES.txt
-./stratum_lab.egg-info/top_level.txt
-./stratum_lab/__init__.py
-./stratum_lab/cli.py
-./stratum_lab/collection/__init__.py
-./stratum_lab/collection/cli.py
-./stratum_lab/collection/parser.py
-./stratum_lab/config.py
-./stratum_lab/harness/__init__.py
-./stratum_lab/harness/cli.py
-./stratum_lab/harness/container.py
-./stratum_lab/harness/input_generator.py
-./stratum_lab/harness/orchestrator.py
-./stratum_lab/knowledge/__init__.py
-./stratum_lab/knowledge/cli.py
-./stratum_lab/knowledge/fragility.py
-./stratum_lab/knowledge/interactions.py
-./stratum_lab/knowledge/patterns.py
-./stratum_lab/knowledge/taxonomy.py
-./stratum_lab/models.py
-./stratum_lab/node_ids.py
-./stratum_lab/outreach/__init__.py
-./stratum_lab/outreach/contact_extractor.py
-./stratum_lab/outreach/enterprise_classifier.py
-./stratum_lab/outreach/github_enricher.py
-./stratum_lab/outreach/metadata_schema.py
-./stratum_lab/outreach/queue.py
-./stratum_lab/outreach/teaser_report.py
-./stratum_lab/overlay/__init__.py
-./stratum_lab/overlay/cli.py
-./stratum_lab/overlay/edges.py
-./stratum_lab/overlay/enricher.py
-./stratum_lab/overlay/semantic_lineage.py
-./stratum_lab/overlay/taxonomy_confirmation.py
-./stratum_lab/query/__init__.py
-./stratum_lab/query/batch_report.py
-./stratum_lab/query/fingerprint.py
-./stratum_lab/query/matcher.py
-./stratum_lab/query/predictor.py
-./stratum_lab/query/report.py
-./stratum_lab/selection/__init__.py
-./stratum_lab/selection/cli.py
-./stratum_lab/selection/scorer.py
-./stratum_lab/selection/selector.py
-./stratum_lab/validation/__init__.py
-./stratum_lab/validation/id_checker.py
-./stratum_patcher/__init__.py
-./stratum_patcher/anthropic_patch.py
-./stratum_patcher/autogen_patch.py
-./stratum_patcher/crewai_patch.py
-./stratum_patcher/event_logger.py
-./stratum_patcher/generic_patch.py
-./stratum_patcher/langchain_patch.py
-./stratum_patcher/langgraph_patch.py
-./stratum_patcher/openai_patch.py
-./stratum_patcher/runner.py
-./stratum_patcher/sitecustomize.py
-./tests/__init__.py
-./tests/conftest.py
-./tests/test_fingerprint.py
-./tests/test_overlay.py
-./tests/test_patchers.py
-./tests/test_query.py
+PROJECT STRUCTURE: stratum-lab
+============================================================
+
+  eval/
+    test_event_schema.py
+    test_failure_classification.py
+    test_graph_overlay.py
+    test_input_generator.py
+    test_knowledge_base.py
+    test_module_summary.py
+    test_patchers.py
+    test_pipeline_integration.py
+    test_query_demo.py
+    test_repo_selection.py
+    test_synthetic_execution.py
+    outputs/
+      event-schema-validation.txt
+      failure-classification-demo.txt
+      graph-overlay-demo.txt
+      input-generator-demo.txt
+      knowledge-base-demo.txt
+      module-summary.txt
+      patcher-unit-tests.txt
+      pipeline-integration-demo.txt
+      project-structure.txt
+      query-demo.txt
+      repo-selection-demo.txt
+      synthetic-execution-demo.txt
+  stratum_lab/
+    __init__.py
+    cli.py
+    config.py
+    models.py
+    node_ids.py
+    collection/
+      __init__.py
+      cli.py
+      parser.py
+    harness/
+      __init__.py
+      cli.py
+      container.py
+      input_generator.py
+      orchestrator.py
+      run_scheduler.py
+    knowledge/
+      __init__.py
+      cli.py
+      dataset_quality.py
+      fragility.py
+      interactions.py
+      patterns.py
+      taxonomy.py
+    outreach/
+      __init__.py
+      contact_extractor.py
+      enterprise_classifier.py
+      github_enricher.py
+      metadata_schema.py
+      queue.py
+      teaser_report.py
+    overlay/
+      __init__.py
+      cli.py
+      edges.py
+      enricher.py
+      semantic_lineage.py
+      taxonomy_confirmation.py
+    query/
+      __init__.py
+      batch_report.py
+      fingerprint.py
+      matcher.py
+      predictor.py
+      report.py
+    selection/
+      __init__.py
+      cli.py
+      power_optimizer.py
+      scorer.py
+      selector.py
+    triage/
+      __init__.py
+      probe.py
+      static_analyzer.py
+    validation/
+      __init__.py
+      id_checker.py
+  stratum_patcher/
+    __init__.py
+    anthropic_patch.py
+    autogen_patch.py
+    crewai_patch.py
+    event_logger.py
+    generic_patch.py
+    langchain_patch.py
+    langgraph_patch.py
+    openai_patch.py
+    runner.py
+    sitecustomize.py

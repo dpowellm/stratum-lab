@@ -26,6 +26,41 @@ from stratum_patcher.event_logger import (
 
 _PATCHED = False
 
+# ---------------------------------------------------------------------------
+# vLLM model mapping — translate any OpenAI/Anthropic model name to our
+# vLLM-served model so requests don't fail on unknown model names.
+# ---------------------------------------------------------------------------
+
+VLLM_MODEL = os.environ.get("STRATUM_VLLM_MODEL", "Qwen/Qwen2.5-72B-Instruct")
+
+MODEL_MAP: dict[str, str] = {
+    "gpt-4": VLLM_MODEL,
+    "gpt-4o": VLLM_MODEL,
+    "gpt-4o-mini": VLLM_MODEL,
+    "gpt-4-turbo": VLLM_MODEL,
+    "gpt-4-turbo-preview": VLLM_MODEL,
+    "gpt-3.5-turbo": VLLM_MODEL,
+    "gpt-3.5-turbo-16k": VLLM_MODEL,
+    "gpt-4-1106-preview": VLLM_MODEL,
+    "gpt-4-0125-preview": VLLM_MODEL,
+    # Claude model names (if anthropic_patch routes through)
+    "claude-3-opus-20240229": VLLM_MODEL,
+    "claude-3-sonnet-20240229": VLLM_MODEL,
+    "claude-3-haiku-20240307": VLLM_MODEL,
+    "claude-3-5-sonnet-20241022": VLLM_MODEL,
+}
+
+
+def _map_model(kwargs: dict[str, Any]) -> tuple[str, str]:
+    """Map the requested model name to our vLLM model.
+
+    Returns (original_model, mapped_model).
+    """
+    original = kwargs.get("model", "")
+    mapped = MODEL_MAP.get(original, VLLM_MODEL)
+    kwargs["model"] = mapped
+    return original, mapped
+
 
 def _extract_tool_calls(choices: Any) -> list[dict[str, Any]]:
     """Pull tool/function call metadata from the response choices."""
@@ -142,11 +177,16 @@ def _wrap_sync_create(original: Any) -> Any:
         node_id = generate_node_id("openai", "ChatCompletion", caller_file, caller_line)
         source = make_node("capability", node_id, "openai.chat.completions.create")
 
+        # Map model name to vLLM model
+        original_model, mapped_model = _map_model(kwargs)
+
         start_id = logger.log_event(
             "llm.call_start",
             source_node=source,
             payload={
-                "model_requested": kwargs.get("model", "unknown"),
+                "model_requested": original_model,
+                "model_actual": mapped_model,
+                "model_mapped": original_model != mapped_model,
                 "message_count": len(kwargs.get("messages", [])),
                 "has_tools": bool(kwargs.get("tools") or kwargs.get("functions")),
             },
@@ -242,11 +282,16 @@ def _wrap_async_create(original: Any) -> Any:
         node_id = generate_node_id("openai", "AsyncChatCompletion", caller_file, caller_line)
         source = make_node("capability", node_id, "openai.async.chat.completions.create")
 
+        # Map model name to vLLM model
+        original_model, mapped_model = _map_model(kwargs)
+
         start_id = logger.log_event(
             "llm.call_start",
             source_node=source,
             payload={
-                "model_requested": kwargs.get("model", "unknown"),
+                "model_requested": original_model,
+                "model_actual": mapped_model,
+                "model_mapped": original_model != mapped_model,
                 "message_count": len(kwargs.get("messages", [])),
                 "has_tools": bool(kwargs.get("tools") or kwargs.get("functions")),
             },

@@ -1,4 +1,4 @@
-Working directory: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_rfzaak8i
+Working directory: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_2ff5c7na
 
 ==============================================================================
 PHASE 1: REPO SELECTION
@@ -10,7 +10,7 @@ PHASE 1: REPO SELECTION
   Avg structural:    27.6
   Avg runnability:   28.5
 
-  -> Saved selection to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_rfzaak8i\selection.json
+  -> Saved selection to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_2ff5c7na\selection.json
 
 ==============================================================================
 PHASE 2: EXECUTION HARNESS (MOCKED)
@@ -20,7 +20,7 @@ PHASE 2: EXECUTION HARNESS (MOCKED)
   Total runs:        30
   Total events:      1478
 
-  -> Saved 30 JSONL files to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_rfzaak8i\raw_events
+  -> Saved 30 JSONL files to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_2ff5c7na\raw_events
 
 ==============================================================================
 PHASE 3: DATA COLLECTION
@@ -88,7 +88,7 @@ PHASE 4: GRAPH OVERLAY
       guardrail_prevented:      1
     Emergent: agent_agent_4 -> ext_api_service (count=0)
 
-  -> Saved 10 enriched graphs to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_rfzaak8i\enriched_graphs
+  -> Saved 10 enriched graphs to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_2ff5c7na\enriched_graphs
 
 ==============================================================================
 PHASE 5: KNOWLEDGE BASE
@@ -103,7 +103,7 @@ PHASE 5: KNOWLEDGE BASE
     no_timeout_on_delegation: P(manifest)=1.0, CI=[0.6457, 1.0], n=7
 
   Novel patterns:    1
-    repo_022: anomaly_score=2.27, dim=avg_propagation_rate
+    repo_022: anomaly_score=2.39, dim=avg_latency_p50
 
   Framework comparisons: 3
     shared_state_without_arbitration: frameworks=['autogen', 'custom', 'langchain']
@@ -115,7 +115,7 @@ PHASE 5: KNOWLEDGE BASE
     chain_node: sensitivity=0.0000, repos=10
     leaf_node: sensitivity=0.0000, repos=10
 
-  -> Saved knowledge base to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_rfzaak8i\knowledge_base
+  -> Saved knowledge base to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_2ff5c7na\knowledge_base
 
 ==============================================================================
 PHASE 6: QUERY LAYER
@@ -177,23 +177,64 @@ PHASE 6B: BATCH REPORTS
 ==============================================================================
 PILOT MODE TEST
 ==============================================================================
-  Pilot input repos:    10
-  Pilot selected repos: 10
-  Pilot control count:  0
-  Pilot treatment count:0
-  PILOT MODE TEST: PASS
+  Pilot batch size:           10
+  Repos executed:             10
+  Runs completed:             30
+
+  Instrumentation failures:   1/30 (3.3%)
+  Model failures:             0/30 (0.0%)
+  Other failures:             1/30
+  Successful runs:            28/30 (93.3%)
+
+  QUALITY GATE:
+    Instrumentation rate:     3.3% <= 20% threshold  PASS
+    Model failure rate:       0.0% <= 15% threshold  PASS
+    Overall success rate:     93.3%
+  QUALITY GATE RESULT:        PASS — proceeding to full scan
+
+==============================================================================
+PHASE 1.5: GITHUB METADATA ENRICHMENT (MOCKED)
+==============================================================================
+  Repos enriched:         10
+  Enterprise-ready:       10/10
+  Contact-ready:          10/10
+  Avg coverage:           81%
+
+==============================================================================
+PHASE 7: ENTERPRISE OUTREACH
+==============================================================================
+  Total classified:       10
+  Enterprise (score>=45): 0
+  By tier:                {'community': 10}
+
+  Contacts extracted:     0
+  Outreach-ready repos:   0/10
+
+  Teaser reports:         10
+  Outreach queue size:    10
+  Queue saved:            C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_2ff5c7na\outreach\outreach_queue.json
+                          C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_2ff5c7na\outreach\outreach_queue.csv
+
+  Sample outreach record:
+    repo:                 repo_013/repo_013
+    contact:              None
+    tier:                 community
+    priority:             0
+    headline:             Stratum Security Scan: your repository -- No Risks Detected...
 
 ==============================================================================
 PIPELINE INTEGRATION SUMMARY
 ==============================================================================
   Phase 1 (Selection):    30 scanned -> 20 selected
+  Phase 1.5 (Metadata):   10 repos enriched, 10 enterprise-ready
   Phase 2 (Execution):    10 repos x 3 runs = 30 runs, 1478 events
   Phase 3 (Collection):   30 run records, 10 repo aggregates
   Phase 4 (Overlay):      10 enriched graphs, 10 emergent edges, 62 dead edges
   Phase 5 (Knowledge):    3 patterns, 2 taxonomy entries, 1 novel, 5 fragility entries
   Phase 6 (Query):        fingerprint + 5 matches + risk prediction + report
   Phase 6B (Batch):       10 per-repo reports
+  Phase 7 (Outreach):     10 outreach records, 0 contact-ready
 
-  All outputs saved to: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_rfzaak8i
+  All outputs saved to: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_2ff5c7na
 
   RESULT: ALL PHASES COMPLETED SUCCESSFULLY

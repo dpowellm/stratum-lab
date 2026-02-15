@@ -107,7 +107,7 @@
   "p50": 280.0,
   "p95": 400.0,
   "p99": 400.0,
-  "variance": 9012.24,
+  "variance": 9012.26,
   "sample_count": 7
 }
   error_behavior   : {
@@ -151,7 +151,7 @@
   "p50": 200.0,
   "p95": 200.0,
   "p99": 200.0,
-  "variance": 1200.0,
+  "variance": 1200.01,
   "sample_count": 4
 }
   error_behavior   : {

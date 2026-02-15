@@ -289,12 +289,20 @@ def score_and_select(
     for r in selected:
         raw = raw_by_id.get(r["repo_id"])
         if raw is not None:
-            rescored.append(score_repo(raw, final_archetype_counts, target))
+            new_r = score_repo(raw, final_archetype_counts, target)
+            # Preserve group tag from selection phase
+            if "group" in r:
+                new_r["group"] = r["group"]
+            rescored.append(new_r)
         else:
             rescored.append(r)
 
     rescored.sort(key=lambda r: r["selection_score"], reverse=True)
     summary = _build_summary(rescored, scored, scored)
+    # Add control/treatment counts
+    control_repos = [r for r in rescored if r.get("group") == "control"]
+    summary["control_count"] = len(control_repos)
+    summary["treatment_count"] = len(rescored) - len(control_repos)
     return rescored, summary
 
 
