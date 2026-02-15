@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stratum-lab"
+version = "0.1.0"
+description = "Stratum behavioral scan infrastructure — runtime research pipeline for AI agent repos"
+requires-python = ">=3.10"
+dependencies = [
+    "click>=8.0",
+    "rich>=13.0",
+    "pydantic>=2.0",
+    "docker>=7.0",
+    "openai>=1.0",
+    "numpy>=1.24",
+    "scipy>=1.10",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "ruff>=0.1.0"]
+
+[project.scripts]
+stratum-lab = "stratum_lab.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["stratum_lab*", "stratum_patcher*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
