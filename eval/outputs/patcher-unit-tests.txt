@@ -1,0 +1,43 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\dpowe\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\dpowe\OneDrive\Documents\Coding Projects\stratum-observability\stratum-lab
+configfile: pyproject.toml
+plugins: anyio-4.12.1
+collecting ... collected 33 items
+
+eval/test_patchers.py::TestEventLogger::test_singleton_identity PASSED   [  3%]
+eval/test_patchers.py::TestEventLogger::test_log_event_returns_event_id PASSED [  6%]
+eval/test_patchers.py::TestEventLogger::test_log_event_writes_valid_jsonl PASSED [  9%]
+eval/test_patchers.py::TestEventLogger::test_log_event_with_all_optional_fields PASSED [ 12%]
+eval/test_patchers.py::TestEventLogger::test_run_id_and_repo_id_from_env PASSED [ 15%]
+eval/test_patchers.py::TestEventLogger::test_generate_node_id PASSED     [ 18%]
+eval/test_patchers.py::TestEventLogger::test_make_node PASSED            [ 21%]
+eval/test_patchers.py::TestEventLogger::test_hash_content PASSED         [ 24%]
+eval/test_patchers.py::TestEventLogger::test_get_data_shape PASSED       [ 27%]
+eval/test_patchers.py::TestOpenAIPatch::test_openai_patch_wraps_create PASSED [ 30%]
+eval/test_patchers.py::TestOpenAIPatch::test_openai_patch_emits_events PASSED [ 33%]
+eval/test_patchers.py::TestOpenAIPatch::test_openai_patch_parent_event_chain PASSED [ 36%]
+eval/test_patchers.py::TestGenericPatch::test_generic_patch_module_loads PASSED [ 39%]
+eval/test_patchers.py::TestGenericPatch::test_requests_wrapping PASSED   [ 42%]
+eval/test_patchers.py::TestGenericPatch::test_builtins_open_wrapping PASSED [ 45%]
+eval/test_patchers.py::TestGenericPatch::test_excepthook_wrapping PASSED [ 48%]
+eval/test_patchers.py::TestGenericPatch::test_file_open_under_app_emits_event PASSED [ 51%]
+eval/test_patchers.py::TestGenericPatch::test_domain_extraction PASSED   [ 54%]
+eval/test_patchers.py::TestCrewAIPatch::test_crewai_patch_loads PASSED   [ 57%]
+eval/test_patchers.py::TestCrewAIPatch::test_crewai_wrapper_functions_exist PASSED [ 60%]
+eval/test_patchers.py::TestCrewAIPatch::test_crewai_kickoff_wrapper_emits_events PASSED [ 63%]
+eval/test_patchers.py::TestLangGraphPatch::test_langgraph_patch_loads PASSED [ 66%]
+eval/test_patchers.py::TestLangGraphPatch::test_langgraph_wrapper_functions_exist PASSED [ 69%]
+eval/test_patchers.py::TestLangGraphPatch::test_langgraph_invoke_wrapper_emits_events PASSED [ 72%]
+eval/test_patchers.py::TestAutoGenPatch::test_autogen_patch_loads PASSED [ 75%]
+eval/test_patchers.py::TestAutoGenPatch::test_autogen_wrapper_functions_exist PASSED [ 78%]
+eval/test_patchers.py::TestAutoGenPatch::test_autogen_receive_wrapper_emits_events PASSED [ 81%]
+eval/test_patchers.py::TestAnthropicPatch::test_anthropic_patch_loads PASSED [ 84%]
+eval/test_patchers.py::TestAnthropicPatch::test_translate_messages_basic PASSED [ 87%]
+eval/test_patchers.py::TestAnthropicPatch::test_translate_messages_with_tool_use PASSED [ 90%]
+eval/test_patchers.py::TestAnthropicPatch::test_translate_tools PASSED   [ 93%]
+eval/test_patchers.py::TestAnthropicPatch::test_translate_response_to_anthropic PASSED [ 96%]
+eval/test_patchers.py::TestCrossPatcherIntegration::test_multiple_event_types_in_single_file PASSED [100%]
+
+============================= 33 passed in 2.08s ==============================

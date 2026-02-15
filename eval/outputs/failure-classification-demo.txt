@@ -1,0 +1,55 @@
+================================================================================
+FAILURE CLASSIFICATION TEST RESULTS
+================================================================================
+
+  [PASS] SUCCESS
+    expected : SUCCESS
+    actual   : SUCCESS
+
+  [PASS] PARTIAL_SUCCESS
+    expected : PARTIAL_SUCCESS
+    actual   : PARTIAL_SUCCESS
+
+  [PASS] DEPENDENCY_FAILURE
+    expected : DEPENDENCY_FAILURE
+    actual   : DEPENDENCY_FAILURE
+
+  [PASS] ENTRY_POINT_FAILURE
+    expected : ENTRY_POINT_FAILURE
+    actual   : ENTRY_POINT_FAILURE
+
+  [PASS] MODEL_FAILURE
+    expected : MODEL_FAILURE
+    actual   : MODEL_FAILURE
+
+  [PASS] TIMEOUT
+    expected : TIMEOUT
+    actual   : TIMEOUT
+
+  [PASS] CRASH
+    expected : CRASH
+    actual   : CRASH
+
+  [PASS] INSTRUMENTATION_FAILURE
+    expected : INSTRUMENTATION_FAILURE
+    actual   : INSTRUMENTATION_FAILURE
+
+--------------------------------------------------------------------------------
+  Results: 8 passed, 0 failed, 8 total
+
+================================================================================
+EDGE CASE TESTS
+================================================================================
+
+  [PASS] Non-zero exit with events => PARTIAL_SUCCESS
+    expected: PARTIAL_SUCCESS
+    actual  : PARTIAL_SUCCESS
+
+  [PASS] Dependency error with exit 0 => DEPENDENCY_FAILURE
+    expected: DEPENDENCY_FAILURE
+    actual  : DEPENDENCY_FAILURE
+
+--------------------------------------------------------------------------------
+  Final: 10 passed, 0 failed, 10 total
+
+Done.

@@ -1,0 +1,81 @@
+  Generated 5 synthetic inputs for https://github.com/example/research-crew
+  Input generation failed for https://github.com/example/broken: vLLM is down. 
+Using generic inputs.
+================================================================================
+TEST: generate_inputs() with mocked vLLM
+================================================================================
+
+  Generated 5 inputs:
+
+  [1] Research the latest breakthroughs in renewable energy storage and summarize the top 3 technologies.
+  [2] {"topic": "autonomous vehicles", "depth": "comprehensive", "max_sources": 10}
+  [3] Compare and contrast large language models: GPT-4, Claude, and Gemini across performance benchmarks.
+  [4] Investigate the current state of CRISPR gene therapy clinical trials and write a patient-friendly summary.
+  [5] Analyze the economic impact of AI automation on the manufacturing sector in 2025.
+
+  Diversity check: PASS (5 unique out of 5)
+  Parseability check: PASS
+  Mock called with model: Qwen/Qwen2.5-72B-Instruct
+  Mock called with temperature: 0.8
+
+================================================================================
+TEST: input_hash()
+================================================================================
+
+  Hashes: ['721cc343c86d', 'e9f4200e1db6', 'ffd23eb45102', '68abd811e5b9', '71e2e16640dc']
+  All unique: PASS
+  Length (12 hex chars): PASS
+
+================================================================================
+TEST: plan_runs()
+================================================================================
+
+  Run plan (5 runs):
+
+    Run 1: Research the latest breakthroughs in renewable energy storage and summarize the ...
+    Run 2: {"topic": "autonomous vehicles", "depth": "comprehensive", "max_sources": 10}
+    Run 3: Compare and contrast large language models: GPT-4, Claude, and Gemini across per...
+    Run 4: Research the latest breakthroughs in renewable energy storage and summarize the ...
+    Run 5: Research the latest breakthroughs in renewable energy storage and summarize the ...
+
+  First 3 (diverse): 3 unique
+  Last 2 (repeats):  all equal to first? PASS
+  Run numbers sequential [1..5]: PASS
+
+  plan_runs with 1 input, 5 runs: 5 entries (PASS)
+  plan_runs with 0 inputs (fallback): 5 entries (PASS)
+
+================================================================================
+TEST: find_example_inputs()
+================================================================================
+
+  Found 12 example inputs:
+
+  [1] python main.py --topic "artificial intelligence trends"
+  [2] {"topic": "machine learning", "depth": "detailed", "max_sources": 5}
+  [3] Summarize recent advances in quantum computing
+  [4] Compare Python and Rust for systems programming
+  [5] Example usage of the research agent.
+  [6] Investigate the following questions about climate change: 1. What are the latest IPCC projections? 2...
+  [7] Analyze the impact of social media on mental health in teenagers
+  [8] Write a comprehensive report on the future of electric vehicles
+  [9] Test suite for research agent.
+  [10] Summarize the history of the Internet from ARPANET to today
+  [11] Compare renewable energy adoption rates across G7 nations
+  [12] {"topic": "space exploration", "depth": "summary", "sources": 3}
+
+  At least some inputs found: PASS
+
+================================================================================
+TEST: generate_inputs() fallback on API error
+================================================================================
+
+  Fallback generated 5 inputs (expected 5): PASS
+  All are non-empty strings: PASS
+    [1] {"task": "Summarize the latest news about artificial intelligence."}
+    [2] {"task": "Write a short report on climate change impacts in 2024."}
+    [3] {"task": "Research the top 3 programming languages and compare them."}
+    [4] {"task": "Plan a weekend trip to San Francisco and list activities."}
+    [5] {"task": "Analyze the pros and cons of remote work for software teams."}
+
+Done.

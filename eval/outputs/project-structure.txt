@@ -1,0 +1,50 @@
+.
+├── .git
+├── Dockerfile
+├── eval
+│   ├── outputs
+│   │   ├── project-structure.txt
+├── pyproject.toml
+├── stratum_lab
+│   ├── __init__.py
+│   ├── cli.py
+│   ├── collection
+│   │   ├── __init__.py
+│   │   ├── cli.py
+│   │   ├── parser.py
+│   ├── config.py
+│   ├── harness
+│   │   ├── __init__.py
+│   │   ├── cli.py
+│   │   ├── container.py
+│   │   ├── input_generator.py
+│   │   ├── orchestrator.py
+│   ├── knowledge
+│   │   ├── __init__.py
+│   │   ├── cli.py
+│   │   ├── fragility.py
+│   │   ├── patterns.py
+│   │   ├── taxonomy.py
+│   ├── models.py
+│   ├── node_ids.py
+│   ├── overlay
+│   │   ├── __init__.py
+│   │   ├── cli.py
+│   │   ├── edges.py
+│   │   ├── enricher.py
+│   ├── selection
+│   │   ├── __init__.py
+│   │   ├── cli.py
+│   │   ├── scorer.py
+│   │   ├── selector.py
+├── stratum_patcher
+│   ├── __init__.py
+│   ├── anthropic_patch.py
+│   ├── autogen_patch.py
+│   ├── crewai_patch.py
+│   ├── event_logger.py
+│   ├── generic_patch.py
+│   ├── langgraph_patch.py
+│   ├── openai_patch.py
+│   ├── runner.py
+│   ├── sitecustomize.py

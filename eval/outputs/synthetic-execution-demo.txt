@@ -1,0 +1,110 @@
+================================================================================
+  SYNTHETIC EXECUTION SIMULATION
+================================================================================
+
+  Run 'run-001': 29 events emitted
+  Run 'run-002': 29 events emitted
+  Run 'run-003': 29 events emitted
+
+  EVENTS PER RUN
+  --------------------------------------------------
+  run-001: 29 events
+  run-002: 29 events
+  run-003: 29 events
+
+  EVENT TYPE DISTRIBUTION (all runs)
+  ------------------------------------------------------------
+  agent.task_start        9 total  (3.0/run)  #########
+  llm.call_start          9 total  (3.0/run)  #########
+  llm.call_end            9 total  (3.0/run)  #########
+  agent.task_end          9 total  (3.0/run)  #########
+  tool.invoked            6 total  (2.0/run)  ######
+  tool.completed          6 total  (2.0/run)  ######
+  delegation.initiated    6 total  (2.0/run)  ######
+  data.read               6 total  (2.0/run)  ######
+  delegation.completed    6 total  (2.0/run)  ######
+  execution.start         3 total  (1.0/run)  ###
+  external.call           3 total  (1.0/run)  ###
+  data.write              3 total  (1.0/run)  ###
+  file.write              3 total  (1.0/run)  ###
+  decision.made           3 total  (1.0/run)  ###
+  guardrail.triggered     3 total  (1.0/run)  ###
+  execution.end           3 total  (1.0/run)  ###
+
+  NODE IDS GENERATED
+  ----------------------------------------------------------------------
+  FileWriter        crewai:FileWriter:tools.py:25
+  HTTP              generic:http:api.search.com:external.py:1
+  LLM               openai:ChatCompletion:llm.py:1
+  QualityGuard      crewai:QualityGuard:guardrails.py:1
+  ResearchCrew      crewai:ResearchCrew:crew.py:1
+  Researcher        crewai:Researcher:agents.py:10
+  Reviewer          crewai:Reviewer:agents.py:50
+  SharedMemory      crewai:SharedMemory:memory.py:1
+  WebSearch         crewai:WebSearch:tools.py:5
+  Writer            crewai:Writer:agents.py:30
+
+  NODE ID DETERMINISM CHECK
+  ------------------------------------------------------------
+  [+] Researcher        DETERMINISTIC (same across all 3 runs)
+  [+] Writer            DETERMINISTIC (same across all 3 runs)
+  [+] Reviewer          DETERMINISTIC (same across all 3 runs)
+  [+] WebSearch         DETERMINISTIC (same across all 3 runs)
+  [+] FileWriter        DETERMINISTIC (same across all 3 runs)
+  [+] SharedMemory      DETERMINISTIC (same across all 3 runs)
+  [+] ResearchCrew      DETERMINISTIC (same across all 3 runs)
+  [+] LLM               DETERMINISTIC (same across all 3 runs)
+  [+] HTTP              DETERMINISTIC (same across all 3 runs)
+  [+] QualityGuard      DETERMINISTIC (same across all 3 runs)
+
+  Result: ALL node IDs are deterministic across runs
+
+  PARENT EVENT CHAIN VALIDATION
+  ------------------------------------------------------------
+  [+] run-001: all 28 parent refs are valid
+  [+] run-002: all 28 parent refs are valid
+  [+] run-003: all 28 parent refs are valid
+
+  TIMESTAMP ORDERING CHECK
+  ------------------------------------------------------------
+  [+] run-001: timestamps are ordered (span: 45.1ms)
+  [+] run-002: timestamps are ordered (span: 48.3ms)
+  [+] run-003: timestamps are ordered (span: 45.4ms)
+
+  RUN ISOLATION CHECK
+  ------------------------------------------------------------
+  [+] run-001: all events have correct run_id
+  [+] run-002: all events have correct run_id
+  [+] run-003: all events have correct run_id
+
+  EVENT TYPE CONSISTENCY ACROSS RUNS
+  ------------------------------------------------------------
+  [+] All runs emit the same 16 event types
+
+  SOURCE NODE DISTRIBUTION (all runs)
+  ------------------------------------------------------------
+  Researcher                                 18  ##################
+  openai.chat.completions.create             18  ##################
+  Writer                                     18  ##################
+  SharedMemory                                9  #########
+  Reviewer                                    9  #########
+  ResearchCrew                                6  ######
+  api.search.com                              3  ###
+  /app/output/article.md                      3  ###
+  QualityGuard                                3  ###
+
+  EDGE TYPE DISTRIBUTION (all runs)
+  ----------------------------------------
+  calls                  12
+  delegates_to           12
+
+================================================================================
+  SUMMARY
+  ----------------------------------------------------------------------
+  Total runs simulated:        3
+  Total events generated:      87
+  Events per run:              29
+  Distinct event types:        16
+  Distinct source nodes:       9
+  Node IDs deterministic:      YES
+================================================================================

@@ -1,0 +1,44 @@
+========================================================================
+  STRATUM EVENT SCHEMA VALIDATION
+  Events file: C:\Users\dpowe\AppData\Local\Temp\stratum_schema_test__a1izpu6.jsonl
+  Total events emitted: 21
+========================================================================
+
+  [+] execution.start       PASS  all checks passed
+  [+] execution.end         PASS  all checks passed
+  [+] agent.task_start      PASS  all checks passed
+  [+] agent.task_end        PASS  all checks passed
+  [+] delegation.initiated  PASS  all checks passed
+  [+] delegation.completed  PASS  all checks passed
+  [+] tool.invoked          PASS  all checks passed
+  [+] tool.completed        PASS  all checks passed
+  [+] tool.call_failure     PASS  all checks passed
+  [+] llm.call_start        PASS  all checks passed
+  [+] llm.call_end          PASS  all checks passed
+  [+] data.read             PASS  all checks passed
+  [+] data.write            PASS  all checks passed
+  [+] error.occurred        PASS  all checks passed
+  [+] error.propagated      PASS  all checks passed
+  [+] error.cascade         PASS  all checks passed
+  [+] decision.made         PASS  all checks passed
+  [+] guardrail.triggered   PASS  all checks passed
+  [+] external.call         PASS  all checks passed
+  [+] file.read             PASS  all checks passed
+  [+] file.write            PASS  all checks passed
+
+------------------------------------------------------------------------
+  Results: 21 passed, 0 failed, 21 total
+------------------------------------------------------------------------
+
+  CROSS-EVENT VALIDATIONS:
+
+  [+] All event_id values are unique
+  [+] All timestamp_ns values are positive integers
+  [+] Timestamps are monotonically non-decreasing
+  [+] All parent_event_id references are valid (5 refs)
+  [+] Consistent run_id across all events: schema-test-run-001
+  [+] Consistent repo_id across all events: schema-test-repo-001
+
+========================================================================
+  ALL CHECKS PASSED
+========================================================================

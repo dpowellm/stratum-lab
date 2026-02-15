@@ -1,0 +1,103 @@
+Working directory: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_q_btleul
+
+==============================================================================
+PHASE 1: REPO SELECTION
+==============================================================================
+  Input repos:       30
+  Selected repos:    20
+  Frameworks:        {'langchain': 6, 'custom': 6, 'autogen': 5, 'langgraph': 3}
+  Archetypes:        {'parallel_fan_out': 3, 'guardrail_gated_pipeline': 2, 'hierarchical_delegation': 2, 'supervisor_worker': 2, 'debate_consensus': 2, 'reflection_loop': 2, 'blackboard_architecture': 2, 'hub_and_spoke_shared_state': 1, 'sequential_pipeline': 1, 'market_auction': 1, 'single_agent_tool_use': 1, 'human_in_the_loop': 1}
+  Avg structural:    28.02
+  Avg runnability:   28.5
+
+  -> Saved selection to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_q_btleul\selection.json
+
+==============================================================================
+PHASE 2: EXECUTION HARNESS (MOCKED)
+==============================================================================
+  Repos executed:    10
+  Runs per repo:     3
+  Total runs:        30
+  Total events:      1132
+
+  -> Saved 30 JSONL files to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_q_btleul\raw_events
+
+==============================================================================
+PHASE 3: DATA COLLECTION
+==============================================================================
+  Run records built: 30
+  Repos aggregated:  10
+
+  Sample run record (repo_018_run_1):
+    Total events:    36
+    Event types:     {'execution.start': 1, 'agent.task_start': 5, 'llm.call_start': 5, 'llm.call_end': 5, 'tool.invoked': 5, 'tool.completed': 5, 'agent.task_end': 5, 'delegation.initiated': 4, 'execution.end': 1}
+    LLM calls:       5
+    Errors:          0
+    Delegations:     4
+
+  Sample repo aggregate (repo_018):
+    Num runs:        3
+    Total events:    109
+    Avg events/run:  36.33
+
+  -> Collection phase complete
+
+==============================================================================
+PHASE 4: GRAPH OVERLAY
+==============================================================================
+  Graphs enriched:   10
+  Total emergent:    0
+  Total dead:        10
+
+  Sample enriched graph (repo_018):
+    Nodes:           5
+    Edges:           5
+    Emergent edges:  0
+    Dead edges:      1
+    Node agent_agent_0:
+      activation_count:    6
+      activation_rate:     2.0
+      failure_rate:        0.0
+    Node agent_agent_1:
+      activation_count:    3
+      activation_rate:     1.0
+      failure_rate:        0.0
+
+  -> Saved 10 enriched graphs to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_q_btleul\enriched_graphs
+
+==============================================================================
+PHASE 5: KNOWLEDGE BASE
+==============================================================================
+  Patterns found:    1
+    linear_delegation_chain: prevalence=1.00, failure_rate=1.00, risk=medium
+
+  Taxonomy preconditions with data: 2
+    shared_state_no_arbitration: P(manifest)=1.0, CI=[0.7225, 1.0], n=10
+    no_timeout_on_delegation: P(manifest)=1.0, CI=[0.6457, 1.0], n=7
+
+  Novel patterns:    2
+    repo_028: anomaly_score=2.62, dim=avg_latency_p50
+    repo_022: anomaly_score=2.33, dim=avg_failure_rate
+
+  Framework comparisons: 1
+    linear_delegation_chain: frameworks=['autogen', 'custom', 'langchain']
+
+  Fragility entries: 3
+    connector_node: sensitivity=0.0000, repos=10
+    chain_node: sensitivity=0.0000, repos=10
+    leaf_node: sensitivity=0.0000, repos=10
+
+  -> Saved knowledge base to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_q_btleul\knowledge_base
+
+==============================================================================
+PIPELINE INTEGRATION SUMMARY
+==============================================================================
+  Phase 1 (Selection):    30 scanned -> 20 selected
+  Phase 2 (Execution):    10 repos x 3 runs = 30 runs, 1132 events
+  Phase 3 (Collection):   30 run records, 10 repo aggregates
+  Phase 4 (Overlay):      10 enriched graphs, 0 emergent edges, 10 dead edges
+  Phase 5 (Knowledge):    1 patterns, 2 taxonomy entries, 2 novel, 3 fragility entries
+
+  All outputs saved to: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_q_btleul
+
+  RESULT: ALL PHASES COMPLETED SUCCESSFULLY

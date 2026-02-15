@@ -1,0 +1,123 @@
+================================================================================
+  REPO SELECTION EVALUATION
+  Synthetic repos generated: 50
+================================================================================
+
+  TOP 10 REPOS BY SELECTION SCORE
+  ----------------------------------------------------------------------------
+  Repo ID      Framework    Archetype                    Struct   Rare   Run  Total
+  ----------------------------------------------------------------------------
+  repo_0003    crewai       guardrail_gated_pipeline       63.0    6.0  25.0   94.0
+  repo_0008    crewai       sequential_pipeline            57.0    6.0  27.0   90.0
+  repo_0005    crewai       debate_consensus               53.0    6.0  27.0   86.0
+  repo_0021    crewai       reflection_loop                51.5    0.0  30.0   81.5
+  repo_0011    langgraph    hub_and_spoke_shared_state     52.5    0.0  28.0   80.5
+  repo_0016    crewai       reflection_loop                50.5    0.0  30.0   80.5
+  repo_0025    custom       human_in_the_loop              57.5    0.0  22.0   79.5
+  repo_0028    langchain    hub_and_spoke_shared_state     51.5    0.0  28.0   79.5
+  repo_0036    langgraph    hierarchical_delegation        49.0    0.0  30.0   79.0
+  repo_0027    crewai       human_in_the_loop              51.5    0.0  27.0   78.5
+
+  BOTTOM 10 REPOS BY SELECTION SCORE
+  ----------------------------------------------------------------------------
+  Repo ID      Framework    Archetype                    Struct   Rare   Run  Total
+  ----------------------------------------------------------------------------
+  repo_0010    crewai       human_in_the_loop              44.5    0.0  28.0   72.5
+  repo_0020    langgraph    human_in_the_loop              57.0    0.0  15.0   72.0
+  repo_0007    langchain    single_agent_tool_use          43.5    0.0  28.0   71.5
+  repo_0043    crewai       hierarchical_delegation        44.0    0.0  27.0   71.0
+  repo_0014    crewai       human_in_the_loop              39.5    0.0  30.0   69.5
+  repo_0022    langgraph    single_agent_tool_use          48.5    0.0  21.0   69.5
+  repo_0023    crewai       sequential_pipeline            48.5    6.0  15.0   69.5
+  repo_0018    langchain    reflection_loop                41.5    0.0  27.0   68.5
+  repo_0047    crewai       supervisor_worker              24.0    6.0  30.0   60.0
+  repo_0037    langgraph    parallel_fan_out               25.0    6.0  28.0   59.0
+
+  FRAMEWORK DISTRIBUTION
+  --------------------------------------------------
+  crewai         15 ( 50.0%)  #########################
+  langgraph       7 ( 23.3%)  ###########
+  langchain       4 ( 13.3%)  ######
+  autogen         3 ( 10.0%)  #####
+  custom          1 (  3.3%)  #
+
+  ARCHETYPE DISTRIBUTION
+  ------------------------------------------------------------
+  human_in_the_loop                 6 ( 20.0%)  ##########
+  reflection_loop                   3 ( 10.0%)  #####
+  hub_and_spoke_shared_state        3 ( 10.0%)  #####
+  hierarchical_delegation           3 ( 10.0%)  #####
+  single_agent_tool_use             3 ( 10.0%)  #####
+  guardrail_gated_pipeline          2 (  6.7%)  ###
+  sequential_pipeline               2 (  6.7%)  ###
+  debate_consensus                  2 (  6.7%)  ###
+  parallel_fan_out                  2 (  6.7%)  ###
+  market_auction                    2 (  6.7%)  ###
+  supervisor_worker                 2 (  6.7%)  ###
+
+  CONSTRAINT VERIFICATION
+  ------------------------------------------------------------
+  [+] Max per archetype: 6 <= 10 (limit)
+  [+] Frameworks represented: 5 >= 3 (minimum)
+  [+] Min runnability score: 15.0 >= 10.0 (threshold)
+  [+] Total selected: 30
+
+  SUMMARY STATISTICS
+  ------------------------------------------------------------
+  total_scanned: 50
+  total_eligible: 50
+  total_selected: 30
+  by_framework:
+    crewai: 15
+    langgraph: 7
+    langchain: 4
+    autogen: 3
+    custom: 1
+  by_archetype:
+    human_in_the_loop: 6
+    reflection_loop: 3
+    hub_and_spoke_shared_state: 3
+    hierarchical_delegation: 3
+    single_agent_tool_use: 3
+    guardrail_gated_pipeline: 2
+    sequential_pipeline: 2
+    debate_consensus: 2
+    parallel_fan_out: 2
+    market_auction: 2
+    supervisor_worker: 2
+  avg_structural_value: 47.6
+  avg_runnability_score: 25.57
+  avg_agent_count: 6.4
+  total_taxonomy_preconditions_covered: 10
+  frameworks_represented: 5
+  archetypes_represented: 11
+
+  SCORE DISTRIBUTION
+  ------------------------------------------------------------
+  Mean selection score:  75.57
+  Min selection score:   59.00
+  Max selection score:   94.00
+  Std dev:               7.20
+  Avg structural value:  47.60
+  Avg archetype rarity:  2.40
+  Avg runnability:       25.57
+
+  COMPLEXITY DISTRIBUTION
+  ----------------------------------------
+  high         18 ( 60.0%)
+  medium       11 ( 36.7%)
+  low           1 (  3.3%)
+
+  INDIVIDUAL SCORER FUNCTION CHECKS
+  ------------------------------------------------------------
+  [+] High-complexity structural value: 79.0 (expected ~54+)
+  [+] Empty repo structural value:      0.0 (expected 0)
+  [+] Fully runnable runnability score:  30.0 (expected 30)
+  [+] Framework resolution (crewai,langchain): crewai (expected crewai)
+  [+] Framework resolution (unknown_fw): custom (expected custom)
+  [+] Complexity (2 agents, 3 edges): low (expected low)
+  [+] Complexity (8 agents, 25 edges): high (expected high)
+
+================================================================================
+  EVALUATION COMPLETE
+================================================================================
