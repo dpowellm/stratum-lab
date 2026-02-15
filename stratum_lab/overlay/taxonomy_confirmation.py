@@ -117,6 +117,54 @@ def _has_output_validation_failures(enriched_graph: dict[str, Any]) -> bool:
     return False
 
 
+def _has_unvalidated_chain(enriched_graph: dict[str, Any]) -> bool:
+    """Check for delegation edges without an intervening guardrail node."""
+    edges = enriched_graph.get("edges", {})
+    nodes = enriched_graph.get("nodes", {})
+    guardrails = {
+        nid for nid, n in nodes.items()
+        if n.get("structural", {}).get("node_type") == "guardrail"
+    }
+
+    for edge_id, edge_data in edges.items():
+        structural = edge_data.get("structural", edge_data)
+        if structural.get("edge_type") != "delegates_to":
+            continue
+        behavioral = edge_data.get("behavioral", {})
+        if behavioral.get("traversal_count", 0) == 0:
+            continue
+        source = structural.get("source", "")
+        target = structural.get("target", "")
+        # Check if any guardrail sits between source and target
+        validated = False
+        for gid in guardrails:
+            incoming = any(
+                e.get("structural", e).get("source") == source
+                and e.get("structural", e).get("target") == gid
+                for e in edges.values()
+            )
+            outgoing = any(
+                e.get("structural", e).get("source") == gid
+                and e.get("structural", e).get("target") == target
+                for e in edges.values()
+            )
+            if incoming and outgoing:
+                validated = True
+                break
+        if not validated:
+            return True
+    return False
+
+
+def _has_unvalidated_classification(enriched_graph: dict[str, Any]) -> bool:
+    """Check for classification/routing output consumed downstream without validation."""
+    semantic = enriched_graph.get("semantic_lineage", {})
+    if semantic.get("classification_injection_count", 0) > 0:
+        if semantic.get("unvalidated_count", 0) > 0:
+            return True
+    return False
+
+
 # Main confirmation rules mapping
 CONFIRMATION_RULES: dict[str, dict[str, Any]] = {
     "STRAT-DC-001": {
@@ -157,6 +205,18 @@ CONFIRMATION_RULES: dict[str, dict[str, Any]] = {
         "precondition_ids": ["no_output_validation", "no_guardrail_on_output"],
         "confirm": lambda g: not _has_output_validation_failures(g),
         "severity_multiplier": lambda g: 1.0,
+    },
+    "STRAT-SC-001": {
+        "name": "unvalidated_semantic_chain",
+        "precondition_ids": ["unvalidated_semantic_chain"],
+        "confirm": lambda g: _has_unvalidated_chain(g),
+        "severity_multiplier": lambda g: 2.0,
+    },
+    "STRAT-SC-002": {
+        "name": "classification_without_validation",
+        "precondition_ids": ["classification_without_validation"],
+        "confirm": lambda g: _has_unvalidated_classification(g),
+        "severity_multiplier": lambda g: 2.5,
     },
 }
 

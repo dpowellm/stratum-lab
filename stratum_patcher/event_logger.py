@@ -14,7 +14,7 @@ import os
 import threading
 import time
 import uuid
-from typing import Any
+from typing import Any, Dict, Optional
 
 
 # ---------------------------------------------------------------------------
@@ -91,6 +91,77 @@ def get_data_shape(obj: Any) -> str:
         return type(obj).__qualname__
     except Exception:
         return "unknown"
+
+
+# ---------------------------------------------------------------------------
+# Semantic content capture utilities
+# ---------------------------------------------------------------------------
+
+_CLASSIFICATION_KEYS = frozenset({
+    "label", "class", "category", "classification", "type",
+    "action", "decision", "next_step", "route", "intent",
+    "sentiment", "priority", "severity", "status",
+})
+
+
+def capture_output_signature(content: Any) -> Dict[str, Any]:
+    """Capture a lightweight semantic signature of agent/LLM output.
+
+    Does NOT store full content.  Stores enough to:
+      1. Detect whether same input -> same output across runs (semantic determinism)
+      2. Track which output hash flows to which downstream input (lineage)
+      3. Classify output type/structure (for schema mismatch detection)
+    """
+    if content is None:
+        return {"type": "null", "hash": None, "size_bytes": 0,
+                "preview": "", "structure": None, "classification_fields": None}
+
+    content_str = json.dumps(content, default=str) if not isinstance(content, str) else content
+
+    return {
+        "type": _classify_content_type(content),
+        "hash": hash_content(content_str),
+        "size_bytes": len(content_str.encode("utf-8", errors="replace")),
+        "preview": content_str[:200],
+        "structure": _extract_structure(content),
+        "classification_fields": _extract_classification_fields(content),
+    }
+
+
+def _classify_content_type(content: Any) -> str:
+    """Classify output: classification, routing_decision, scored_output, structured_json, text."""
+    if isinstance(content, dict):
+        keys = {k.lower() for k in content.keys()}
+        if keys & {"label", "class", "category", "classification", "type", "intent"}:
+            return "classification"
+        if keys & {"action", "decision", "next_step", "route"}:
+            return "routing_decision"
+        if keys & {"score", "rating", "confidence", "probability"}:
+            return "scored_output"
+        return "structured_json"
+    elif isinstance(content, str):
+        return "long_text" if len(content) > 500 else "short_text"
+    return "unknown"
+
+
+def _extract_structure(content: Any) -> Optional[Dict]:
+    """Extract structural skeleton — key names and value types, not values."""
+    if isinstance(content, dict):
+        return {k: type(v).__name__ for k, v in content.items()}
+    elif isinstance(content, list) and content:
+        return {"length": len(content), "item_type": type(content[0]).__name__}
+    return None
+
+
+def _extract_classification_fields(content: Any) -> Optional[Dict]:
+    """If output contains classification/routing decisions, extract them."""
+    if not isinstance(content, dict):
+        return None
+    found = {}
+    for key, value in content.items():
+        if key.lower() in _CLASSIFICATION_KEYS:
+            found[key] = str(value)[:100]
+    return found if found else None
 
 
 # ---------------------------------------------------------------------------

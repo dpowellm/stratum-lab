@@ -14,6 +14,7 @@ Prints:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 import os
@@ -197,10 +198,17 @@ def _llm_events(
     duration_ms: int = 300,
     input_tokens: int = 500,
     output_tokens: int = 200,
+    output_hash: str | None = None,
+    output_type: str | None = None,
 ) -> list[dict]:
     """Emit llm.call_start + llm.call_end pair."""
     start_id = _eid()
     end_id = _eid()
+    end_payload: dict = {"input_tokens": input_tokens, "output_tokens": output_tokens}
+    if output_hash:
+        end_payload["output_hash"] = output_hash
+    if output_type:
+        end_payload["output_type"] = output_type
     return [
         {
             "event_id": start_id,
@@ -217,7 +225,7 @@ def _llm_events(
             "parent_event_id": start_id,
             "source_node": _source(agent_name, "agent"),
             "target_node": _source(llm_name, "capability"),
-            "payload": {"input_tokens": input_tokens, "output_tokens": output_tokens},
+            "payload": end_payload,
         },
     ]
 
@@ -227,10 +235,17 @@ def _delegation_events(
     target_agent: str,
     offset_ms: int,
     duration_ms: int = 50,
+    context_hash: str | None = None,
+    context_source_node: str | None = None,
 ) -> list[dict]:
     """Emit delegation.initiated + delegation.completed pair."""
     start_id = _eid()
     end_id = _eid()
+    init_payload: dict = {}
+    if context_hash:
+        init_payload["context_hash"] = context_hash
+    if context_source_node:
+        init_payload["context_source_node"] = context_source_node
     return [
         {
             "event_id": start_id,
@@ -238,7 +253,7 @@ def _delegation_events(
             "timestamp_ns": _ts(offset_ms),
             "source_node": _source(source_agent),
             "target_node": _source(target_agent),
-            "payload": {},
+            "payload": init_payload,
         },
         {
             "event_id": end_id,
@@ -395,39 +410,54 @@ def build_run_events(run_index: int) -> list[dict]:
     base = run_index * 5000  # stagger timestamps across runs
     events: list[dict] = []
 
+    # Semantic content hashes — Researcher's LLM output flows to Writer via delegation
+    researcher_output_hash = f"res_out_{run_index:03d}"
+    writer_output_hash = f"wrt_out_{run_index:03d}"
+
     # ---- Researcher works ----
     events += _agent_task_events("Researcher", base + 0, duration_ms=800)
     events += _tool_events("WebSearch", "Researcher", base + 50, duration_ms=200)
     events += _llm_events("LLMCall", "Researcher", base + 300, duration_ms=350,
-                          input_tokens=600, output_tokens=250)
+                          input_tokens=600, output_tokens=250,
+                          output_hash=researcher_output_hash,
+                          output_type="structured_data")
     events += _write_event("Researcher", "SharedMemory", base + 700)
 
-    # ---- Researcher delegates to Writer ----
-    events += _delegation_events("Researcher", "Writer", base + 800)
+    # ---- Researcher delegates to Writer (passing its output as context) ----
+    events += _delegation_events("Researcher", "Writer", base + 800,
+                                  context_hash=researcher_output_hash,
+                                  context_source_node="agent_researcher")
 
     # ---- Writer works ----
     events += _agent_task_events("Writer", base + 900, duration_ms=600)
     events += _tool_events("FileWriter", "Writer", base + 950, duration_ms=150)
     events += _write_event("Writer", "SharedMemory", base + 1200)
 
-    # ---- Writer delegates to Reviewer ----
-    events += _delegation_events("Writer", "Reviewer", base + 1500)
+    # ---- Writer delegates to Reviewer (passing its output as context) ----
+    events += _delegation_events("Writer", "Reviewer", base + 1500,
+                                  context_hash=writer_output_hash,
+                                  context_source_node="agent_writer")
 
     # ---- Reviewer works ----
     events += _agent_task_events("Reviewer", base + 1600, duration_ms=400)
     events += _llm_events("ReviewCall", "Reviewer", base + 1650, duration_ms=280,
-                          input_tokens=800, output_tokens=100)
+                          input_tokens=800, output_tokens=100,
+                          output_hash=writer_output_hash,
+                          output_type="short_text")
     events += _read_event("Reviewer", "SharedMemory", base + 1900)
 
     # ---- External call (WebSearch -> WebAPI) ----
     events += _external_call_event("WebSearch", "WebAPI", base + 260)
 
     # ---- Decision event (Researcher decides) ----
+    # Use per-run input_hash so that runs sharing the same input text
+    # produce the same hash, enabling determinism metric computation.
+    run_ih = hashlib.sha256(run_input_texts[run_index].encode("utf-8")).hexdigest()[:12]
     option = "opt_a" if run_index < 2 else "opt_b"
     events += _decision_event(
         "Researcher", base + 750,
         option_hash=option, confidence=0.85 + run_index * 0.03,
-        input_hash="inp_001",
+        input_hash=run_ih,
     )
 
     # ---- Guardrail check (Writer -> OutputGuard) ----
@@ -457,15 +487,25 @@ def build_run_events(run_index: int) -> list[dict]:
 
 
 # Build run_records
+# Make run_000 and run_002 share the same input so the enricher can compute
+# same_input_activation_consistency and same_input_path_consistency.
+run_input_texts = [
+    "Research the latest breakthroughs in renewable energy",  # run_000
+    "Compare AI agent frameworks for enterprise use",          # run_001
+    "Research the latest breakthroughs in renewable energy",  # run_002 — SAME as run_000
+]
+
 run_records: list[dict] = []
 all_events_for_edge_detection: list[dict] = []
 
 for i in range(3):
     run_events = build_run_events(i)
+    ih = hashlib.sha256(run_input_texts[i].encode("utf-8")).hexdigest()[:12]
     run_records.append({
         "events": run_events,
         "run_id": f"run_{i:03d}",
         "repo_id": "test_repo_001",
+        "metadata": {"input_hash": ih},
     })
     all_events_for_edge_detection.extend(run_events)
 
@@ -584,6 +624,64 @@ for node_id, node_data in enriched["nodes"].items():
     match_flag = eb.get("structural_prediction_match")
     errors = eb["errors_occurred"]
     print(f"  {node_id:30s}  errors={errors:3d}  prediction_match={match_flag}")
+
+print("\n" + "=" * 80)
+print("(g) CASCADE ANALYSIS")
+print("=" * 80)
+cascade = enriched.get("cascade_analysis", {})
+if cascade:
+    print(f"  max_cascade_depth:      {cascade.get('max_cascade_depth', 0)}")
+    print(f"  avg_cascade_depth:      {cascade.get('avg_cascade_depth', 0):.2f}")
+    print(f"  cascading_failure_rate: {cascade.get('cascading_failure_rate', 0):.2f}")
+    for c in cascade.get("cascades", []):
+        print(f"\n  Origin: {c['origin_node']}")
+        print(f"    origin_errors:          {c.get('origin_errors', c.get('origin_error_count', 0))}")
+        print(f"    max_depth:              {c.get('max_depth', 0)}")
+        print(f"    affected_downstream:    {len(c.get('affected_downstream', []))}")
+        for ds in c.get("affected_downstream", []):
+            print(f"      {ds['node_id']} (depth={ds['depth']}, errors={ds.get('error_count', ds.get('errors', 0))})")
+else:
+    print("  (no cascade analysis)")
+
+print("\n" + "=" * 80)
+print("(h) SEMANTIC LINEAGE")
+print("=" * 80)
+semantic = enriched.get("semantic_lineage", {})
+if semantic:
+    print(f"  handoff_count:                 {len(semantic.get('handoffs', []))}")
+    print(f"  unvalidated_fraction:          {semantic.get('unvalidated_fraction', 0):.2f}")
+    print(f"  semantic_chain_depth:          {semantic.get('semantic_chain_depth', 0)}")
+    print(f"  max_blast_radius:              {semantic.get('max_blast_radius', 0)}")
+    print(f"  classification_injection_count:{semantic.get('classification_injection_count', 0)}")
+    det = semantic.get("semantic_determinism", {})
+    if det:
+        print(f"  semantic_determinism nodes:    {len(det)}")
+        for nid, m in list(det.items())[:5]:
+            print(f"    {nid}: deterministic={m.get('semantically_deterministic', True)}")
+    for h in semantic.get("handoffs", [])[:5]:
+        print(f"\n  Handoff: {h.get('source_node')} -> {h.get('target_node')}")
+        print(f"    content_hash: {h.get('content_hash', '?')[:16]}...")
+        print(f"    validated:    {h.get('validated', False)}")
+else:
+    print("  (no semantic lineage)")
+
+# Check per-edge semantic_flow
+print("\n" + "=" * 80)
+print("(i) SEMANTIC FLOW ON EDGES")
+print("=" * 80)
+has_semantic_flow = False
+for edge_id, edge_data in enriched["edges"].items():
+    sf = edge_data.get("behavioral", {}).get("semantic_flow") or edge_data.get("semantic_flow")
+    if sf:
+        has_semantic_flow = True
+        structural = edge_data.get("structural", edge_data)
+        src, tgt = structural.get("source", "?"), structural.get("target", "?")
+        print(f"  {edge_id}: {src} -> {tgt}")
+        print(f"    content_hashes: {len(sf.get('content_hashes', []))}")
+        print(f"    validated:      {sf.get('validated', False)}")
+        print(f"    has_classification_dependency: {sf.get('has_classification_dependency', False)}")
+if not has_semantic_flow:
+    print("  (no semantic_flow on edges — expected if no output_hash in events)")
 
 print("\n" + "=" * 80)
 print("UNMAPPED EVENTS")

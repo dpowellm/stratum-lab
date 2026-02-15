@@ -19,6 +19,7 @@ from typing import Any
 
 from stratum_patcher.event_logger import (
     EventLogger,
+    capture_output_signature,
     get_data_shape,
     hash_content,
     make_node,
@@ -165,6 +166,15 @@ def _wrap_agent_execute_task(original: Any) -> Any:
                 payload["error_type"] = type(error).__name__
             if result is not None:
                 payload["result_shape"] = get_data_shape(result)
+                try:
+                    _sig = capture_output_signature(result)
+                    payload["output_hash"] = _sig["hash"]
+                    payload["output_type"] = _sig["type"]
+                    payload["output_size_bytes"] = _sig["size_bytes"]
+                    payload["output_preview"] = _sig["preview"]
+                    payload["classification_fields"] = _sig["classification_fields"]
+                except Exception:
+                    pass
             logger.log_event(
                 "agent.task_end",
                 source_node=source,
@@ -260,6 +270,9 @@ def _wrap_delegate_work(original: Any) -> Any:
         target_id = generate_node_id(_FRAMEWORK, target_role, __file__, 0)
         target = make_node("agent", target_id, target_role)
 
+        # Capture context being passed to delegate
+        _task_context = kwargs.get("task", args[1] if len(args) > 1 else "")
+        _context_sig = capture_output_signature(_task_context)
         start_id = logger.log_event(
             "delegation.initiated",
             source_node=source,
@@ -268,9 +281,12 @@ def _wrap_delegate_work(original: Any) -> Any:
             payload={
                 "delegator": delegator_role,
                 "delegate": target_role,
-                "task_hash": hash_content(
-                    kwargs.get("task", args[1] if len(args) > 1 else "")
-                ),
+                "task_hash": hash_content(_task_context),
+                "context_hash": _context_sig["hash"],
+                "context_type": _context_sig["type"],
+                "context_size_bytes": _context_sig["size_bytes"],
+                "context_source_node": delegator_id,
+                "has_classification_dependency": _context_sig["classification_fields"] is not None,
             },
         )
 

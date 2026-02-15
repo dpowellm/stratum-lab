@@ -16,6 +16,7 @@ from typing import Any
 
 from stratum_patcher.event_logger import (
     EventLogger,
+    capture_output_signature,
     get_data_shape,
     hash_content,
     make_node,
@@ -48,6 +49,7 @@ def _wrap_receive(original: Any) -> Any:
         # Describe the message without capturing its content
         msg_shape = get_data_shape(message)
         msg_hash = hash_content(message)
+        _context_sig = capture_output_signature(message)
 
         start_id = logger.log_event(
             "message.received",
@@ -59,6 +61,11 @@ def _wrap_receive(original: Any) -> Any:
                 "receiver": receiver_name,
                 "message_shape": msg_shape,
                 "message_hash": msg_hash,
+                "context_hash": _context_sig["hash"],
+                "context_type": _context_sig["type"],
+                "context_size_bytes": _context_sig["size_bytes"],
+                "context_source_node": send_nid,
+                "has_classification_dependency": _context_sig["classification_fields"] is not None,
             },
         )
 
@@ -108,6 +115,7 @@ def _wrap_a_receive(original: Any) -> Any:
 
         msg_shape = get_data_shape(message)
         msg_hash = hash_content(message)
+        _context_sig = capture_output_signature(message)
 
         start_id = logger.log_event(
             "message.received",
@@ -120,6 +128,11 @@ def _wrap_a_receive(original: Any) -> Any:
                 "message_shape": msg_shape,
                 "message_hash": msg_hash,
                 "async": True,
+                "context_hash": _context_sig["hash"],
+                "context_type": _context_sig["type"],
+                "context_size_bytes": _context_sig["size_bytes"],
+                "context_source_node": send_nid,
+                "has_classification_dependency": _context_sig["classification_fields"] is not None,
             },
         )
 
@@ -209,6 +222,15 @@ def _wrap_generate_reply(original: Any) -> Any:
                 if isinstance(result, dict):
                     if "function_call" in result or "tool_calls" in result:
                         payload["has_tool_call"] = True
+                try:
+                    _sig = capture_output_signature(result)
+                    payload["output_hash"] = _sig["hash"]
+                    payload["output_type"] = _sig["type"]
+                    payload["output_size_bytes"] = _sig["size_bytes"]
+                    payload["output_preview"] = _sig["preview"]
+                    payload["classification_fields"] = _sig["classification_fields"]
+                except Exception:
+                    pass
             logger.log_event(
                 "reply.generated",
                 source_node=source,
@@ -270,6 +292,15 @@ def _wrap_a_generate_reply(original: Any) -> Any:
                 if isinstance(result, dict):
                     if "function_call" in result or "tool_calls" in result:
                         payload["has_tool_call"] = True
+                try:
+                    _sig = capture_output_signature(result)
+                    payload["output_hash"] = _sig["hash"]
+                    payload["output_type"] = _sig["type"]
+                    payload["output_size_bytes"] = _sig["size_bytes"]
+                    payload["output_preview"] = _sig["preview"]
+                    payload["classification_fields"] = _sig["classification_fields"]
+                except Exception:
+                    pass
             logger.log_event(
                 "reply.generated",
                 source_node=source,

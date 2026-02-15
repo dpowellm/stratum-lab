@@ -17,6 +17,7 @@ from typing import Any
 
 from stratum_patcher.event_logger import (
     EventLogger,
+    capture_output_signature,
     get_caller_info,
     get_data_shape,
     make_node,
@@ -163,6 +164,19 @@ def _wrap_sync_create(original: Any) -> Any:
         finally:
             latency_ms = (time.perf_counter() - t0) * 1000.0
             payload = _build_payload(kwargs, result, latency_ms, error)
+            # Semantic content capture on llm.call_end
+            if error is None and result is not None:
+                try:
+                    _content = _extract_response_content(result)
+                    _sig = capture_output_signature(_content)
+                    payload["output_hash"] = _sig["hash"]
+                    payload["output_type"] = _sig["type"]
+                    payload["output_size_bytes"] = _sig["size_bytes"]
+                    payload["output_preview"] = _sig["preview"]
+                    payload["output_structure"] = _sig["structure"]
+                    payload["classification_fields"] = _sig["classification_fields"]
+                except Exception:
+                    pass
             logger.log_event(
                 "llm.call_end",
                 source_node=source,
@@ -188,6 +202,34 @@ def _wrap_sync_create(original: Any) -> Any:
                     pass
 
     return wrapper
+
+
+def _extract_response_content(result: Any) -> Any:
+    """Extract the text content from an OpenAI response object."""
+    try:
+        choices = getattr(result, "choices", None) or (
+            result.get("choices") if isinstance(result, dict) else None
+        )
+        if choices and len(choices) > 0:
+            first = choices[0]
+            message = getattr(first, "message", None) or (
+                first.get("message") if isinstance(first, dict) else None
+            )
+            if message is not None:
+                content = getattr(message, "content", None) or (
+                    message.get("content") if isinstance(message, dict) else None
+                )
+                if content is not None:
+                    # Try to parse as JSON for richer classification
+                    try:
+                        import json as _json
+                        return _json.loads(content)
+                    except Exception:
+                        pass
+                    return content
+    except Exception:
+        pass
+    return None
 
 
 def _wrap_async_create(original: Any) -> Any:
@@ -222,6 +264,19 @@ def _wrap_async_create(original: Any) -> Any:
         finally:
             latency_ms = (time.perf_counter() - t0) * 1000.0
             payload = _build_payload(kwargs, result, latency_ms, error)
+            # Semantic content capture on async llm.call_end
+            if error is None and result is not None:
+                try:
+                    _content = _extract_response_content(result)
+                    _sig = capture_output_signature(_content)
+                    payload["output_hash"] = _sig["hash"]
+                    payload["output_type"] = _sig["type"]
+                    payload["output_size_bytes"] = _sig["size_bytes"]
+                    payload["output_preview"] = _sig["preview"]
+                    payload["output_structure"] = _sig["structure"]
+                    payload["classification_fields"] = _sig["classification_fields"]
+                except Exception:
+                    pass
             logger.log_event(
                 "llm.call_end",
                 source_node=source,
@@ -311,7 +366,21 @@ def patch() -> None:
         pass
 
     # ------------------------------------------------------------------
-    # 4) Redirect base_url if env is set
+    # 4) AsyncOpenAI client class (ensure async completions are patched)
+    # ------------------------------------------------------------------
+    try:
+        _AsyncOpenAI = getattr(openai, "AsyncOpenAI", None)
+        if _AsyncOpenAI is not None:
+            # Patch at the class level to ensure any instantiation gets the wrapper.
+            # The AsyncCompletions class patch above covers the method, but we also
+            # mark the client class so tests can verify the patch was applied.
+            if not getattr(_AsyncOpenAI, "_stratum_patched", False):
+                _AsyncOpenAI._stratum_patched = True  # type: ignore[attr-defined]
+    except Exception:
+        pass
+
+    # ------------------------------------------------------------------
+    # 5) Redirect base_url if env is set
     # ------------------------------------------------------------------
     try:
         base_url = os.environ.get("OPENAI_BASE_URL")

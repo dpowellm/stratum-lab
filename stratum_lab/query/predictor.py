@@ -50,6 +50,7 @@ class RiskPrediction:
     positive_signals: list[str] = field(default_factory=list)
     framework_comparison: dict = field(default_factory=dict)
     dataset_coverage: dict = field(default_factory=dict)
+    semantic_analysis: dict = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -237,71 +238,199 @@ REMEDIATIONS: dict[str, str] = {
 # Positive-signal detection
 # ---------------------------------------------------------------------------
 
+
+def _delegation_depth(graph: dict) -> int:
+    """Compute max delegation depth from graph edges (BFS)."""
+    edges = graph.get("edges", {})
+    adj: dict[str, list[str]] = {}
+    targets: set[str] = set()
+    for e in edges.values():
+        s = e.get("structural", e)
+        if s.get("edge_type") == "delegates_to":
+            src = s.get("source", "")
+            tgt = s.get("target", "")
+            if src and tgt:
+                adj.setdefault(src, []).append(tgt)
+                targets.add(tgt)
+    if not adj:
+        return 0
+    roots = set(adj.keys()) - targets
+    if not roots:
+        roots = set(adj.keys())
+    max_depth = 0
+    for root in roots:
+        visited = {root}
+        queue = [(root, 1)]
+        while queue:
+            node, depth = queue.pop(0)
+            max_depth = max(max_depth, depth)
+            for t in adj.get(node, []):
+                if t not in visited:
+                    visited.add(t)
+                    queue.append((t, depth + 1))
+    return max_depth
+
+
+def _shared_state_writer_count(graph: dict) -> int:
+    """Count agents writing to data stores with 2+ writers."""
+    nodes = graph.get("nodes", {})
+    edges = graph.get("edges", {})
+    data_stores = {
+        nid for nid, n in nodes.items()
+        if n.get("structural", n).get("node_type") == "data_store"
+    }
+    writers_per_store: dict[str, set[str]] = {}
+    for e in edges.values():
+        s = e.get("structural", e)
+        if s.get("edge_type") == "writes_to":
+            tgt = s.get("target", "")
+            src = s.get("source", "")
+            if tgt in data_stores and src:
+                writers_per_store.setdefault(tgt, set()).add(src)
+    total = 0
+    for writers in writers_per_store.values():
+        if len(writers) >= 2:
+            total += len(writers)
+    return total
+
+
+def _all_externals_have_error_boundary(graph: dict) -> bool:
+    """Check if every external_service node has an upstream error boundary."""
+    ext_nodes = [
+        nid for nid, n in graph.get("nodes", {}).items()
+        if n.get("structural", n).get("node_type") == "external"
+    ]
+    if not ext_nodes:
+        return False  # no externals = nothing to report
+    edges = graph.get("edges", {})
+    for ext_id in ext_nodes:
+        incoming = [
+            e for e in edges.values()
+            if (e.get("structural", e).get("target") == ext_id)
+        ]
+        if not any(
+            graph["nodes"].get(e.get("structural", e).get("source", ""), {})
+            .get("structural", graph["nodes"].get(e.get("structural", e).get("source", ""), {}))
+            .get("error_handling")
+            for e in incoming
+        ):
+            return False
+    return True
+
+
 # Structural features that indicate good engineering practices.
+# Each signal has a ``detect`` lambda that inspects the actual structural
+# graph and returns ``True`` only when the structural evidence is present.
 _POSITIVE_INDICATORS: list[dict[str, Any]] = [
     {
-        "signal": "Guardrail nodes present — output safety checks are in place",
+        "signal": "Guardrails present — output filtering reduces risk of harmful or malformed agent outputs",
         "detect": lambda g: any(
             n.get("structural", n).get("node_type") == "guardrail"
             for n in g.get("nodes", {}).values()
         ),
     },
     {
-        "signal": "Observability hooks detected — structured logging or tracing edges exist",
+        "signal": "Human checkpoint configured — human-in-the-loop prevents fully autonomous irreversible actions",
+        "detect": lambda g: any(
+            n.get("structural", n).get("node_type") in ("human_checkpoint", "approval_gate")
+            or "human" in n.get("structural", n).get("name", "").lower()
+            for n in g.get("nodes", {}).values()
+        ) or g.get("structural_metrics", {}).get("has_human_checkpoint", 0) == 1,
+    },
+    {
+        "signal": "Observability sinks present — agent behavior is being logged for monitoring",
         "detect": lambda g: (
-            "no_observability_hooks" not in set(g.get("taxonomy_preconditions", []))
-            and any(
+            any(
                 n.get("structural", n).get("node_type") in ("observability", "logger", "tracer")
                 for n in g.get("nodes", {}).values()
             )
-        ) or (
-            # Check for observability-related edges even without dedicated nodes
-            any(
-                e.get("structural", e).get("edge_type") in ("logs_to", "traces_to", "monitors")
+            or any(
+                e.get("structural", e).get("edge_type") in ("logs_to", "traces_to", "monitors", "feeds_into")
                 for e in g.get("edges", {}).values()
             )
         ),
     },
     {
-        "signal": "Human checkpoints present — delegation chains include approval gates",
-        "detect": lambda g: any(
-            n.get("structural", n).get("node_type") in ("human_checkpoint", "approval_gate")
+        "signal": "Shallow delegation chain — delegation depth ≤2 limits cascading failure risk",
+        "detect": lambda g: _delegation_depth(g) <= 2,
+    },
+    {
+        "signal": "No shared mutable state — agents use isolated data stores, eliminating write contention",
+        "detect": lambda g: _shared_state_writer_count(g) == 0,
+    },
+    {
+        "signal": "Single-framework architecture — consistent error handling and lifecycle management",
+        "detect": lambda g: len(set(
+            n.get("structural", n).get("framework", "")
             for n in g.get("nodes", {}).values()
-        ),
+            if n.get("structural", n).get("node_type") == "agent"
+        ) - {""}) <= 1,
     },
     {
-        "signal": "Error handling strategy defined — agents have explicit error handling configured",
-        "detect": lambda g: any(
-            (n.get("structural", n).get("error_handling") or n.get("error_handling"))
-            for n in g.get("nodes", {}).values()
-        ),
+        "signal": "All external calls guarded — external service dependencies have error boundaries",
+        "detect": _all_externals_have_error_boundary,
     },
     {
-        "signal": "Write arbitration present — shared data stores have arbitration edges",
-        "detect": lambda g: any(
-            e.get("structural", e).get("edge_type") == "arbitrated_by"
-            for e in g.get("edges", {}).values()
-        ),
-    },
-    {
-        "signal": "Circuit breakers configured — external calls have circuit-breaker protection",
-        "detect": lambda g: (
-            "no_circuit_breaker" not in set(g.get("taxonomy_preconditions", []))
-        ),
-    },
-    {
-        "signal": "Retry strategy configured — transient failures will be retried automatically",
-        "detect": lambda g: (
-            "missing_retry_strategy" not in set(g.get("taxonomy_preconditions", []))
-        ),
-    },
-    {
-        "signal": "Rate limiting in place — agents cannot overwhelm downstream services",
-        "detect": lambda g: (
-            "no_rate_limiting" not in set(g.get("taxonomy_preconditions", []))
-        ),
+        "signal": "Low topology complexity — simple graph structure reduces emergent interaction risk",
+        "detect": lambda g: len(g.get("edges", {})) <= 2 * len(g.get("nodes", {})),
     },
 ]
+
+
+# ---------------------------------------------------------------------------
+# Semantic risk scoring (Issue 16)
+# ---------------------------------------------------------------------------
+
+def _compute_semantic_risk(structural_graph: dict) -> dict[str, Any]:
+    """Compute semantic cascade risk from structural graph and semantic lineage."""
+    semantic = structural_graph.get("semantic_lineage", {})
+
+    unvalidated = semantic.get("unvalidated_fraction", 1.0)
+    chain_depth = semantic.get("semantic_chain_depth", 0)
+    max_blast = semantic.get("max_blast_radius", 0)
+    class_count = semantic.get("classification_injection_count", 0)
+
+    score = (
+        unvalidated * 30
+        + min(chain_depth / 5.0, 1.0) * 25
+        + min(max_blast / 4.0, 1.0) * 20
+        + min(class_count / 3.0, 1.0) * 25
+    )
+
+    det = semantic.get("semantic_determinism", {})
+    nondet = [
+        n for n, m in det.items()
+        if not m.get("semantically_deterministic", True)
+    ]
+
+    return {
+        "semantic_risk_score": round(score, 1),
+        "unvalidated_handoff_fraction": unvalidated,
+        "semantic_chain_depth": chain_depth,
+        "max_blast_radius": max_blast,
+        "classification_injection_points": class_count,
+        "nondeterministic_nodes": nondet,
+        "verdict": _semantic_verdict(score, chain_depth, class_count),
+    }
+
+
+def _semantic_verdict(score: float, depth: int, class_count: int) -> str:
+    """Generate a human-readable verdict for semantic risk."""
+    if score >= 60 and class_count > 0:
+        return (
+            f"HIGH SEMANTIC RISK: Classification decisions propagate through "
+            f"{depth}-deep agent chain with no validation. A single "
+            f"misclassification cascades unchecked to the final output."
+        )
+    elif score >= 40:
+        return (
+            "MODERATE SEMANTIC RISK: Unvalidated handoffs where upstream "
+            "output becomes downstream context without checking."
+        )
+    elif score >= 20:
+        return "LOW SEMANTIC RISK: Some unvalidated handoffs but limited chain depth."
+    else:
+        return "MINIMAL SEMANTIC RISK: Handoffs are validated or chain is shallow."
 
 
 # ---------------------------------------------------------------------------
@@ -348,6 +477,13 @@ def _classify_archetype(fingerprint: dict) -> tuple[str, float]:
             elif isinstance(m, dict):
                 motif_names.add(m.get("motif_name", ""))
 
+    # Combined motif rules (checked first)
+    if "linear_delegation_chain" in motif_names and "shared_state_without_arbitration" in motif_names:
+        return ("hierarchical_delegation", 0.0)
+    if "hub_and_spoke" in motif_names and "shared_state_without_arbitration" in motif_names:
+        return ("hub_and_spoke_shared_state", 0.0)
+
+    # Single motif rules
     if "hub_and_spoke" in motif_names:
         return ("hub_and_spoke", 0.0)
     if "linear_delegation_chain" in motif_names:
@@ -617,8 +753,12 @@ def predict_risks(
     else:
         kb_fingerprints: list[dict[str, Any]] = _raw_fps
 
-    # Classify archetype
-    archetype, _ = _classify_archetype(structural_graph)
+    # Compute fingerprint for archetype classification
+    from stratum_lab.query.fingerprint import compute_graph_fingerprint
+    customer_fp = compute_graph_fingerprint(structural_graph)
+
+    # Classify archetype using the fingerprint (which has motifs)
+    archetype, _ = _classify_archetype(customer_fp)
     archetype_prevalence = _compute_archetype_prevalence(archetype, kb_fingerprints)
 
     # Detect positive signals
@@ -745,11 +885,14 @@ def predict_risks(
         taxonomy_probs, patterns, taxonomy_preconditions,
     )
 
+    # Semantic risk analysis
+    semantic_analysis = _compute_semantic_risk(structural_graph)
+
     # Sort predicted risks by manifestation probability descending
     predicted_risks.sort(key=lambda r: r.manifestation_probability, reverse=True)
 
     return RiskPrediction(
-        graph_fingerprint=structural_graph,
+        graph_fingerprint=customer_fp,
         archetype=archetype,
         archetype_prevalence=archetype_prevalence,
         overall_risk_score=overall_risk_score,
@@ -758,4 +901,5 @@ def predict_risks(
         positive_signals=positive_signals,
         framework_comparison=framework_comparison,
         dataset_coverage=dataset_coverage,
+        semantic_analysis=semantic_analysis,
     )

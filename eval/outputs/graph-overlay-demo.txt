@@ -15,7 +15,7 @@
   "p50": 350.0,
   "p95": 800.0,
   "p99": 800.0,
-  "variance": 64999.93,
+  "variance": 64999.99,
   "sample_count": 9
 }
   error_behavior   : {
@@ -43,8 +43,8 @@
   "avg_iterations": 1.0
 }
   determinism      : {
-  "same_input_activation_consistency": null,
-  "same_input_path_consistency": null,
+  "same_input_activation_consistency": 1.0,
+  "same_input_path_consistency": 1.0,
   "cross_input_variance": 0.0
 }
 
@@ -61,7 +61,7 @@
   "p50": 375.0,
   "p95": 600.0,
   "p99": 600.0,
-  "variance": 50625.03,
+  "variance": 50624.97,
   "sample_count": 6
 }
   error_behavior   : {
@@ -89,8 +89,8 @@
   "avg_iterations": 1.0
 }
   determinism      : {
-  "same_input_activation_consistency": null,
-  "same_input_path_consistency": null,
+  "same_input_activation_consistency": 1.0,
+  "same_input_path_consistency": 1.0,
   "cross_input_variance": 0.0
 }
 
@@ -107,7 +107,7 @@
   "p50": 280.0,
   "p95": 400.0,
   "p99": 400.0,
-  "variance": 9012.28,
+  "variance": 9012.24,
   "sample_count": 7
 }
   error_behavior   : {
@@ -133,9 +133,9 @@
   "avg_iterations": 1.0
 }
   determinism      : {
-  "same_input_activation_consistency": null,
-  "same_input_path_consistency": null,
-  "cross_input_variance": 0.1414
+  "same_input_activation_consistency": 1.0,
+  "same_input_path_consistency": 0.0,
+  "cross_input_variance": 0.0769
 }
 
 --- cap_web_search_tool (WebSearch) ---
@@ -151,7 +151,7 @@
   "p50": 200.0,
   "p95": 200.0,
   "p99": 200.0,
-  "variance": 1200.01,
+  "variance": 1200.0,
   "sample_count": 4
 }
   error_behavior   : {
@@ -177,9 +177,9 @@
   "avg_iterations": 0.0
 }
   determinism      : {
-  "same_input_activation_consistency": null,
-  "same_input_path_consistency": null,
-  "cross_input_variance": 0.202
+  "same_input_activation_consistency": 1.0,
+  "same_input_path_consistency": 0.0,
+  "cross_input_variance": 0.1111
 }
 
 --- cap_file_writer_tool (FileWriter) ---
@@ -221,8 +221,8 @@
   "avg_iterations": 0.0
 }
   determinism      : {
-  "same_input_activation_consistency": null,
-  "same_input_path_consistency": null,
+  "same_input_activation_consistency": 1.0,
+  "same_input_path_consistency": 1.0,
   "cross_input_variance": 0.0
 }
 
@@ -265,8 +265,8 @@
   "avg_iterations": 0.0
 }
   determinism      : {
-  "same_input_activation_consistency": null,
-  "same_input_path_consistency": null,
+  "same_input_activation_consistency": 1.0,
+  "same_input_path_consistency": 1.0,
   "cross_input_variance": 0.0
 }
 
@@ -309,8 +309,8 @@
   "avg_iterations": 0.0
 }
   determinism      : {
-  "same_input_activation_consistency": null,
-  "same_input_path_consistency": null,
+  "same_input_activation_consistency": 1.0,
+  "same_input_path_consistency": 1.0,
   "cross_input_variance": 0.0
 }
 
@@ -353,8 +353,8 @@
   "avg_iterations": 0.0
 }
   determinism      : {
-  "same_input_activation_consistency": null,
-  "same_input_path_consistency": null,
+  "same_input_activation_consistency": 1.0,
+  "same_input_path_consistency": 1.0,
   "cross_input_variance": 0.0
 }
 
@@ -397,8 +397,8 @@
   "avg_iterations": 0.0
 }
   determinism      : {
-  "same_input_activation_consistency": null,
-  "same_input_path_consistency": null,
+  "same_input_activation_consistency": 1.0,
+  "same_input_path_consistency": 1.0,
   "cross_input_variance": 0.0
 }
 
@@ -441,8 +441,8 @@
   "avg_iterations": 0.0
 }
   determinism      : {
-  "same_input_activation_consistency": null,
-  "same_input_path_consistency": null,
+  "same_input_activation_consistency": 1.0,
+  "same_input_path_consistency": 1.0,
   "cross_input_variance": 0.0
 }
 
@@ -493,8 +493,8 @@
   "false_positive_indicators": 0
 }
   determinism      : {
-  "same_input_activation_consistency": null,
-  "same_input_path_consistency": null,
+  "same_input_activation_consistency": 1.0,
+  "same_input_path_consistency": 1.0,
   "cross_input_variance": 0.0
 }
 
@@ -749,6 +749,64 @@
   ds_shared_memory                errors=  0  prediction_match=None
   ext_web_api                     errors=  0  prediction_match=None
   guard_output                    errors=  0  prediction_match=None
+
+================================================================================
+(g) CASCADE ANALYSIS
+================================================================================
+  max_cascade_depth:      1
+  avg_cascade_depth:      0.50
+  cascading_failure_rate: 0.50
+
+  Origin: agent_researcher
+    origin_errors:          1
+    max_depth:              0
+    affected_downstream:    0
+
+  Origin: agent_writer
+    origin_errors:          2
+    max_depth:              0
+    affected_downstream:    0
+
+================================================================================
+(h) SEMANTIC LINEAGE
+================================================================================
+  handoff_count:                 6
+  unvalidated_fraction:          1.00
+  semantic_chain_depth:          2
+  max_blast_radius:              2
+  classification_injection_count:0
+
+  Handoff: agent_researcher -> agent_writer
+    content_hash: res_out_000...
+    validated:    False
+
+  Handoff: agent_researcher -> agent_writer
+    content_hash: res_out_001...
+    validated:    False
+
+  Handoff: agent_researcher -> agent_writer
+    content_hash: res_out_002...
+    validated:    False
+
+  Handoff: agent_writer -> agent_reviewer
+    content_hash: wrt_out_000...
+    validated:    False
+
+  Handoff: agent_writer -> agent_reviewer
+    content_hash: wrt_out_001...
+    validated:    False
+
+================================================================================
+(i) SEMANTIC FLOW ON EDGES
+================================================================================
+  e1: agent_researcher -> agent_writer
+    content_hashes: 3
+    validated:      False
+    has_classification_dependency: False
+  e2: agent_writer -> agent_reviewer
+    content_hashes: 3
+    validated:      False
+    has_classification_dependency: False
 
 ================================================================================
 UNMAPPED EVENTS

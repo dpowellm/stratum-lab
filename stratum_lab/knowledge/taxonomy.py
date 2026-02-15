@@ -53,6 +53,8 @@ TAXONOMY_PRECONDITIONS = [
     "missing_retry_strategy",
     "no_dead_letter_queue",
     "no_circuit_breaker",
+    "unvalidated_semantic_chain",
+    "classification_without_validation",
 ]
 
 
@@ -181,6 +183,18 @@ def compute_manifestation_probabilities(
         else:
             severity_label = "none"
 
+        # Relative risk: P(failure|precondition) / P(failure|no precondition)
+        repos_without_precondition = [
+            rd for rd in repo_data
+            if precondition_id not in rd["preconditions"]
+        ]
+        n_without = len(repos_without_precondition)
+        failures_without = sum(
+            1 for rd in repos_without_precondition if rd["had_runtime_failures"]
+        )
+        control_failure_rate = failures_without / max(n_without, 1)
+        relative_risk = probability / max(control_failure_rate, 0.01)
+
         results[precondition_id] = {
             "probability": round(probability, 4),
             "confidence_interval": [round(ci_low, 4), round(ci_high, 4)],
@@ -191,6 +205,9 @@ def compute_manifestation_probabilities(
                 "avg_errors": round(avg_severity, 2),
                 "severity_label": severity_label,
             },
+            "relative_risk": round(relative_risk, 2),
+            "control_failure_rate": round(control_failure_rate, 4),
+            "control_sample_size": n_without,
         }
 
     return results
@@ -357,6 +374,20 @@ def compute_structural_metric_correlations(
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
+def compute_severity_score(
+    avg_errors: float,
+    cascade_depth: int,
+    nodes_affected: int,
+    total_nodes: int,
+) -> float:
+    """0-100 severity score combining error volume, cascade depth, and blast radius."""
+    error_volume = min(avg_errors / 50.0, 1.0)
+    depth_factor = min(cascade_depth / 5.0, 1.0)
+    blast_radius = nodes_affected / max(total_nodes, 1)
+    score = error_volume * 30 + depth_factor * 40 + blast_radius * 30
+    return round(score, 1)
+
 
 def _wilson_ci(
     successes: int,

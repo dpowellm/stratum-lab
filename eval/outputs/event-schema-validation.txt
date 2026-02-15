@@ -1,6 +1,6 @@
 ========================================================================
   STRATUM EVENT SCHEMA VALIDATION
-  Events file: C:\Users\dpowe\AppData\Local\Temp\stratum_schema_test_nrk5_0z7.jsonl
+  Events file: C:\Users\dpowe\AppData\Local\Temp\stratum_schema_test_do2g3aaf.jsonl
   Total events emitted: 21
 ========================================================================
 

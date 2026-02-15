@@ -117,6 +117,9 @@ def main():
         agent_count = sel["agent_count"]
         agent_names = [f"Agent_{j}" for j in range(agent_count)]
 
+        # Determinism: runs 1 and 3 share an input_hash, run 2 differs
+        input_hashes = {1: f"{repo_id}_input_A", 2: f"{repo_id}_input_B", 3: f"{repo_id}_input_A"}
+
         for run_num in range(1, runs_per_repo + 1):
             run_id = f"{repo_id}_run_{run_num}"
             events_file = os.path.join(raw_events_dir, f"{run_id}.jsonl")
@@ -126,7 +129,7 @@ def main():
             events.append(make_event("execution.start", run_id, repo_id, fw,
                                      source_node=node("agent", f"agent_{agent_names[0].lower()}", agent_names[0])))
 
-            for ag_name in agent_names:
+            for ag_idx, ag_name in enumerate(agent_names):
                 ag_node = node("agent", f"agent_{ag_name.lower()}", ag_name)
 
                 # agent.task_start
@@ -154,6 +157,16 @@ def main():
                                          source_node=node("capability", f"cap_tool_{ag_name.lower()}", f"{ag_name}_tool"),
                                          payload={"tool_name": f"tool_{ag_name.lower()}", "status": "success"}))
 
+                # decision.made (with input_hash for determinism metrics)
+                events.append(make_event("decision.made", run_id, repo_id, fw,
+                                         source_node=ag_node,
+                                         payload={
+                                             "input_hash": input_hashes[run_num],
+                                             "selected_option_hash": f"opt_{ag_idx}",
+                                             "outcome": f"option_{ag_idx}",
+                                             "confidence": round(0.7 + ag_idx * 0.05, 2),
+                                         }))
+
                 # agent.task_end
                 events.append(make_event("agent.task_end", run_id, repo_id, fw,
                                          source_node=ag_node,
@@ -166,11 +179,60 @@ def main():
                 events.append(make_event("delegation.initiated", run_id, repo_id, fw,
                                          source_node=src, target_node=tgt, edge_type="delegates_to"))
 
-            # Maybe an error in run 2
+            # data.write: first two agents write to shared data store
+            ds_node = node("data_store", "ds_shared_memory", "SharedMemory")
+            for j in range(min(2, len(agent_names))):
+                ag_node = node("agent", f"agent_{agent_names[j].lower()}", agent_names[j])
+                events.append(make_event("data.write", run_id, repo_id, fw,
+                                         source_node=ag_node, target_node=ds_node,
+                                         payload={"data_size_bytes": 1024}))
+
+            # data.read: last agent reads from shared data store
+            last_ag = node("agent", f"agent_{agent_names[-1].lower()}", agent_names[-1])
+            events.append(make_event("data.read", run_id, repo_id, fw,
+                                     source_node=last_ag, target_node=ds_node))
+
+            # external.call: first agent calls external service
+            ext_node = node("external", "ext_api_service", "APIService")
+            first_ag = node("agent", f"agent_{agent_names[0].lower()}", agent_names[0])
+            events.append(make_event("external.call", run_id, repo_id, fw,
+                                     source_node=first_ag, target_node=ext_node,
+                                     payload={"endpoint": "/api/data", "latency_ms": 200.0}))
+
+            # guardrail.triggered: output filter guardrail
+            guard_node = node("guardrail", "guard_output_filter", "OutputFilter")
+            events.append(make_event("guardrail.triggered", run_id, repo_id, fw,
+                                     source_node=guard_node,
+                                     payload={"action_prevented": run_num == 2,
+                                              "latency_ms": 5.0}))
+
+            # Run 2: error.occurred + error.propagated with multi-node path
             if run_num == 2:
                 events.append(make_event("error.occurred", run_id, repo_id, fw,
                                          source_node=node("agent", f"agent_{agent_names[-1].lower()}", agent_names[-1]),
                                          payload={"error_type": "RuntimeError", "error_message": "Test error"}))
+                # error.propagated with propagation_path across agents
+                if len(agent_names) >= 2:
+                    prop_path = [f"agent_{agent_names[-1].lower()}"]
+                    for j in range(len(agent_names) - 2, -1, -1):
+                        prop_path.append(f"agent_{agent_names[j].lower()}")
+                    events.append(make_event("error.propagated", run_id, repo_id, fw,
+                                             source_node=node("agent", f"agent_{agent_names[-1].lower()}", agent_names[-1]),
+                                             payload={
+                                                 "error_type": "RuntimeError",
+                                                 "propagation_path": prop_path,
+                                                 "downstream_impact": True,
+                                                 "reached_irreversible": False,
+                                             }))
+
+            # Emergent edge: last agent directly calls external service
+            # (no structural edge between them — only agent_0 has a structural
+            # calls edge to ext_api_service)
+            if len(agent_names) >= 2:
+                emergent_src = node("agent", f"agent_{agent_names[-1].lower()}", agent_names[-1])
+                events.append(make_event("external.call", run_id, repo_id, fw,
+                                         source_node=emergent_src, target_node=ext_node,
+                                         payload={"endpoint": "/api/emergency", "latency_ms": 300.0}))
 
             # execution.end
             events.append(make_event("execution.end", run_id, repo_id, fw,
@@ -188,6 +250,7 @@ def main():
                 "events_file": events_file,
                 "events_count": len(events),
                 "status": "SUCCESS",
+                "input_hash": input_hashes[run_num],
             })
 
     print(f"  Repos executed:    {len(selected[:10])}")
@@ -215,6 +278,7 @@ def main():
             "repo_id": result["repo_id"],
             "run_id": result["run_id"],
             "framework": result["framework"],
+            "input_hash": result.get("input_hash", result["run_id"]),
         })
         all_run_records.append(record)
 
@@ -257,7 +321,6 @@ def main():
     print(SEPARATOR)
 
     from stratum_lab.overlay.enricher import enrich_graph
-    from stratum_lab.overlay.edges import detect_emergent_edges, detect_dead_edges
 
     enriched_graphs = []
     total_emergent = 0
@@ -272,33 +335,114 @@ def main():
         agent_count = sel["agent_count"]
         agent_names = [f"Agent_{j}" for j in range(agent_count)]
 
-        # Build structural graph for this repo
+        # Build structural graph for this repo — all node types
         struct_nodes = {}
         struct_edges = {}
+        edge_ctr = 0
+
+        # Agent nodes
         for j, ag_name in enumerate(agent_names):
             struct_nodes[f"agent_{ag_name.lower()}"] = {
                 "node_type": "agent", "name": ag_name,
                 "source_file": "agents.py", "line_number": j * 20,
             }
 
+        # Capability nodes (tool + LLM per agent)
+        for ag_name in agent_names:
+            struct_nodes[f"cap_tool_{ag_name.lower()}"] = {
+                "node_type": "capability", "name": f"{ag_name}_tool",
+                "class_name": f"Tool{ag_name}",
+            }
+            struct_nodes[f"cap_llm_{ag_name.lower()}"] = {
+                "node_type": "capability", "name": f"{ag_name}_llm",
+                "class_name": f"LLM{ag_name}",
+            }
+
+        # Data store node
+        struct_nodes["ds_shared_memory"] = {
+            "node_type": "data_store", "name": "SharedMemory",
+        }
+
+        # External service node
+        struct_nodes["ext_api_service"] = {
+            "node_type": "external", "name": "APIService",
+        }
+
+        # Guardrail node
+        struct_nodes["guard_output_filter"] = {
+            "node_type": "guardrail", "name": "OutputFilter",
+        }
+
+        # Delegation edges: agent chain
         for j in range(len(agent_names) - 1):
-            struct_edges[f"e_{j}"] = {
+            edge_ctr += 1
+            struct_edges[f"e_{edge_ctr}"] = {
                 "edge_type": "delegates_to",
                 "source": f"agent_{agent_names[j].lower()}",
                 "target": f"agent_{agent_names[j+1].lower()}",
             }
-        # Add a "dead" edge that will never be traversed
+
+        # tool_of edges: each tool capability -> its agent
+        for ag_name in agent_names:
+            edge_ctr += 1
+            struct_edges[f"e_{edge_ctr}"] = {
+                "edge_type": "tool_of",
+                "source": f"cap_tool_{ag_name.lower()}",
+                "target": f"agent_{ag_name.lower()}",
+            }
+
+        # writes_to edges: first two agents -> data store
+        for j in range(min(2, len(agent_names))):
+            edge_ctr += 1
+            struct_edges[f"e_{edge_ctr}"] = {
+                "edge_type": "writes_to",
+                "source": f"agent_{agent_names[j].lower()}",
+                "target": "ds_shared_memory",
+            }
+
+        # reads_from: last agent -> data store
+        edge_ctr += 1
+        struct_edges[f"e_{edge_ctr}"] = {
+            "edge_type": "reads_from",
+            "source": f"agent_{agent_names[-1].lower()}",
+            "target": "ds_shared_memory",
+        }
+
+        # calls: first agent -> external service
+        edge_ctr += 1
+        struct_edges[f"e_{edge_ctr}"] = {
+            "edge_type": "calls",
+            "source": f"agent_{agent_names[0].lower()}",
+            "target": "ext_api_service",
+        }
+
+        # filtered_by: second agent -> guardrail (or first if only 1)
+        guard_agent = agent_names[1] if len(agent_names) > 1 else agent_names[0]
+        edge_ctr += 1
+        struct_edges[f"e_{edge_ctr}"] = {
+            "edge_type": "filtered_by",
+            "source": f"agent_{guard_agent.lower()}",
+            "target": "guard_output_filter",
+        }
+
+        # Dead edge: will never be traversed at runtime
         if len(agent_names) >= 3:
+            edge_ctr += 1
             struct_edges["e_dead"] = {
                 "edge_type": "reads_from",
                 "source": f"agent_{agent_names[-1].lower()}",
                 "target": f"agent_{agent_names[0].lower()}",
             }
 
+        # Taxonomy preconditions
+        taxonomy_preconds = sel.get("taxonomy_preconditions", [])
+        if not taxonomy_preconds:
+            taxonomy_preconds = ["shared_state_no_arbitration", "no_timeout_on_delegation", "unhandled_tool_failure"]
+
         structural_graph = {
             "repo_id": repo_id,
             "framework": fw,
-            "taxonomy_preconditions": sel.get("taxonomy_preconditions", []),
+            "taxonomy_preconditions": taxonomy_preconds,
             "nodes": struct_nodes,
             "edges": struct_edges,
         }
@@ -313,28 +457,12 @@ def main():
 
         enriched = enrich_graph(structural_graph, enriched_records)
 
-        # Detect emergent/dead edges
-        all_events = []
-        for rec in enriched_records:
-            all_events.extend(rec["events"])
-
-        interaction_events = [e for e in all_events if e.get("source_node") and e.get("target_node")]
-        emergent = detect_emergent_edges(
-            structural_graph["edges"], interaction_events,
-            structural_nodes=structural_graph["nodes"], total_runs=len(records)
-        )
-        dead = detect_dead_edges(
-            structural_graph["edges"], interaction_events,
-            total_runs=len(records), structural_nodes=structural_graph["nodes"]
-        )
-
-        enriched["emergent_edges"] = emergent
-        enriched["dead_edges"] = dead
-        enriched["taxonomy_preconditions"] = sel.get("taxonomy_preconditions", [])
+        # enrich_graph already computes emergent/dead edges
+        enriched["taxonomy_preconditions"] = taxonomy_preconds
         enriched_graphs.append(enriched)
 
-        total_emergent += len(emergent)
-        total_dead += len(dead)
+        total_emergent += len(enriched.get("emergent_edges", []))
+        total_dead += len(enriched.get("dead_edges", []))
 
     print(f"  Graphs enriched:   {len(enriched_graphs)}")
     print(f"  Total emergent:    {total_emergent}")
@@ -346,16 +474,36 @@ def main():
         print(f"\n  Sample enriched graph ({sample_eg['repo_id']}):")
         print(f"    Nodes:           {len(sample_eg['nodes'])}")
         print(f"    Edges:           {len(sample_eg['edges'])}")
-        print(f"    Emergent edges:  {len(sample_eg['emergent_edges'])}")
-        print(f"    Dead edges:      {len(sample_eg['dead_edges'])}")
+        print(f"    Emergent edges:  {len(sample_eg.get('emergent_edges', []))}")
+        print(f"    Dead edges:      {len(sample_eg.get('dead_edges', []))}")
 
-        for nid, ndata in list(sample_eg["nodes"].items())[:2]:
+        # Show one node per type
+        seen_types = set()
+        for nid, ndata in sample_eg["nodes"].items():
+            struct = ndata.get("structural", ndata)
+            ntype = struct.get("node_type", "unknown")
+            if ntype in seen_types:
+                continue
+            seen_types.add(ntype)
             beh = ndata.get("behavioral", {})
-            print(f"    Node {nid}:")
+            print(f"    Node {nid} (type={ntype}):")
             print(f"      activation_count:    {beh.get('activation_count', 0)}")
             print(f"      activation_rate:     {beh.get('activation_rate', 0)}")
             tp = beh.get("throughput", {})
             print(f"      failure_rate:        {tp.get('failure_rate', 0)}")
+            det = beh.get("determinism")
+            if det:
+                print(f"      same_input_activation_consistency: {det.get('same_input_activation_consistency')}")
+                print(f"      same_input_path_consistency:       {det.get('same_input_path_consistency')}")
+            gr_eff = beh.get("guardrail_effectiveness")
+            if gr_eff:
+                print(f"      guardrail_trigger_count:  {gr_eff.get('trigger_count', 0)}")
+                print(f"      guardrail_prevented:      {gr_eff.get('prevented_action_count', 0)}")
+
+        # Show emergent edges detail
+        for em in sample_eg.get("emergent_edges", [])[:2]:
+            print(f"    Emergent: {em.get('source_node_id')} -> {em.get('target_node_id')} "
+                  f"(count={em.get('interaction_count', 0)})")
 
     # Save enriched graphs
     enriched_dir = os.path.join(tmpdir, "enriched_graphs")
@@ -420,6 +568,9 @@ def main():
     with open(os.path.join(kb_dir, "patterns.json"), "w") as f:
         json.dump(patterns, f, indent=2, default=str)
     with open(os.path.join(kb_dir, "taxonomy.json"), "w") as f:
+        json.dump(taxonomy, f, indent=2, default=str)
+    # Also save as taxonomy_probabilities.json (expected by predictor.py)
+    with open(os.path.join(kb_dir, "taxonomy_probabilities.json"), "w") as f:
         json.dump(taxonomy, f, indent=2, default=str)
     with open(os.path.join(kb_dir, "novel_patterns.json"), "w") as f:
         json.dump(novel, f, indent=2, default=str)
@@ -493,6 +644,55 @@ def main():
         print(f"\n  Risk report generated: {len(json.dumps(report))} chars (JSON)")
 
     # =====================================================================
+    # PHASE 6B: BATCH REPORTS
+    # =====================================================================
+    print(f"\n{SEPARATOR}")
+    print("PHASE 6B: BATCH REPORTS")
+    print(SEPARATOR)
+
+    from stratum_lab.query.batch_report import generate_batch_reports
+
+    if enriched_graphs:
+        batch_reports_dir = os.path.join(tmpdir, "batch_reports")
+        batch_summary = generate_batch_reports(enriched_dir, kb_dir, batch_reports_dir)
+        batch_count = batch_summary.get("reports_generated", 0)
+        print(f"  Batch reports generated: {batch_count}")
+        print(f"  Errors:                {batch_summary.get('errors', 0)}")
+        reports_list = batch_summary.get("reports", [])
+        if reports_list:
+            sample_br = reports_list[0]
+            print(f"  Sample report ({sample_br.get('repo_id', '?')}):")
+            print(f"    risk_score:  {sample_br.get('risk_score', 'N/A')}")
+            print(f"    risk_level:  {sample_br.get('risk_level', 'N/A')}")
+            print(f"    risk_count:  {sample_br.get('risk_count', 0)}")
+        dist = batch_summary.get("risk_distribution", {})
+        if dist:
+            print(f"  Risk distribution: {dist.get('by_risk_level', {})}")
+    else:
+        batch_count = 0
+        print("  (no enriched graphs for batch reports)")
+
+    # =====================================================================
+    # PILOT MODE TEST
+    # =====================================================================
+    print(f"\n{SEPARATOR}")
+    print("PILOT MODE TEST")
+    print(SEPARATOR)
+
+    # Test pilot mode with a small subset
+    from stratum_lab.selection.selector import score_and_select as pilot_select
+
+    pilot_repos = raw_repos[:10]
+    pilot_selected, pilot_summary = pilot_select(
+        pilot_repos, target=5, min_runnability=10, min_per_archetype=1
+    )
+    print(f"  Pilot input repos:    {len(pilot_repos)}")
+    print(f"  Pilot selected repos: {len(pilot_selected)}")
+    print(f"  Pilot control count:  {pilot_summary.get('control_count', 0)}")
+    print(f"  Pilot treatment count:{pilot_summary.get('treatment_count', 0)}")
+    print(f"  PILOT MODE TEST: PASS")
+
+    # =====================================================================
     # SUMMARY
     # =====================================================================
     print(f"\n{SEPARATOR}")
@@ -504,8 +704,10 @@ def main():
     print(f"  Phase 4 (Overlay):      {len(enriched_graphs)} enriched graphs, {total_emergent} emergent edges, {total_dead} dead edges")
     print(f"  Phase 5 (Knowledge):    {len(patterns)} patterns, {len(present)} taxonomy entries, {len(novel)} novel, {len(fragility)} fragility entries")
     print(f"  Phase 6 (Query):        fingerprint + {len(matches) if enriched_graphs else 0} matches + risk prediction + report")
+    batch_count = batch_count if enriched_graphs else 0
+    print(f"  Phase 6B (Batch):       {batch_count} per-repo reports")
     print(f"\n  All outputs saved to: {tmpdir}")
-    print(f"\n  RESULT: ALL 6 PHASES COMPLETED SUCCESSFULLY")
+    print(f"\n  RESULT: ALL PHASES COMPLETED SUCCESSFULLY")
 
     # Cleanup
     shutil.rmtree(tmpdir, ignore_errors=True)

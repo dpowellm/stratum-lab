@@ -13,6 +13,7 @@ from typing import Any
 import numpy as np
 
 from stratum_lab.overlay.edges import detect_dead_edges, detect_emergent_edges
+from stratum_lab.overlay.semantic_lineage import reconstruct_lineage
 from stratum_lab.node_ids import (
     match_runtime_to_structural,
     normalize_name,
@@ -611,6 +612,39 @@ def enrich_graph(
                 continue  # accounted for as emergent
         truly_unmapped_edge_events.append(ev)
 
+    # ---- Cascade analysis (Issue 3) ----
+    cascade_analysis = _compute_cascade_metrics(enriched_nodes, enriched_edges, structural_graph)
+
+    # ---- Semantic lineage (Issue 15) ----
+    # Resolve event node_ids to structural IDs for lineage matching
+    resolved_events = _resolve_event_node_ids(all_events, structural_nodes)
+    semantic = reconstruct_lineage(resolved_events, structural_graph)
+    semantic_lineage = {
+        "handoffs": semantic["handoffs"],
+        "total_handoffs": semantic["total_handoffs"],
+        "unvalidated_count": semantic["unvalidated_count"],
+        "unvalidated_fraction": semantic["unvalidated_fraction"],
+        "semantic_chain_depth": semantic["semantic_chain_depth"],
+        "max_blast_radius": semantic["max_blast_radius"],
+        "classification_injection_count": semantic["classification_injection_count"],
+        "semantic_determinism": semantic["semantic_determinism"],
+    }
+
+    # Fill per-edge semantic_flow
+    for handoff in semantic["handoffs"]:
+        edge_key = _find_edge(handoff["source_node"], handoff["target_node"], structural_edges)
+        if edge_key and edge_key in enriched_edges:
+            edge_beh = enriched_edges[edge_key].get("behavioral", {})
+            if "semantic_flow" not in edge_beh:
+                edge_beh["semantic_flow"] = {
+                    "content_hashes": [],
+                    "validated": handoff["validated"],
+                    "has_classification_dependency": False,
+                }
+            edge_beh["semantic_flow"]["content_hashes"].append(handoff["content_hash"])
+            if handoff["has_classification_dependency"]:
+                edge_beh["semantic_flow"]["has_classification_dependency"] = True
+
     return {
         "repo_id": repo_id,
         "framework": framework,
@@ -619,6 +653,8 @@ def enrich_graph(
         "edges": enriched_edges,
         "execution_paths": execution_paths,
         "path_analysis": path_analysis,
+        "cascade_analysis": cascade_analysis,
+        "semantic_lineage": semantic_lineage,
         "emergent_edges": emergent_edges,
         "dead_edges": dead_edges,
         "unmapped_events": {
@@ -850,6 +886,29 @@ def _match_event_to_nodes(
                 matched.append(nid)
 
     return matched
+
+
+def _resolve_event_node_ids(
+    events: list[dict[str, Any]],
+    structural_nodes: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Create copies of events with source/target node_id resolved to structural IDs.
+
+    This is needed for semantic lineage reconstruction which matches on node_id.
+    """
+    resolved = []
+    for ev in events:
+        ev_copy = dict(ev)
+        for key in ("source_node", "target_node"):
+            node_ref = ev.get(key)
+            if node_ref:
+                ref_copy = dict(node_ref)
+                resolved_id = _match_node_ref(ref_copy, structural_nodes)
+                if resolved_id:
+                    ref_copy["node_id"] = resolved_id
+                ev_copy[key] = ref_copy
+        resolved.append(ev_copy)
+    return resolved
 
 
 def _match_node_ref(
@@ -1381,6 +1440,83 @@ def _compute_failure_impacts(
             "avg_recovery_time_ms": avg_recovery_time,
             "silent_degradation_count": silent_degradation,
         }
+
+
+# ---------------------------------------------------------------------------
+# Cascade analysis (Issue 3)
+# ---------------------------------------------------------------------------
+
+def _compute_cascade_metrics(
+    enriched_nodes: dict[str, dict[str, Any]],
+    enriched_edges: dict[str, dict[str, Any]],
+    structural_graph: dict[str, Any],
+) -> dict[str, Any]:
+    """For each node that experienced errors, trace downstream impact via BFS."""
+    structural_edges = structural_graph.get("edges", {})
+    cascades: list[dict[str, Any]] = []
+
+    for node_id, node_data in enriched_nodes.items():
+        error_beh = node_data.get("behavioral", {}).get("error_behavior", {})
+        if error_beh.get("errors_occurred", 0) == 0:
+            continue
+
+        # BFS from this node following structural edges
+        visited: set[str] = set()
+        queue: list[tuple[str, int]] = [(node_id, 0)]
+        affected_downstream: list[dict[str, Any]] = []
+
+        while queue:
+            current, depth = queue.pop(0)
+            if current in visited:
+                continue
+            visited.add(current)
+
+            # Check if downstream node also experienced errors
+            if current != node_id:
+                downstream = enriched_nodes.get(current, {})
+                ds_errors = downstream.get("behavioral", {}).get(
+                    "error_behavior", {}
+                ).get("errors_occurred", 0)
+                if ds_errors > 0:
+                    affected_downstream.append({
+                        "node_id": current,
+                        "depth": depth,
+                        "error_count": ds_errors,
+                    })
+
+            # Traverse outgoing structural edges
+            for _eid, edge_data in structural_edges.items():
+                source = edge_data.get("source", "")
+                target = edge_data.get("target", "")
+                if source == current and target not in visited:
+                    queue.append((target, depth + 1))
+
+        cascades.append({
+            "origin_node": node_id,
+            "origin_errors": error_beh.get("errors_occurred", 0),
+            "cascade_depth": max((d["depth"] for d in affected_downstream), default=0),
+            "nodes_affected": len(affected_downstream),
+            "total_downstream_errors": sum(
+                d["error_count"] for d in affected_downstream
+            ),
+            "affected_nodes": affected_downstream,
+        })
+
+    return {
+        "cascades": cascades,
+        "max_cascade_depth": max(
+            (c["cascade_depth"] for c in cascades), default=0
+        ),
+        "avg_cascade_depth": (
+            sum(c["cascade_depth"] for c in cascades) / len(cascades)
+            if cascades
+            else 0
+        ),
+        "cascading_failure_rate": (
+            len([c for c in cascades if c["cascade_depth"] > 0])
+            / max(len(cascades), 1)
+        ),
+    }
 
 
 # ---------------------------------------------------------------------------

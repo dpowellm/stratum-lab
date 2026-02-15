@@ -203,42 +203,46 @@ def _motif_name(m: Any) -> str:
 
 
 # Simple rule-based archetype classifier.  These correspond to the common
-# multi-agent topology families observed in the dataset.
+# multi-agent topology families observed in the dataset.  Combined-motif
+# rules are checked first so that a graph with *both* a delegation chain
+# and shared state isn't classified by whichever single-motif rule happens
+# to fire first.
 _ARCHETYPE_RULES: list[dict[str, Any]] = [
+    # --- Combined motif rules (checked first) ---
+    {
+        "name": "hierarchical_delegation",
+        "detect": lambda fp: (
+            _fp_has_motif(fp, "linear_delegation_chain")
+            and _fp_has_motif(fp, "shared_state_without_arbitration")
+        ),
+    },
+    {
+        "name": "hub_and_spoke_shared_state",
+        "detect": lambda fp: (
+            _fp_has_motif(fp, "hub_and_spoke")
+            and _fp_has_motif(fp, "shared_state_without_arbitration")
+        ),
+    },
+    # --- Single motif rules ---
     {
         "name": "hub_and_spoke",
-        "detect": lambda fp: any(
-            _motif_name(m) == "hub_and_spoke"
-            for m in fp.get("motifs", [])
-        ),
+        "detect": lambda fp: _fp_has_motif(fp, "hub_and_spoke"),
     },
     {
         "name": "linear_pipeline",
-        "detect": lambda fp: any(
-            _motif_name(m) == "linear_delegation_chain"
-            for m in fp.get("motifs", [])
-        ),
+        "detect": lambda fp: _fp_has_motif(fp, "linear_delegation_chain"),
     },
     {
         "name": "feedback_loop_system",
-        "detect": lambda fp: any(
-            _motif_name(m) == "feedback_loop"
-            for m in fp.get("motifs", [])
-        ),
+        "detect": lambda fp: _fp_has_motif(fp, "feedback_loop"),
     },
     {
         "name": "shared_state_system",
-        "detect": lambda fp: any(
-            _motif_name(m) == "shared_state_without_arbitration"
-            for m in fp.get("motifs", [])
-        ),
+        "detect": lambda fp: _fp_has_motif(fp, "shared_state_without_arbitration"),
     },
     {
         "name": "trust_boundary_system",
-        "detect": lambda fp: any(
-            _motif_name(m) == "trust_boundary_crossing"
-            for m in fp.get("motifs", [])
-        ),
+        "detect": lambda fp: _fp_has_motif(fp, "trust_boundary_crossing"),
     },
     {
         "name": "simple_agent",
@@ -252,14 +256,56 @@ _ARCHETYPE_RULES: list[dict[str, Any]] = [
 ]
 
 
-def _classify_archetype(fingerprint: dict) -> str:
-    """Return the archetype name for a fingerprint, or ``"generic"``."""
+def _fp_has_motif(fingerprint: dict, motif_name: str) -> bool:
+    """Check whether a fingerprint contains the given motif."""
+    for m in fingerprint.get("motifs", []):
+        if _motif_name(m) == motif_name:
+            return True
+    return False
+
+
+def _classify_archetype(
+    fingerprint: dict,
+    kb_fingerprints: list[dict[str, Any]] | None = None,
+    normalization: dict[str, Any] | None = None,
+) -> str:
+    """Return the archetype name for a fingerprint.
+
+    Tries rule-based classification first, then nearest-neighbor fallback
+    using KB fingerprints (if provided).  Only falls back to ``"generic"``
+    when no KB repo has similarity > 0.5.
+    """
+    # 1. Rule-based classification
     for rule in _ARCHETYPE_RULES:
         try:
             if rule["detect"](fingerprint):
                 return rule["name"]
         except Exception:
             continue
+
+    # 2. Nearest-neighbor fallback using KB fingerprints
+    if kb_fingerprints:
+        query_vec = _extract_feature_vector(fingerprint)
+        query_norm = _normalize_vector(query_vec, normalization)
+        best_sim = 0.0
+        best_archetype = "generic"
+        for kb_fp in kb_fingerprints:
+            kb_vec = _extract_feature_vector(kb_fp)
+            kb_norm = _normalize_vector(kb_vec, normalization)
+            sim = cosine_similarity(query_norm, kb_norm)
+            if sim > best_sim:
+                best_sim = sim
+                # Classify the KB fingerprint itself to get its archetype
+                for rule in _ARCHETYPE_RULES:
+                    try:
+                        if rule["detect"](kb_fp):
+                            best_archetype = rule["name"]
+                            break
+                    except Exception:
+                        continue
+        if best_sim > 0.5 and best_archetype != "generic":
+            return best_archetype
+
     return "generic"
 
 
@@ -382,9 +428,10 @@ def _archetype_matches(
     fingerprint: dict,
     patterns: list[dict[str, Any]],
     kb_fingerprints: list[dict[str, Any]],
+    normalization: dict[str, Any] | None = None,
 ) -> list[Match]:
     """Match fingerprint to patterns sharing the same archetype."""
-    query_archetype = _classify_archetype(fingerprint)
+    query_archetype = _classify_archetype(fingerprint, kb_fingerprints, normalization)
 
     if query_archetype == "generic":
         return []
@@ -528,7 +575,7 @@ def match_against_dataset(
 
     # Strategy 3: archetype match
     all_matches.extend(
-        _archetype_matches(fingerprint, patterns, kb_fingerprints)
+        _archetype_matches(fingerprint, patterns, kb_fingerprints, normalization)
     )
 
     # Enrich matches with fragility flags where applicable

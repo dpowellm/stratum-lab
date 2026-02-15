@@ -252,6 +252,27 @@ def main() -> None:
     print()
 
     # -----------------------------------------------------------------
+    # Control group breakdown
+    # -----------------------------------------------------------------
+    print("  CONTROL GROUP BREAKDOWN")
+    print("  " + "-" * 60)
+    control_count = summary.get("control_count", 0)
+    treatment_count = summary.get("treatment_count", 0)
+    print(f"  control:   {control_count}")
+    print(f"  treatment: {treatment_count}")
+    control_repos = [r for r in selected if r.get("group") == "control"]
+    treatment_repos = [r for r in selected if r.get("group") != "control"]
+    print(f"  control repos (tagged):   {len(control_repos)}")
+    print(f"  treatment repos (tagged): {len(treatment_repos)}")
+    if control_repos:
+        avg_prec = sum(len(r.get("taxonomy_preconditions", [])) for r in control_repos) / len(control_repos)
+        print(f"  avg preconditions (control):   {avg_prec:.1f}")
+    if treatment_repos:
+        avg_prec_t = sum(len(r.get("taxonomy_preconditions", [])) for r in treatment_repos) / len(treatment_repos)
+        print(f"  avg preconditions (treatment): {avg_prec_t:.1f}")
+    print()
+
+    # -----------------------------------------------------------------
     # Summary stats
     # -----------------------------------------------------------------
     print("  SUMMARY STATISTICS")

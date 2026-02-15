@@ -121,11 +121,15 @@ def _build_report_dict(
         ),
     }
 
+    # Semantic analysis
+    semantic_analysis = getattr(prediction, "semantic_analysis", {}) or {}
+
     return {
         "executive_summary": executive_summary,
         "risk_details": risk_details,
         "structural_only_risks": prediction.structural_only_risks,
         "architecture_analysis": architecture_analysis,
+        "semantic_analysis": semantic_analysis,
         "benchmark_comparison": benchmark,
         "dataset_coverage": prediction.dataset_coverage,
         "methodology": methodology,
@@ -199,6 +203,25 @@ def _render_markdown(report: dict[str, Any]) -> str:
         lines.append(f"- {nt}: {count}")
     lines.append("")
 
+    # Semantic analysis
+    sem = report.get("semantic_analysis", {})
+    if sem:
+        lines.append("## Semantic Cascade Analysis")
+        lines.append("")
+        lines.append(f"- **Semantic Risk Score:** {sem.get('semantic_risk_score', 0):.1f} / 100")
+        lines.append(f"- **Unvalidated Handoff Fraction:** {sem.get('unvalidated_handoff_fraction', 0):.0%}")
+        lines.append(f"- **Semantic Chain Depth:** {sem.get('semantic_chain_depth', 0)}")
+        lines.append(f"- **Max Blast Radius:** {sem.get('max_blast_radius', 0)}")
+        lines.append(f"- **Classification Injection Points:** {sem.get('classification_injection_points', 0)}")
+        nondet = sem.get("nondeterministic_nodes", [])
+        if nondet:
+            lines.append(f"- **Non-deterministic Nodes:** {', '.join(nondet)}")
+        verdict = sem.get("verdict", "")
+        if verdict:
+            lines.append("")
+            lines.append(f"> {verdict}")
+        lines.append("")
+
     # Benchmark
     bench = report["benchmark_comparison"]
     lines.append("## Benchmark Comparison")
@@ -209,11 +232,20 @@ def _render_markdown(report: dict[str, Any]) -> str:
     if bench.get("framework_comparison"):
         lines.append("**Framework-specific data:**")
         lines.append("")
-        for fw, data in bench["framework_comparison"].items():
-            if isinstance(data, dict):
-                fr = data.get("failure_rate", "N/A")
-                lines.append(f"- {fw}: failure rate = {fr}")
-        lines.append("")
+        for motif, comparison in bench["framework_comparison"].items():
+            if not isinstance(comparison, dict):
+                continue
+            per_fw = comparison.get("per_framework", {})
+            if per_fw:
+                lines.append(f"**{motif}:**")
+                for fw_name, fw_data in per_fw.items():
+                    rate = fw_data.get("failure_rate", 0)
+                    count = fw_data.get("repos_count", 0)
+                    lines.append(f"- {fw_name}: {rate:.0%} failure rate (n={count})")
+                lines.append("")
+            else:
+                lines.append(f"- {motif}: no framework-specific data available")
+                lines.append("")
 
     # Methodology
     meth = report["methodology"]

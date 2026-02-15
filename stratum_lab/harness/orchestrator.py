@@ -7,8 +7,11 @@ CSVs for downstream pipeline phases.
 
 from __future__ import annotations
 
+import asyncio
 import csv
 import json
+import logging
+import threading
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -26,6 +29,40 @@ from rich.progress import (
     TimeElapsedColumn,
     TimeRemainingColumn,
 )
+
+logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Latency tracker for adaptive backpressure
+# ---------------------------------------------------------------------------
+
+class LatencyTracker:
+    """Track rolling average inference latency for adaptive backpressure."""
+
+    def __init__(self, window_seconds: int = 60) -> None:
+        self.window = window_seconds
+        self.samples: list[tuple[float, float]] = []  # (timestamp, latency_ms)
+        self._lock = threading.Lock()
+
+    def record(self, latency_ms: float) -> None:
+        """Record a latency sample."""
+        with self._lock:
+            self.samples.append((time.time(), latency_ms))
+            self._prune()
+
+    def avg_last_window(self) -> float:
+        """Return average latency over the last window_seconds."""
+        with self._lock:
+            self._prune()
+            if not self.samples:
+                return 0.0
+            return sum(s[1] for s in self.samples) / len(self.samples)
+
+    def _prune(self) -> None:
+        """Remove samples older than the window."""
+        cutoff = time.time() - self.window
+        self.samples = [(t, l) for t, l in self.samples if t > cutoff]
 
 from stratum_lab.config import (
     DEFAULT_CONCURRENT_CONTAINERS,
@@ -65,6 +102,9 @@ class Orchestrator:
         Per-execution timeout in seconds.
     runs_per_repo:
         Total runs per repo (3 diverse + 2 repeat by default).
+    max_concurrent:
+        Maximum concurrent container executions (semaphore limit).
+        Defaults to *concurrent* if not specified.
     """
 
     def __init__(
@@ -75,13 +115,21 @@ class Orchestrator:
         concurrent: int = DEFAULT_CONCURRENT_CONTAINERS,
         timeout: int = DEFAULT_EXECUTION_TIMEOUT_SECONDS,
         runs_per_repo: int = DEFAULT_RUNS_PER_REPO,
+        max_concurrent: int | None = None,
     ) -> None:
         self.selection_file = Path(selection_file)
         self.output_dir = Path(output_dir)
         self.vllm_url = vllm_url
         self.concurrent = concurrent
+        self.max_concurrent = max_concurrent if max_concurrent is not None else concurrent
         self.timeout = timeout
         self.runs_per_repo = runs_per_repo
+
+        # Concurrency control
+        self._semaphore = threading.Semaphore(self.max_concurrent)
+        self.active_count = 0
+        self._active_lock = threading.Lock()
+        self.latency_tracker = LatencyTracker()
 
         # Loaded at run-time
         self._selections: list[dict[str, Any]] = []
@@ -212,45 +260,67 @@ class Orchestrator:
     ) -> RunResult:
         """Execute a single run for a repo.
 
-        1. Calls ``container.run_container()``
-        2. Classifies the result status
-        3. Saves the events file to output_dir
-        4. Returns the ``RunResult``
+        1. Acquires semaphore to limit concurrency
+        2. Applies adaptive backpressure if vLLM is overloaded
+        3. Calls ``container.run_container()``
+        4. Classifies the result status
+        5. Saves the events file to output_dir
+        6. Returns the ``RunResult``
         """
-        repo_id = repo_selection.get("repo_id", "unknown")
-        repo_url = repo_selection.get("repo_url", "")
-        framework = repo_selection.get("framework", "unknown")
-        entry_point = repo_selection.get("detected_entry_point", "main.py")
-        run_id = run_id or f"{repo_id}_run_{run_number}_{uuid.uuid4().hex[:8]}"
+        # Adaptive backpressure: if average latency > 30s, sleep before proceeding
+        avg_latency = self.latency_tracker.avg_last_window()
+        if avg_latency > 30_000:  # 30s in ms
+            logger.warning(
+                f"vLLM overloaded (avg {avg_latency:.0f}ms). "
+                f"Applying backpressure before next launch."
+            )
+            time.sleep(min(avg_latency / 1000.0, 30.0))
 
-        result = run_container(
-            repo_url=repo_url,
-            entry_point=entry_point,
-            run_id=run_id,
-            repo_id=repo_id,
-            framework=framework,
-            input_data=input_data,
-            timeout=self.timeout,
-            vllm_url=self.vllm_url,
-        )
+        self._semaphore.acquire()
+        with self._active_lock:
+            self.active_count += 1
+        try:
+            repo_id = repo_selection.get("repo_id", "unknown")
+            repo_url = repo_selection.get("repo_url", "")
+            framework = repo_selection.get("framework", "unknown")
+            entry_point = repo_selection.get("detected_entry_point", "main.py")
+            run_id = run_id or f"{repo_id}_run_{run_number}_{uuid.uuid4().hex[:8]}"
 
-        # Refine status classification
-        result.status = self.classify_status(result)
+            t0 = time.perf_counter()
+            result = run_container(
+                repo_url=repo_url,
+                entry_point=entry_point,
+                run_id=run_id,
+                repo_id=repo_id,
+                framework=framework,
+                input_data=input_data,
+                timeout=self.timeout,
+                vllm_url=self.vllm_url,
+            )
+            latency_ms = (time.perf_counter() - t0) * 1000.0
+            self.latency_tracker.record(latency_ms)
 
-        # Copy events file to canonical output location
-        if result.events_file_path:
-            dest = self.output_dir / f"{repo_id}_run_{run_number}.jsonl"
-            try:
-                src = Path(result.events_file_path)
-                if src.exists():
-                    dest.parent.mkdir(parents=True, exist_ok=True)
-                    import shutil
-                    shutil.copy2(str(src), str(dest))
-                    result.events_file_path = str(dest)
-            except Exception:
-                pass
+            # Refine status classification
+            result.status = self.classify_status(result)
 
-        return result
+            # Copy events file to canonical output location
+            if result.events_file_path:
+                dest = self.output_dir / f"{repo_id}_run_{run_number}.jsonl"
+                try:
+                    src = Path(result.events_file_path)
+                    if src.exists():
+                        dest.parent.mkdir(parents=True, exist_ok=True)
+                        import shutil
+                        shutil.copy2(str(src), str(dest))
+                        result.events_file_path = str(dest)
+                except Exception:
+                    pass
+
+            return result
+        finally:
+            with self._active_lock:
+                self.active_count -= 1
+            self._semaphore.release()
 
     # ------------------------------------------------------------------
     # Status classification

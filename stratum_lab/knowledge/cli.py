@@ -22,6 +22,7 @@ from stratum_lab.knowledge.patterns import (
     compare_frameworks,
     detect_novel_patterns,
 )
+from stratum_lab.knowledge.interactions import compute_interaction_matrix
 from stratum_lab.knowledge.taxonomy import (
     TAXONOMY_PRECONDITIONS,
     compute_manifestation_probabilities,
@@ -280,7 +281,25 @@ def run_knowledge_build(enriched_dir: str, output_dir: str) -> None:
     _write_json(fragility_map, output_path / "fragility_map.json")
     console.print(f"  Mapped [bold]{len(fragility_map)}[/bold] fragility entries")
 
-    # 7. Compute and store graph fingerprints for similarity search
+    # 7. Cross-pattern interaction analysis
+    console.print("\n[bold]Computing cross-pattern interactions...[/bold]")
+    interactions = compute_interaction_matrix(enriched_graphs)
+    _write_json(interactions, output_path / "interactions.json")
+    interaction_list = interactions.get("interactions", [])
+    synergistic = interactions.get("synergistic_pairs", [])
+    console.print(
+        f"  Interaction pairs analyzed: [bold]{len(interaction_list)}[/bold]"
+    )
+    console.print(
+        f"  Synergistic (>1.5x) pairs: [bold]{len(synergistic)}[/bold]"
+    )
+    if interactions.get("most_dangerous_combination"):
+        combo = interactions["most_dangerous_combination"]
+        console.print(
+            f"  Most dangerous: {combo['precondition_a']} + {combo['precondition_b']}"
+        )
+
+    # 8. Compute and store graph fingerprints for similarity search
     console.print("\n[bold]Computing graph fingerprints...[/bold]")
     try:
         from stratum_lab.query.fingerprint import (
@@ -319,5 +338,5 @@ def run_knowledge_build(enriched_dir: str, output_dir: str) -> None:
         f"  Files: patterns.json, taxonomy_probabilities.json, "
         f"structural_correlations.json, novel_patterns.json, "
         f"framework_comparisons.json, fragility_map.json, "
-        f"fingerprints.json, normalization.json"
+        f"interactions.json, fingerprints.json, normalization.json"
     )

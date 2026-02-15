@@ -17,6 +17,7 @@ from typing import Any, Iterator
 
 from stratum_patcher.event_logger import (
     EventLogger,
+    capture_output_signature,
     get_data_shape,
     hash_content,
     make_node,
@@ -286,6 +287,15 @@ def _wrap_add_node(original: Any) -> Any:
                         payload["error_type"] = type(error).__name__
                     if result is not None:
                         payload["output_shape"] = get_data_shape(result)
+                        try:
+                            _sig = capture_output_signature(result)
+                            payload["output_hash"] = _sig["hash"]
+                            payload["output_type"] = _sig["type"]
+                            payload["output_size_bytes"] = _sig["size_bytes"]
+                            payload["output_preview"] = _sig["preview"]
+                            payload["classification_fields"] = _sig["classification_fields"]
+                        except Exception:
+                            pass
                     logger.log_event(
                         "agent.task_end",
                         source_node=source,

@@ -7,36 +7,36 @@
   ----------------------------------------------------------------------------
   Repo ID      Framework    Archetype                    Struct   Rare   Run  Total
   ----------------------------------------------------------------------------
-  repo_0003    crewai       guardrail_gated_pipeline       63.0    6.0  25.0   94.0
   repo_0008    crewai       sequential_pipeline            57.0    6.0  27.0   90.0
+  repo_0003    crewai       guardrail_gated_pipeline       63.0    0.0  25.0   88.0
+  repo_0041    langgraph    market_auction                 46.5   18.0  23.0   87.5
   repo_0005    crewai       debate_consensus               53.0    6.0  27.0   86.0
+  repo_0002    autogen      single_agent_tool_use          51.0    6.0  27.0   84.0
   repo_0021    crewai       reflection_loop                51.5    0.0  30.0   81.5
   repo_0011    langgraph    hub_and_spoke_shared_state     52.5    0.0  28.0   80.5
   repo_0016    crewai       reflection_loop                50.5    0.0  30.0   80.5
   repo_0025    custom       human_in_the_loop              57.5    0.0  22.0   79.5
   repo_0028    langchain    hub_and_spoke_shared_state     51.5    0.0  28.0   79.5
-  repo_0036    langgraph    hierarchical_delegation        49.0    0.0  30.0   79.0
-  repo_0027    crewai       human_in_the_loop              51.5    0.0  27.0   78.5
 
   BOTTOM 10 REPOS BY SELECTION SCORE
   ----------------------------------------------------------------------------
   Repo ID      Framework    Archetype                    Struct   Rare   Run  Total
   ----------------------------------------------------------------------------
-  repo_0010    crewai       human_in_the_loop              44.5    0.0  28.0   72.5
   repo_0020    langgraph    human_in_the_loop              57.0    0.0  15.0   72.0
-  repo_0007    langchain    single_agent_tool_use          43.5    0.0  28.0   71.5
   repo_0043    crewai       hierarchical_delegation        44.0    0.0  27.0   71.0
+  repo_0032    crewai       guardrail_gated_pipeline       50.5    0.0  20.0   70.5
   repo_0014    crewai       human_in_the_loop              39.5    0.0  30.0   69.5
-  repo_0022    langgraph    single_agent_tool_use          48.5    0.0  21.0   69.5
   repo_0023    crewai       sequential_pipeline            48.5    6.0  15.0   69.5
-  repo_0018    langchain    reflection_loop                41.5    0.0  27.0   68.5
   repo_0047    crewai       supervisor_worker              24.0    6.0  30.0   60.0
   repo_0037    langgraph    parallel_fan_out               25.0    6.0  28.0   59.0
+  repo_0035    langchain    reflection_loop                34.0    0.0  20.0   54.0
+  repo_0009    crewai       guardrail_gated_pipeline       23.5    0.0  18.0   41.5
+  repo_0000    crewai       guardrail_gated_pipeline       12.0    0.0  27.0   39.0
 
   FRAMEWORK DISTRIBUTION
   --------------------------------------------------
-  crewai         15 ( 50.0%)  #########################
-  langgraph       7 ( 23.3%)  ###########
+  crewai         16 ( 53.3%)  ##########################
+  langgraph       6 ( 20.0%)  ##########
   langchain       4 ( 13.3%)  ######
   autogen         3 ( 10.0%)  #####
   custom          1 (  3.3%)  #
@@ -44,16 +44,16 @@
   ARCHETYPE DISTRIBUTION
   ------------------------------------------------------------
   human_in_the_loop                 6 ( 20.0%)  ##########
+  guardrail_gated_pipeline          4 ( 13.3%)  ######
   reflection_loop                   3 ( 10.0%)  #####
   hub_and_spoke_shared_state        3 ( 10.0%)  #####
   hierarchical_delegation           3 ( 10.0%)  #####
-  single_agent_tool_use             3 ( 10.0%)  #####
-  guardrail_gated_pipeline          2 (  6.7%)  ###
   sequential_pipeline               2 (  6.7%)  ###
   debate_consensus                  2 (  6.7%)  ###
+  single_agent_tool_use             2 (  6.7%)  ###
   parallel_fan_out                  2 (  6.7%)  ###
-  market_auction                    2 (  6.7%)  ###
   supervisor_worker                 2 (  6.7%)  ###
+  market_auction                    1 (  3.3%)  #
 
   CONSTRAINT VERIFICATION
   ------------------------------------------------------------
@@ -62,51 +62,59 @@
   [+] Min runnability score: 15.0 >= 10.0 (threshold)
   [+] Total selected: 30
 
+  CONTROL GROUP BREAKDOWN
+  ------------------------------------------------------------
+  control:   0
+  treatment: 0
+  control repos (tagged):   0
+  treatment repos (tagged): 30
+  avg preconditions (treatment): 5.7
+
   SUMMARY STATISTICS
   ------------------------------------------------------------
   total_scanned: 50
   total_eligible: 50
   total_selected: 30
   by_framework:
-    crewai: 15
-    langgraph: 7
+    crewai: 16
+    langgraph: 6
     langchain: 4
     autogen: 3
     custom: 1
   by_archetype:
     human_in_the_loop: 6
+    guardrail_gated_pipeline: 4
     reflection_loop: 3
     hub_and_spoke_shared_state: 3
     hierarchical_delegation: 3
-    single_agent_tool_use: 3
-    guardrail_gated_pipeline: 2
     sequential_pipeline: 2
     debate_consensus: 2
+    single_agent_tool_use: 2
     parallel_fan_out: 2
-    market_auction: 2
     supervisor_worker: 2
-  avg_structural_value: 47.6
-  avg_runnability_score: 25.57
-  avg_agent_count: 6.4
+    market_auction: 1
+  avg_structural_value: 45.57
+  avg_runnability_score: 25.2
+  avg_agent_count: 6.27
   total_taxonomy_preconditions_covered: 10
   frameworks_represented: 5
   archetypes_represented: 11
 
   SCORE DISTRIBUTION
   ------------------------------------------------------------
-  Mean selection score:  75.57
-  Min selection score:   59.00
-  Max selection score:   94.00
-  Std dev:               7.20
-  Avg structural value:  47.60
-  Avg archetype rarity:  2.40
-  Avg runnability:       25.57
+  Mean selection score:  73.37
+  Min selection score:   39.00
+  Max selection score:   90.00
+  Std dev:               12.00
+  Avg structural value:  45.57
+  Avg archetype rarity:  2.60
+  Avg runnability:       25.20
 
   COMPLEXITY DISTRIBUTION
   ----------------------------------------
-  high         18 ( 60.0%)
-  medium       11 ( 36.7%)
-  low           1 (  3.3%)
+  high         19 ( 63.3%)
+  medium        9 ( 30.0%)
+  low           2 (  6.7%)
 
   INDIVIDUAL SCORER FUNCTION CHECKS
   ------------------------------------------------------------

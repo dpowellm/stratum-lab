@@ -295,9 +295,9 @@ class TestNormalizeFeatureVector:
         raw_vector = fp["feature_vector"]
 
         # Build normalization constants that bracket the raw values
-        constants = {}
-        for i, val in enumerate(raw_vector):
-            constants[str(i)] = {"min": val - 1.0, "max": val + 1.0}
+        mins = [v - 1.0 for v in raw_vector]
+        maxs = [v + 1.0 for v in raw_vector]
+        constants = {"min": mins, "max": maxs}
 
         normalized = normalize_feature_vector(raw_vector, constants)
 
@@ -308,7 +308,7 @@ class TestNormalizeFeatureVector:
     def test_zero_range_maps_to_zero(self):
         """When min == max for a feature, the normalized value should be 0.0."""
         raw = [5.0] * 20
-        constants = {str(i): {"min": 5.0, "max": 5.0} for i in range(20)}
+        constants = {"min": [5.0] * 20, "max": [5.0] * 20}
 
         normalized = normalize_feature_vector(raw, constants)
 
@@ -318,7 +318,7 @@ class TestNormalizeFeatureVector:
     def test_exact_min_maps_to_zero(self):
         """A value equal to the minimum should normalize to 0.0."""
         raw = [0.0] * 20
-        constants = {str(i): {"min": 0.0, "max": 10.0} for i in range(20)}
+        constants = {"min": [0.0] * 20, "max": [10.0] * 20}
 
         normalized = normalize_feature_vector(raw, constants)
 
@@ -328,7 +328,7 @@ class TestNormalizeFeatureVector:
     def test_exact_max_maps_to_one(self):
         """A value equal to the maximum should normalize to 1.0."""
         raw = [10.0] * 20
-        constants = {str(i): {"min": 0.0, "max": 10.0} for i in range(20)}
+        constants = {"min": [0.0] * 20, "max": [10.0] * 20}
 
         normalized = normalize_feature_vector(raw, constants)
 
@@ -338,7 +338,7 @@ class TestNormalizeFeatureVector:
     def test_values_clamped_above_max(self):
         """Values above max should be clamped to 1.0."""
         raw = [20.0] * 20
-        constants = {str(i): {"min": 0.0, "max": 10.0} for i in range(20)}
+        constants = {"min": [0.0] * 20, "max": [10.0] * 20}
 
         normalized = normalize_feature_vector(raw, constants)
 
@@ -348,7 +348,7 @@ class TestNormalizeFeatureVector:
     def test_values_clamped_below_min(self):
         """Values below min should be clamped to 0.0."""
         raw = [-5.0] * 20
-        constants = {str(i): {"min": 0.0, "max": 10.0} for i in range(20)}
+        constants = {"min": [0.0] * 20, "max": [10.0] * 20}
 
         normalized = normalize_feature_vector(raw, constants)
 
@@ -372,13 +372,12 @@ class TestComputeNormalizationConstants:
 
         constants = compute_normalization_constants([fp1, fp2])
 
-        assert len(constants) == 20
-        for i in range(20):
-            key = str(i)
-            assert key in constants
-            assert "min" in constants[key]
-            assert "max" in constants[key]
-            assert constants[key]["min"] <= constants[key]["max"]
+        assert "min" in constants
+        assert "max" in constants
+        assert len(constants["min"]) == 20
+        assert len(constants["max"]) == 20
+        for lo, hi in zip(constants["min"], constants["max"]):
+            assert lo <= hi
 
     def test_single_fingerprint_min_equals_max(self, sample_structural_graph):
         """With only one fingerprint, min and max should be equal for every feature."""
@@ -386,14 +385,13 @@ class TestComputeNormalizationConstants:
 
         constants = compute_normalization_constants([fp])
 
-        for i in range(20):
-            key = str(i)
-            assert constants[key]["min"] == constants[key]["max"]
+        for lo, hi in zip(constants["min"], constants["max"]):
+            assert lo == hi
 
     def test_empty_list_returns_empty_dict(self):
-        """An empty list of fingerprints should return an empty dict."""
+        """An empty list of fingerprints should return empty min/max lists."""
         constants = compute_normalization_constants([])
-        assert constants == {}
+        assert constants == {"min": [], "max": []}
 
     def test_min_max_reflect_actual_extremes(self):
         """The min/max should reflect the actual minimum and maximum values
@@ -405,7 +403,7 @@ class TestComputeNormalizationConstants:
 
         constants = compute_normalization_constants([fp_low, fp_mid, fp_high])
 
-        for i in range(20):
-            key = str(i)
-            assert constants[key]["min"] == pytest.approx(0.0)
-            assert constants[key]["max"] == pytest.approx(10.0)
+        for lo in constants["min"]:
+            assert lo == pytest.approx(0.0)
+        for hi in constants["max"]:
+            assert hi == pytest.approx(10.0)

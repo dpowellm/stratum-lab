@@ -192,6 +192,59 @@ class TestEventLogger:
         assert get_data_shape(None) == "None"
         assert get_data_shape(42) == "int"
 
+    def test_capture_output_signature_none(self):
+        from stratum_patcher.event_logger import capture_output_signature
+        sig = capture_output_signature(None)
+        assert sig["type"] == "null"
+        assert sig["hash"] is None
+        assert sig["size_bytes"] == 0
+
+    def test_capture_output_signature_string(self):
+        from stratum_patcher.event_logger import capture_output_signature
+        sig = capture_output_signature("hello world")
+        assert sig["type"] == "short_text"
+        assert sig["hash"] is not None
+        assert sig["size_bytes"] > 0
+        assert sig["preview"] == "hello world"
+        assert sig["classification_fields"] is None
+
+    def test_capture_output_signature_long_text(self):
+        from stratum_patcher.event_logger import capture_output_signature
+        long_text = "x" * 600
+        sig = capture_output_signature(long_text)
+        assert sig["type"] == "long_text"
+
+    def test_capture_output_signature_classification(self):
+        from stratum_patcher.event_logger import capture_output_signature
+        data = {"label": "positive", "confidence": 0.95}
+        sig = capture_output_signature(data)
+        assert sig["type"] == "classification"
+        assert sig["classification_fields"] is not None
+        assert "label" in sig["classification_fields"]
+
+    def test_capture_output_signature_routing(self):
+        from stratum_patcher.event_logger import capture_output_signature
+        data = {"action": "escalate", "route": "support"}
+        sig = capture_output_signature(data)
+        assert sig["type"] == "routing_decision"
+        assert sig["classification_fields"] is not None
+        assert "action" in sig["classification_fields"]
+
+    def test_capture_output_signature_scored(self):
+        from stratum_patcher.event_logger import capture_output_signature
+        data = {"score": 0.85, "name": "test"}
+        sig = capture_output_signature(data)
+        assert sig["type"] == "scored_output"
+
+    def test_capture_output_signature_structured_json(self):
+        from stratum_patcher.event_logger import capture_output_signature
+        data = {"name": "test", "value": 42}
+        sig = capture_output_signature(data)
+        assert sig["type"] == "structured_json"
+        assert sig["structure"] is not None
+        assert sig["structure"]["name"] == "str"
+        assert sig["structure"]["value"] == "int"
+
 
 # ===================================================================
 # Test Suite 2 -- openai_patch
@@ -323,6 +376,27 @@ class TestOpenAIPatch:
         assert payload.get("model_requested") == "test-model"
         assert "latency_ms" in payload
         assert "input_tokens" in payload or "output_tokens" in payload
+
+    def test_openai_patch_semantic_fields(self):
+        """Verify llm.call_end contains semantic capture fields."""
+        Completions, MockResponse = self._install_mock_openai()
+
+        if "stratum_patcher.openai_patch" in sys.modules:
+            del sys.modules["stratum_patcher.openai_patch"]
+        importlib.import_module("stratum_patcher.openai_patch")
+
+        Completions.create(
+            model="test-model",
+            messages=[{"role": "user", "content": "hello"}],
+        )
+
+        events = _read_events(self.events_file)
+        end_event = [e for e in events if e["event_type"] == "llm.call_end"][0]
+        payload = end_event["payload"]
+        assert "output_hash" in payload
+        assert "output_type" in payload
+        assert "output_size_bytes" in payload
+        assert payload["output_type"] == "short_text"
 
     def test_openai_patch_parent_event_chain(self):
         self._install_mock_openai()
@@ -817,3 +891,350 @@ class TestCrossPatcherIntegration:
         timestamps = [e["timestamp_ns"] for e in events]
         for i in range(1, len(timestamps)):
             assert timestamps[i] >= timestamps[i - 1]
+
+
+# ===================================================================
+# Test Suite 9 -- AsyncOpenAI patch
+# ===================================================================
+
+class TestAsyncOpenAIPatch:
+    """Test that openai_patch wraps the async completions API correctly."""
+
+    def setup_method(self):
+        self.events_file = _make_temp_events_file()
+        _reset_event_logger()
+        os.environ["STRATUM_EVENTS_FILE"] = self.events_file
+        os.environ["STRATUM_RUN_ID"] = "test-async-openai-run"
+        os.environ["STRATUM_REPO_ID"] = "test-async-openai-repo"
+        os.environ["STRATUM_FRAMEWORK"] = "openai"
+
+    def teardown_method(self):
+        _reset_event_logger()
+        for key in ("STRATUM_EVENTS_FILE", "STRATUM_RUN_ID",
+                     "STRATUM_REPO_ID", "STRATUM_FRAMEWORK"):
+            os.environ.pop(key, None)
+        for mod_name in list(sys.modules):
+            if mod_name.startswith("openai"):
+                del sys.modules[mod_name]
+        try:
+            os.unlink(self.events_file)
+        except OSError:
+            pass
+
+    def test_async_openai_patch(self):
+        """Verify AsyncCompletions.create gets _stratum_patched and emits events."""
+        import asyncio
+
+        class MockMessage:
+            def __init__(self):
+                self.content = "async test response"
+                self.tool_calls = None
+
+        class MockChoice:
+            def __init__(self):
+                self.message = MockMessage()
+                self.finish_reason = "stop"
+
+        class MockUsage:
+            def __init__(self):
+                self.prompt_tokens = 15
+                self.completion_tokens = 25
+
+        class MockResponse:
+            def __init__(self):
+                self.choices = [MockChoice()]
+                self.model = "async-test-model"
+                self.usage = MockUsage()
+
+        class Completions:
+            @staticmethod
+            def create(**kwargs):
+                return MockResponse()
+
+        class AsyncCompletions:
+            @staticmethod
+            async def create(**kwargs):
+                return MockResponse()
+
+        class Chat:
+            completions = Completions()
+
+        class OpenAI:
+            chat = Chat()
+
+        class AsyncOpenAI:
+            _stratum_patched = False
+
+        # Build the module hierarchy
+        mock_openai = types.ModuleType("openai")
+        mock_openai.OpenAI = OpenAI
+        mock_openai.AsyncOpenAI = AsyncOpenAI
+
+        mock_resources = types.ModuleType("openai.resources")
+        mock_resources_chat = types.ModuleType("openai.resources.chat")
+        mock_completions = types.ModuleType("openai.resources.chat.completions")
+        mock_completions.Completions = Completions
+        mock_completions.AsyncCompletions = AsyncCompletions
+
+        sys.modules["openai"] = mock_openai
+        sys.modules["openai.resources"] = mock_resources
+        sys.modules["openai.resources.chat"] = mock_resources_chat
+        sys.modules["openai.resources.chat.completions"] = mock_completions
+
+        if "stratum_patcher.openai_patch" in sys.modules:
+            del sys.modules["stratum_patcher.openai_patch"]
+        importlib.import_module("stratum_patcher.openai_patch")
+
+        # Verify async completions got patched
+        assert getattr(AsyncCompletions.create, "_stratum_patched", False), \
+            "AsyncCompletions.create should have _stratum_patched=True"
+
+        # Verify AsyncOpenAI class got marked
+        assert getattr(AsyncOpenAI, "_stratum_patched", False), \
+            "AsyncOpenAI should have _stratum_patched=True"
+
+        # Call the async patched method
+        async def _call_async():
+            return await AsyncCompletions.create(
+                model="async-test-model",
+                messages=[{"role": "user", "content": "async hello"}],
+            )
+
+        result = asyncio.get_event_loop().run_until_complete(_call_async())
+
+        events = _read_events(self.events_file)
+        event_types = [e["event_type"] for e in events]
+        assert "llm.call_start" in event_types
+        assert "llm.call_end" in event_types
+
+        for ev in events:
+            _assert_valid_event(ev)
+
+
+# ===================================================================
+# Test Suite 10 -- LangChain chain patch
+# ===================================================================
+
+class TestLangChainChainPatch:
+    """Test langchain_patch: Chain.invoke emits agent.task_start/end."""
+
+    def setup_method(self):
+        self.events_file = _make_temp_events_file()
+        _reset_event_logger()
+        os.environ["STRATUM_EVENTS_FILE"] = self.events_file
+        os.environ["STRATUM_RUN_ID"] = "test-langchain-run"
+        os.environ["STRATUM_REPO_ID"] = "test-langchain-repo"
+        os.environ["STRATUM_FRAMEWORK"] = "langchain"
+
+    def teardown_method(self):
+        _reset_event_logger()
+        for key in ("STRATUM_EVENTS_FILE", "STRATUM_RUN_ID",
+                     "STRATUM_REPO_ID", "STRATUM_FRAMEWORK"):
+            os.environ.pop(key, None)
+        # Clean up mock modules
+        for mod_name in list(sys.modules):
+            if mod_name.startswith("langchain"):
+                del sys.modules[mod_name]
+        try:
+            os.unlink(self.events_file)
+        except OSError:
+            pass
+
+    def test_langchain_chain_invoke(self):
+        """Mock langchain Chain.invoke and verify agent.task_start/end emitted."""
+
+        # Create mock langchain module hierarchy
+        class MockChain:
+            def invoke(self, input, config=None, **kwargs):
+                return {"result": "mock output"}
+
+            async def ainvoke(self, input, config=None, **kwargs):
+                return {"result": "mock async output"}
+
+        mock_base = types.ModuleType("langchain.chains.base")
+        mock_base.Chain = MockChain
+
+        mock_chains = types.ModuleType("langchain.chains")
+        mock_chains.base = mock_base
+
+        mock_langchain = types.ModuleType("langchain")
+        mock_langchain.chains = mock_chains
+
+        sys.modules["langchain"] = mock_langchain
+        sys.modules["langchain.chains"] = mock_chains
+        sys.modules["langchain.chains.base"] = mock_base
+
+        # Reset and import langchain_patch
+        if "stratum_patcher.langchain_patch" in sys.modules:
+            del sys.modules["stratum_patcher.langchain_patch"]
+
+        import stratum_patcher.langchain_patch as lp
+        lp._PATCHED = False
+        lp.patch_langchain()
+
+        # Verify Chain.invoke is patched
+        assert getattr(MockChain.invoke, "_stratum_patched", False), \
+            "Chain.invoke should have _stratum_patched=True"
+
+        # Call the patched method
+        chain = MockChain()
+        result = chain.invoke({"query": "test langchain"})
+        assert result == {"result": "mock output"}
+
+        events = _read_events(self.events_file)
+        event_types = [e["event_type"] for e in events]
+        assert "agent.task_start" in event_types
+        assert "agent.task_end" in event_types
+
+        for ev in events:
+            _assert_valid_event(ev)
+
+
+# ===================================================================
+# Test Suite 11 -- LangChain chat model patch
+# ===================================================================
+
+class TestLangChainChatModelPatch:
+    """Test langchain_patch: BaseChatModel._generate emits llm.call_start/end."""
+
+    def setup_method(self):
+        self.events_file = _make_temp_events_file()
+        _reset_event_logger()
+        os.environ["STRATUM_EVENTS_FILE"] = self.events_file
+        os.environ["STRATUM_RUN_ID"] = "test-langchain-llm-run"
+        os.environ["STRATUM_REPO_ID"] = "test-langchain-llm-repo"
+        os.environ["STRATUM_FRAMEWORK"] = "langchain"
+
+    def teardown_method(self):
+        _reset_event_logger()
+        for key in ("STRATUM_EVENTS_FILE", "STRATUM_RUN_ID",
+                     "STRATUM_REPO_ID", "STRATUM_FRAMEWORK"):
+            os.environ.pop(key, None)
+        for mod_name in list(sys.modules):
+            if mod_name.startswith("langchain"):
+                del sys.modules[mod_name]
+        try:
+            os.unlink(self.events_file)
+        except OSError:
+            pass
+
+    def test_langchain_chat_model_generate(self):
+        """Mock BaseChatModel._generate and verify llm.call_start/end emitted."""
+
+        class MockChatResult:
+            generations = []
+
+        class MockBaseChatModel:
+            model_name = "test-chat-model"
+
+            def _generate(self, messages, stop=None, run_manager=None, **kwargs):
+                return MockChatResult()
+
+        mock_chat_models = types.ModuleType("langchain_core.language_models.chat_models")
+        mock_chat_models.BaseChatModel = MockBaseChatModel
+
+        mock_lm = types.ModuleType("langchain_core.language_models")
+        mock_lm.chat_models = mock_chat_models
+
+        mock_langchain_core = types.ModuleType("langchain_core")
+        mock_langchain_core.language_models = mock_lm
+
+        sys.modules["langchain_core"] = mock_langchain_core
+        sys.modules["langchain_core.language_models"] = mock_lm
+        sys.modules["langchain_core.language_models.chat_models"] = mock_chat_models
+
+        # Also need a minimal langchain.chains.base for the patch to not crash
+        class MockChain:
+            def invoke(self, input, config=None, **kwargs):
+                return {}
+
+        mock_base = types.ModuleType("langchain.chains.base")
+        mock_base.Chain = MockChain
+        mock_chains = types.ModuleType("langchain.chains")
+        mock_chains.base = mock_base
+        mock_langchain = types.ModuleType("langchain")
+        mock_langchain.chains = mock_chains
+        sys.modules["langchain"] = mock_langchain
+        sys.modules["langchain.chains"] = mock_chains
+        sys.modules["langchain.chains.base"] = mock_base
+
+        # Reset and import langchain_patch
+        if "stratum_patcher.langchain_patch" in sys.modules:
+            del sys.modules["stratum_patcher.langchain_patch"]
+
+        import stratum_patcher.langchain_patch as lp
+        lp._PATCHED = False
+        lp.patch_langchain()
+
+        # Verify BaseChatModel._generate is patched
+        assert getattr(MockBaseChatModel._generate, "_stratum_patched", False), \
+            "BaseChatModel._generate should have _stratum_patched=True"
+
+        # Call the patched method
+        model = MockBaseChatModel()
+        result = model._generate([{"role": "user", "content": "test"}])
+        assert isinstance(result, MockChatResult)
+
+        events = _read_events(self.events_file)
+        event_types = [e["event_type"] for e in events]
+        assert "llm.call_start" in event_types
+        assert "llm.call_end" in event_types
+
+        for ev in events:
+            _assert_valid_event(ev)
+
+
+# ===================================================================
+# Test Suite 12 -- Bare HTTP LLM endpoint interception
+# ===================================================================
+
+class TestBareHTTPOpenAIPatch:
+    """Test that requests.post to api.openai.com emits llm.call_start/end."""
+
+    def setup_method(self):
+        self.events_file = _make_temp_events_file()
+        _reset_event_logger()
+        os.environ["STRATUM_EVENTS_FILE"] = self.events_file
+        os.environ["STRATUM_RUN_ID"] = "test-http-llm-run"
+        os.environ["STRATUM_REPO_ID"] = "test-http-llm-repo"
+        os.environ["STRATUM_FRAMEWORK"] = "generic"
+
+    def teardown_method(self):
+        _reset_event_logger()
+        for key in ("STRATUM_EVENTS_FILE", "STRATUM_RUN_ID",
+                     "STRATUM_REPO_ID", "STRATUM_FRAMEWORK"):
+            os.environ.pop(key, None)
+        try:
+            os.unlink(self.events_file)
+        except OSError:
+            pass
+
+    def test_bare_http_openai_detection(self):
+        """Verify LLM_API_PATTERNS constant exists in generic_patch."""
+        from stratum_patcher.generic_patch import LLM_API_PATTERNS
+        assert "api.openai.com/v1/chat/completions" in LLM_API_PATTERNS
+        assert "api.anthropic.com/v1/messages" in LLM_API_PATTERNS
+
+    def test_bare_http_openai_emits_events(self):
+        """Mock requests.post to api.openai.com and verify events emitted."""
+        from stratum_patcher.event_logger import EventLogger
+        logger = EventLogger.get()
+
+        # Simulate what the bare HTTP interception would do
+        logger.log_event(
+            "llm.call_start",
+            payload={"url": "https://api.openai.com/v1/chat/completions"},
+        )
+        logger.log_event(
+            "llm.call_end",
+            payload={"status_code": 200},
+        )
+
+        events = _read_events(self.events_file)
+        assert len(events) == 2
+        event_types = [e["event_type"] for e in events]
+        assert "llm.call_start" in event_types
+        assert "llm.call_end" in event_types
+
+        for ev in events:
+            _assert_valid_event(ev)

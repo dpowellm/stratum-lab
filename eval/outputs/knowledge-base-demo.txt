@@ -3,118 +3,132 @@
 ================================================================================
 
   shared_state_no_arbitration:
-    probability          : 0.6667
-    confidence_interval  : [0.2077, 0.9385]
-    sample_size          : 3
-    manifested_count     : 2
-    severity             : {'avg_errors': 9.5, 'severity_label': 'medium'}
+    probability          : 0.5
+    confidence_interval  : [0.0945, 0.9055]
+    sample_size          : 2
+    manifested_count     : 1
+    severity             : {'avg_errors': 3.0, 'severity_label': 'low'}
 
   unbounded_delegation_depth:
-    probability          : 0.75
-    confidence_interval  : [0.3006, 0.9544]
-    sample_size          : 4
+    probability          : 0.375
+    confidence_interval  : [0.1368, 0.6943]
+    sample_size          : 8
     manifested_count     : 3
-    severity             : {'avg_errors': 10.33, 'severity_label': 'high'}
+    severity             : {'avg_errors': 9.67, 'severity_label': 'medium'}
 
   no_timeout_on_delegation:
-    probability          : 0.5
-    confidence_interval  : [0.2152, 0.7848]
+    probability          : 0.625
+    confidence_interval  : [0.3057, 0.8632]
     sample_size          : 8
-    manifested_count     : 4
-    severity             : {'avg_errors': 49.75, 'severity_label': 'high'}
+    manifested_count     : 5
+    severity             : {'avg_errors': 9.0, 'severity_label': 'medium'}
 
   no_output_validation:
     probability          : 0.75
     confidence_interval  : [0.3006, 0.9544]
     sample_size          : 4
     manifested_count     : 3
-    severity             : {'avg_errors': 6.0, 'severity_label': 'medium'}
+    severity             : {'avg_errors': 9.33, 'severity_label': 'medium'}
 
   single_point_of_failure:
-    probability          : 0.5
-    confidence_interval  : [0.0945, 0.9055]
-    sample_size          : 2
+    probability          : 0.2
+    confidence_interval  : [0.0362, 0.6245]
+    sample_size          : 5
     manifested_count     : 1
-    severity             : {'avg_errors': 8.0, 'severity_label': 'medium'}
+    severity             : {'avg_errors': 6.0, 'severity_label': 'medium'}
 
   implicit_ordering_dependency:
-    probability          : 0.4286
-    confidence_interval  : [0.1582, 0.7495]
-    sample_size          : 7
-    manifested_count     : 3
-    severity             : {'avg_errors': 10.33, 'severity_label': 'high'}
-
-  unhandled_tool_failure:
-    probability          : 0.5556
-    confidence_interval  : [0.2667, 0.8112]
-    sample_size          : 9
-    manifested_count     : 5
-    severity             : {'avg_errors': 42.8, 'severity_label': 'high'}
-
-  shared_tool_no_concurrency_control:
-    probability          : 0.75
-    confidence_interval  : [0.3006, 0.9544]
-    sample_size          : 4
-    manifested_count     : 3
-    severity             : {'avg_errors': 10.33, 'severity_label': 'high'}
-
-  no_fallback_for_external:
-    probability          : 0.4286
-    confidence_interval  : [0.1582, 0.7495]
-    sample_size          : 7
-    manifested_count     : 3
-    severity             : {'avg_errors': 7.0, 'severity_label': 'medium'}
-
-  circular_delegation:
-    probability          : 0.5
-    confidence_interval  : [0.2152, 0.7848]
-    sample_size          : 8
-    manifested_count     : 4
-    severity             : {'avg_errors': 8.0, 'severity_label': 'medium'}
-
-  no_rate_limiting:
     probability          : 0.5
     confidence_interval  : [0.15, 0.85]
     sample_size          : 4
     manifested_count     : 2
-    severity             : {'avg_errors': 10.0, 'severity_label': 'medium'}
+    severity             : {'avg_errors': 4.5, 'severity_label': 'medium'}
 
-  data_store_no_schema_enforcement:
-    probability          : 0.6667
-    confidence_interval  : [0.3542, 0.8794]
-    sample_size          : 9
-    manifested_count     : 6
-    severity             : {'avg_errors': 9.33, 'severity_label': 'medium'}
-
-  trust_boundary_no_sanitization:
+  unhandled_tool_failure:
     probability          : 0.2857
     confidence_interval  : [0.0822, 0.6411]
     sample_size          : 7
     manifested_count     : 2
-    severity             : {'avg_errors': 5.0, 'severity_label': 'medium'}
+    severity             : {'avg_errors': 92.0, 'severity_label': 'high'}
 
-  no_error_propagation_strategy:
-    probability          : 0.4
-    confidence_interval  : [0.1176, 0.7693]
+  shared_tool_no_concurrency_control:
+    probability          : 0.6
+    confidence_interval  : [0.2307, 0.8824]
     sample_size          : 5
-    manifested_count     : 2
-    severity             : {'avg_errors': 5.5, 'severity_label': 'medium'}
+    manifested_count     : 3
+    severity             : {'avg_errors': 7.67, 'severity_label': 'medium'}
 
-  capability_overlap_no_priority:
+  no_fallback_for_external:
+    probability          : 0.5
+    confidence_interval  : [0.1876, 0.8124]
+    sample_size          : 6
+    manifested_count     : 3
+    severity             : {'avg_errors': 63.0, 'severity_label': 'high'}
+
+  circular_delegation:
+    probability          : 0.25
+    confidence_interval  : [0.0456, 0.6994]
+    sample_size          : 4
+    manifested_count     : 1
+    severity             : {'avg_errors': 6.0, 'severity_label': 'medium'}
+
+  no_rate_limiting:
     probability          : 0.6667
     confidence_interval  : [0.2077, 0.9385]
     sample_size          : 3
     manifested_count     : 2
-    severity             : {'avg_errors': 14.0, 'severity_label': 'high'}
+    severity             : {'avg_errors': 5.5, 'severity_label': 'medium'}
 
-  Total preconditions with data: 15 / 32
+  data_store_no_schema_enforcement:
+    probability          : 0.0
+    confidence_interval  : [0.0, 0.6576]
+    sample_size          : 2
+    manifested_count     : 0
+    severity             : {'avg_errors': 0.0, 'severity_label': 'none'}
+
+  trust_boundary_no_sanitization:
+    probability          : 0.5
+    confidence_interval  : [0.15, 0.85]
+    sample_size          : 4
+    manifested_count     : 2
+    severity             : {'avg_errors': 7.5, 'severity_label': 'medium'}
+
+  no_error_propagation_strategy:
+    probability          : 0.5
+    confidence_interval  : [0.1876, 0.8124]
+    sample_size          : 6
+    manifested_count     : 3
+    severity             : {'avg_errors': 65.33, 'severity_label': 'high'}
+
+  capability_overlap_no_priority:
+    probability          : 0.8
+    confidence_interval  : [0.3755, 0.9638]
+    sample_size          : 5
+    manifested_count     : 4
+    severity             : {'avg_errors': 9.5, 'severity_label': 'medium'}
+
+  unvalidated_semantic_chain:
+    probability          : 1.0
+    confidence_interval  : [0.5101, 1.0]
+    sample_size          : 4
+    manifested_count     : 4
+    severity             : {'avg_errors': 9.5, 'severity_label': 'medium'}
+
+  classification_without_validation:
+    probability          : 0.5
+    confidence_interval  : [0.0945, 0.9055]
+    sample_size          : 2
+    manifested_count     : 1
+    severity             : {'avg_errors': 3.0, 'severity_label': 'low'}
+
+  Total preconditions with data: 17 / 34
 
 ================================================================================
 (b) NOVEL PATTERNS DETECTED
 ================================================================================
 
   repo_id                 : repo_099
-  anomaly_score           : 4.4439
+  anomaly_score           : 4.4515
   most_anomalous_dimension: avg_latency_p50
   behavioral_fingerprint  : {
     "avg_failure_rate": 0.85,
@@ -123,9 +137,9 @@
     "avg_decision_entropy": 0.0
 }
   z_scores                : {
-    "avg_failure_rate": 4.4426,
-    "avg_propagation_rate": 3.7652,
-    "avg_latency_p50": 4.4439,
+    "avg_failure_rate": 4.366,
+    "avg_propagation_rate": 3.2803,
+    "avg_latency_p50": 4.4515,
     "avg_decision_entropy": 0.0
 }
 
@@ -138,128 +152,128 @@
     crewai (5 repos):
       failure_rate         : 0.4
       confidence_interval  : [0.1176, 0.7693]
-      avg_error_rate       : 0.1597
-      avg_latency_p50_ms   : 981.17
+      avg_error_rate       : 0.1838
+      avg_latency_p50_ms   : 892.71
     langgraph (5 repos):
       failure_rate         : 0.2
       confidence_interval  : [0.0362, 0.6245]
-      avg_error_rate       : 0.4
-      avg_latency_p50_ms   : 962.72
+      avg_error_rate       : 0.0825
+      avg_latency_p50_ms   : 1148.17
     autogen (5 repos):
       failure_rate         : 0.4
       confidence_interval  : [0.1176, 0.7693]
-      avg_error_rate       : 0.2167
-      avg_latency_p50_ms   : 869.91
+      avg_error_rate       : 0.0833
+      avg_latency_p50_ms   : 1204.85
 
   Motif: hub_and_spoke
   Frameworks compared: ['autogen', 'crewai', 'langgraph']
     crewai (3 repos):
       failure_rate         : 1.0
       confidence_interval  : [0.4385, 1.0]
-      avg_error_rate       : 0.617
-      avg_latency_p50_ms   : 3839.82
+      avg_error_rate       : 0.5751
+      avg_latency_p50_ms   : 3836.84
     langgraph (2 repos):
       failure_rate         : 1.0
       confidence_interval  : [0.3424, 1.0]
-      avg_error_rate       : 0.101
-      avg_latency_p50_ms   : 924.39
+      avg_error_rate       : 0.4547
+      avg_latency_p50_ms   : 1276.57
     autogen (1 repos):
       failure_rate         : 1.0
       confidence_interval  : [0.2065, 1.0]
-      avg_error_rate       : 0.4286
-      avg_latency_p50_ms   : 844.14
+      avg_error_rate       : 0.1
+      avg_latency_p50_ms   : 1068.66
 
   Motif: trust_boundary_crossing
   Frameworks compared: ['autogen', 'crewai', 'langgraph']
     crewai (8 repos):
       failure_rate         : 0.625
       confidence_interval  : [0.3057, 0.8632]
-      avg_error_rate       : 0.5408
-      avg_latency_p50_ms   : 2053.16
+      avg_error_rate       : 0.5149
+      avg_latency_p50_ms   : 1996.76
     langgraph (7 repos):
       failure_rate         : 0.4286
       confidence_interval  : [0.1582, 0.7495]
-      avg_error_rate       : 0.1758
-      avg_latency_p50_ms   : 951.77
+      avg_error_rate       : 0.3307
+      avg_latency_p50_ms   : 1184.85
     autogen (6 repos):
       failure_rate         : 0.5
       confidence_interval  : [0.1876, 0.8124]
-      avg_error_rate       : 0.2697
-      avg_latency_p50_ms   : 865.62
+      avg_error_rate       : 0.0889
+      avg_latency_p50_ms   : 1182.15
 
 ================================================================================
 (d) FRAGILITY MAP
 ================================================================================
 
   Structural position: chain_node
-    avg_tool_call_failure_rate : 0.0897
-    max_tool_call_failure_rate : 0.2143
-    sensitivity_score          : 0.1099
-    max_sensitivity_score      : 0.4615
+    avg_tool_call_failure_rate : 0.1579
+    max_tool_call_failure_rate : 0.6923
+    sensitivity_score          : 0.1332
+    max_sensitivity_score      : 0.6569
     affected_repos_count       : 10
     total_nodes_analyzed       : 10
     quality_dependent_rate     : 0.2
-    avg_retry_activations      : 0.7
+    avg_retry_activations      : 0.5
     top_fragile_nodes (up to 3):
-      repo_005/agent_alpha: sensitivity=0.4615, tcfr=0.1538
-      repo_010/agent_alpha: sensitivity=0.4257, tcfr=0.2143
-      repo_011/agent_alpha: sensitivity=0.0667, tcfr=0.1667
+      repo_005/agent_alpha: sensitivity=0.6569, tcfr=0.6923
+      repo_010/agent_alpha: sensitivity=0.4612, tcfr=0.3529
+      repo_013/agent_alpha: sensitivity=0.08, tcfr=0.2
 
   Structural position: leaf_node
-    avg_tool_call_failure_rate : 0.1131
-    max_tool_call_failure_rate : 0.8571
-    sensitivity_score          : 0.0926
-    max_sensitivity_score      : 0.7228
+    avg_tool_call_failure_rate : 0.1084
+    max_tool_call_failure_rate : 1.0
+    sensitivity_score          : 0.0901
+    max_sensitivity_score      : 0.8
     affected_repos_count       : 21
     total_nodes_analyzed       : 68
     quality_dependent_rate     : 0.1324
-    avg_retry_activations      : 0.38
+    avg_retry_activations      : 0.35
     top_fragile_nodes (up to 3):
+      repo_010/agent_beta: sensitivity=0.8, tcfr=1.0
       repo_000/agent_alpha: sensitivity=0.7228, tcfr=0.8571
-      repo_005/agent_beta: sensitivity=0.6569, tcfr=0.6923
-      repo_015/agent_beta: sensitivity=0.6473, tcfr=0.8182
+      repo_099/agent_alpha: sensitivity=0.6828, tcfr=0.8571
 
   Structural position: hub_node
-    avg_tool_call_failure_rate : 0.0772
-    max_tool_call_failure_rate : 0.5
-    sensitivity_score          : 0.0672
-    max_sensitivity_score      : 0.6
+    avg_tool_call_failure_rate : 0.0939
+    max_tool_call_failure_rate : 0.4706
+    sensitivity_score          : 0.0721
+    max_sensitivity_score      : 0.5682
     affected_repos_count       : 11
     total_nodes_analyzed       : 11
     quality_dependent_rate     : 0.0909
-    avg_retry_activations      : 0.45
+    avg_retry_activations      : 0.36
     top_fragile_nodes (up to 3):
-      repo_015/agent_alpha: sensitivity=0.6, tcfr=0.5
-      repo_012/agent_manager: sensitivity=0.0667, tcfr=0.1667
-      repo_009/agent_alpha: sensitivity=0.0444, tcfr=0.1111
+      repo_015/agent_alpha: sensitivity=0.5682, tcfr=0.4706
+      repo_009/agent_alpha: sensitivity=0.05, tcfr=0.125
+      repo_016/agent_manager: sensitivity=0.05, tcfr=0.125
 
   Structural position: isolated_node
-    avg_tool_call_failure_rate : 0.0561
+    avg_tool_call_failure_rate : 0.0505
     max_tool_call_failure_rate : 0.2
-    sensitivity_score          : 0.0224
+    sensitivity_score          : 0.0202
     max_sensitivity_score      : 0.08
     affected_repos_count       : 18
     total_nodes_analyzed       : 38
     quality_dependent_rate     : 0.0
     avg_retry_activations      : 0.0
     top_fragile_nodes (up to 3):
-      repo_002/agent_gamma: sensitivity=0.08, tcfr=0.2
-      repo_003/agent_delta: sensitivity=0.0572, tcfr=0.1429
-      repo_005/agent_gamma: sensitivity=0.0572, tcfr=0.1429
+      repo_009/agent_delta: sensitivity=0.08, tcfr=0.2
+      repo_007/agent_delta: sensitivity=0.0667, tcfr=0.1667
+      repo_011/ds_shared_state: sensitivity=0.0667, tcfr=0.1667
 
   Structural position: connector_node
-    avg_tool_call_failure_rate : 0.0414
-    max_tool_call_failure_rate : 0.1667
-    sensitivity_score          : 0.0166
-    max_sensitivity_score      : 0.0667
+    avg_tool_call_failure_rate : 0.0206
+    max_tool_call_failure_rate : 0.1429
+    sensitivity_score          : 0.0082
+    max_sensitivity_score      : 0.0572
     affected_repos_count       : 15
     total_nodes_analyzed       : 20
     quality_dependent_rate     : 0.0
     avg_retry_activations      : 0.0
     top_fragile_nodes (up to 3):
-      repo_009/agent_gamma: sensitivity=0.0667, tcfr=0.1667
-      repo_003/agent_gamma: sensitivity=0.05, tcfr=0.125
-      repo_015/agent_gamma: sensitivity=0.0444, tcfr=0.1111
+      repo_003/agent_gamma: sensitivity=0.0572, tcfr=0.1429
+      repo_006/agent_manager: sensitivity=0.05, tcfr=0.125
+      repo_019/agent_manager: sensitivity=0.0364, tcfr=0.0909
 
 ================================================================================
 PATTERN KNOWLEDGE BASE (full)
@@ -268,25 +282,76 @@ PATTERN KNOWLEDGE BASE (full)
   pat_trust_boundary_crossing_cca34053602a:
     pattern_name : trust_boundary_crossing
     prevalence   : 21/21 (1.0)
-    risk_level   : medium (score=0.3311)
+    risk_level   : medium (score=0.3379)
     failure_rate  : 0.5238  CI=[0.3237, 0.7166]
 
   pat_linear_delegation_chain_49ffd5d9ffba:
     pattern_name : linear_delegation_chain
     prevalence   : 15/21 (0.7143)
-    risk_level   : low (score=0.2265)
+    risk_level   : low (score=0.228)
     failure_rate  : 0.3333  CI=[0.1518, 0.5829]
 
   pat_shared_state_without_arbitration_8a1886c55ae2:
     pattern_name : shared_state_without_arbitration
     prevalence   : 8/21 (0.381)
-    risk_level   : medium (score=0.3775)
+    risk_level   : medium (score=0.3727)
     failure_rate  : 0.625  CI=[0.3057, 0.8632]
 
   pat_hub_and_spoke_e8bcae16234d:
     pattern_name : hub_and_spoke
     prevalence   : 6/21 (0.2857)
-    risk_level   : medium (score=0.5503)
+    risk_level   : medium (score=0.5598)
     failure_rate  : 1.0  CI=[0.6097, 1.0]
+
+================================================================================
+(e) FINGERPRINTS & NORMALIZATION
+================================================================================
+  Fingerprints computed: 21
+  Feature vector length: 20
+  Normalization constants saved: True
+  Min vector: [5.0, 0.0, 1.0, 1.0, 0.0, 3.0, 2.0, 2.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.75, 0.03, 0.0, 0.0, 1.0, 0.0, 0.0]
+  Max vector: [5.0, 0.0, 1.0, 1.0, 0.0, 8.0, 3.0, 3.0, 0.0, 0.0, 3.0, 1.0, 0.0, 3.5, 0.1, 0.01, 1.0, 3.0, 0.0, 0.0]
+
+  Sample fingerprint (repo_000):
+    motifs:         ['hub_and_spoke', 'shared_state_without_arbitration', 'trust_boundary_crossing']
+    topology_hash:  6c4d805131a6171b...
+    raw_vector:     [5.0, 0.0, 1.0, 1.0, 0.0, 8.0, 2.0, 2.0, 0.0, 0.0]... (20 dims)
+    normalized:     [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]... (20 dims)
+
+  Sample fingerprint (repo_001):
+    motifs:         ['linear_delegation_chain', 'trust_boundary_crossing']
+    topology_hash:  3ede9a443381dd83...
+    raw_vector:     [5.0, 0.0, 1.0, 1.0, 0.0, 3.0, 3.0, 3.0, 0.0, 0.0]... (20 dims)
+    normalized:     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0]... (20 dims)
+
+  Sample fingerprint (repo_002):
+    motifs:         ['linear_delegation_chain', 'trust_boundary_crossing']
+    topology_hash:  3ede9a443381dd83...
+    raw_vector:     [5.0, 0.0, 1.0, 1.0, 0.0, 3.0, 3.0, 3.0, 0.0, 0.0]... (20 dims)
+    normalized:     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0]... (20 dims)
+
+================================================================================
+(f) CROSS-PATTERN INTERACTIONS
+================================================================================
+  Total interaction pairs analyzed: 136
+  Synergistic pairs (>1.5x):       31
+
+  Most dangerous combination:
+    capability_overlap_no_priority + single_point_of_failure
+    interaction_effect: 100.0
+    P(fail|both):      1.0
+    co_occurrence:     1
+
+  Synergistic pairs:
+    capability_overlap_no_priority + single_point_of_failure: effect=100.0, P(both)=1.0, n=1
+    circular_delegation + no_timeout_on_delegation: effect=100.0, P(both)=1.0, n=1
+    classification_without_validation + implicit_ordering_dependency: effect=100.0, P(both)=1.0, n=1
+    classification_without_validation + shared_tool_no_concurrency_control: effect=100.0, P(both)=1.0, n=1
+    classification_without_validation + unvalidated_semantic_chain: effect=100.0, P(both)=1.0, n=1
+    no_fallback_for_external + shared_state_no_arbitration: effect=100.0, P(both)=1.0, n=1
+    capability_overlap_no_priority + circular_delegation: effect=50.0, P(both)=0.5, n=2
+    circular_delegation + implicit_ordering_dependency: effect=50.0, P(both)=0.5, n=2
+    circular_delegation + no_rate_limiting: effect=50.0, P(both)=0.5, n=2
+    circular_delegation + single_point_of_failure: effect=50.0, P(both)=0.5, n=2
 
 Done.

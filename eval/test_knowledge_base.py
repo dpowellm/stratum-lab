@@ -40,8 +40,11 @@ random.seed(42)
 # 1.  Helpers to synthesise enriched graph dicts
 # =========================================================================
 
-# We draw taxonomy preconditions from the canonical list
-PRECONDITION_POOL = TAXONOMY_PRECONDITIONS[:15]  # use a manageable subset
+# We draw taxonomy preconditions from the canonical list, plus semantic ones
+PRECONDITION_POOL = TAXONOMY_PRECONDITIONS[:15] + [
+    "unvalidated_semantic_chain",
+    "classification_without_validation",
+]
 
 
 def _rand_latency() -> dict:
@@ -413,5 +416,88 @@ for pat in pkb:
           f"(score={pat['risk_assessment']['risk_score']})")
     bd = pat["behavioral_distribution"]
     print(f"    failure_rate  : {bd['failure_rate']}  CI={bd['confidence_interval_95']}")
+
+
+# =========================================================================
+# (e) FINGERPRINTS & NORMALIZATION
+# =========================================================================
+
+print("\n" + "=" * 80)
+print("(e) FINGERPRINTS & NORMALIZATION")
+print("=" * 80)
+
+from stratum_lab.query.fingerprint import (
+    compute_graph_fingerprint,
+    compute_normalization_constants,
+    normalize_feature_vector,
+)
+
+# Compute fingerprints for all enriched graphs
+fingerprints: dict[str, dict] = {}
+for graph in enriched_graphs:
+    rid = graph["repo_id"]
+    fingerprints[rid] = compute_graph_fingerprint(graph)
+
+print(f"  Fingerprints computed: {len(fingerprints)}")
+if fingerprints:
+    sample_fp = list(fingerprints.values())[0]
+    print(f"  Feature vector length: {len(sample_fp['feature_vector'])}")
+
+# Compute normalization constants
+all_fps = list(fingerprints.values())
+norm_constants = compute_normalization_constants(all_fps)
+has_norm = bool(norm_constants.get("min")) and bool(norm_constants.get("max"))
+print(f"  Normalization constants saved: {has_norm}")
+
+if has_norm:
+    print(f"  Min vector: {[round(v, 2) for v in norm_constants['min']]}")
+    print(f"  Max vector: {[round(v, 2) for v in norm_constants['max']]}")
+
+# Show sample fingerprints (first 3 repos)
+for rid in list(fingerprints.keys())[:3]:
+    fp = fingerprints[rid]
+    raw_vec = fp["feature_vector"]
+    if has_norm:
+        norm_vec = normalize_feature_vector(raw_vec, norm_constants)
+    else:
+        norm_vec = raw_vec
+    print(f"\n  Sample fingerprint ({rid}):")
+    print(f"    motifs:         {fp['motifs']}")
+    print(f"    topology_hash:  {fp['topology_hash'][:16]}...")
+    print(f"    raw_vector:     {[round(v, 2) for v in raw_vec[:10]]}... ({len(raw_vec)} dims)")
+    print(f"    normalized:     {[round(v, 2) for v in norm_vec[:10]]}... ({len(norm_vec)} dims)")
+
+# =========================================================================
+# (f) CROSS-PATTERN INTERACTIONS
+# =========================================================================
+
+print("\n" + "=" * 80)
+print("(f) CROSS-PATTERN INTERACTIONS")
+print("=" * 80)
+
+from stratum_lab.knowledge.interactions import compute_interaction_matrix
+
+interactions = compute_interaction_matrix(enriched_graphs)
+interaction_list = interactions.get("interactions", [])
+synergistic = interactions.get("synergistic_pairs", [])
+
+print(f"  Total interaction pairs analyzed: {len(interaction_list)}")
+print(f"  Synergistic pairs (>1.5x):       {len(synergistic)}")
+
+if interactions.get("most_dangerous_combination"):
+    combo = interactions["most_dangerous_combination"]
+    print(f"\n  Most dangerous combination:")
+    print(f"    {combo['precondition_a']} + {combo['precondition_b']}")
+    print(f"    interaction_effect: {combo['interaction_effect']}")
+    print(f"    P(fail|both):      {combo['p_fail_both']}")
+    print(f"    co_occurrence:     {combo['co_occurrence_count']}")
+
+if synergistic:
+    print(f"\n  Synergistic pairs:")
+    for pair in synergistic[:10]:
+        print(f"    {pair['precondition_a']} + {pair['precondition_b']}: "
+              f"effect={pair['interaction_effect']}, "
+              f"P(both)={pair['p_fail_both']}, "
+              f"n={pair['co_occurrence_count']}")
 
 print("\nDone.")

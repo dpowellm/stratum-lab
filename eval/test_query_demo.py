@@ -27,6 +27,7 @@ from stratum_lab.knowledge.fragility import build_fragility_map
 from stratum_lab.query.fingerprint import (
     compute_graph_fingerprint,
     compute_normalization_constants,
+    normalize_feature_vector,
 )
 from stratum_lab.query.matcher import match_against_dataset
 from stratum_lab.query.predictor import predict_risks
@@ -327,8 +328,18 @@ print("(a) GRAPH FINGERPRINT")
 print(SEPARATOR)
 
 fp = compute_graph_fingerprint(customer_graph)
-print(f"  feature_vector ({len(fp['feature_vector'])} elements):")
+print(f"  feature_vector (raw, {len(fp['feature_vector'])} elements):")
 for i, val in enumerate(fp["feature_vector"]):
+    print(f"    [{i:2d}] {val:.6f}")
+
+# Normalize using dataset normalization constants
+import json as _json
+_norm_path = os.path.join(kb_dir, "normalization.json")
+with open(_norm_path, "r") as _f:
+    _norm_constants = _json.load(_f)
+norm_vec = normalize_feature_vector(fp["feature_vector"], _norm_constants)
+print(f"\n  feature_vector (normalized to [0,1], {len(norm_vec)} elements):")
+for i, val in enumerate(norm_vec):
     print(f"    [{i:2d}] {val:.6f}")
 print(f"\n  motifs: {fp['motifs']}")
 print(f"  topology_hash: {fp['topology_hash']}")
@@ -387,17 +398,38 @@ for sr in prediction.structural_only_risks:
 
 print(f"\n  Dataset coverage: {json.dumps(prediction.dataset_coverage, indent=4, default=str)}")
 
-# ---- (d) Full risk report (JSON) ----
+# ---- (d) Semantic analysis ----
 print(f"\n{SEPARATOR}")
-print("(d) FULL RISK REPORT (JSON)")
+print("(d) SEMANTIC ANALYSIS")
+print(SEPARATOR)
+
+sem = getattr(prediction, "semantic_analysis", {}) or {}
+if sem:
+    print(f"  semantic_risk_score:           {sem.get('semantic_risk_score', 0):.1f}")
+    print(f"  unvalidated_handoff_fraction:  {sem.get('unvalidated_handoff_fraction', 0):.2f}")
+    print(f"  semantic_chain_depth:          {sem.get('semantic_chain_depth', 0)}")
+    print(f"  max_blast_radius:              {sem.get('max_blast_radius', 0)}")
+    print(f"  classification_injection_points:{sem.get('classification_injection_points', 0)}")
+    nondet = sem.get("nondeterministic_nodes", [])
+    if nondet:
+        print(f"  nondeterministic_nodes:        {', '.join(nondet)}")
+    verdict = sem.get("verdict", "")
+    if verdict:
+        print(f"  verdict:                       {verdict}")
+else:
+    print("  (no semantic analysis — expected if no semantic_lineage on graph)")
+
+# ---- (e) Full risk report (JSON) ----
+print(f"\n{SEPARATOR}")
+print("(e) FULL RISK REPORT (JSON)")
 print(SEPARATOR)
 
 report_json = generate_risk_report(prediction, customer_graph, output_format="json")
 print(json.dumps(report_json, indent=2, default=str))
 
-# ---- (e) Risk report (Markdown excerpt) ----
+# ---- (f) Risk report (Markdown excerpt) ----
 print(f"\n{SEPARATOR}")
-print("(e) RISK REPORT (MARKDOWN)")
+print("(f) RISK REPORT (MARKDOWN)")
 print(SEPARATOR)
 
 report_md = generate_risk_report(prediction, customer_graph, output_format="markdown")

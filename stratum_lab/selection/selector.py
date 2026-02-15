@@ -42,6 +42,7 @@ def select_repos(
     min_runnability: float = DEFAULT_MIN_RUNNABILITY,
     max_per_archetype: int = DEFAULT_MAX_PER_ARCHETYPE,
     min_per_archetype: int = DEFAULT_MIN_PER_ARCHETYPE,
+    control_fraction: float = 0.15,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Apply the constrained greedy selection algorithm.
 
@@ -57,6 +58,9 @@ def select_repos(
         Hard cap on repos per archetype.
     min_per_archetype:
         Soft minimum for archetypes with enough eligible members.
+    control_fraction:
+        Fraction of target to reserve for "clean" repos with 0-1
+        taxonomy preconditions (the control group for relative risk).
 
     Returns
     -------
@@ -65,9 +69,33 @@ def select_repos(
         summary is the aggregate summary dict.
     """
     # ------------------------------------------------------------------
+    # Step 0: Split control group
+    # ------------------------------------------------------------------
+    control_count = int(target * control_fraction)
+    treatment_target = target - control_count
+
+    # Separate repos by precondition count
+    def _precondition_count(r: dict[str, Any]) -> int:
+        return len(r.get("taxonomy_preconditions", []))
+
+    # ------------------------------------------------------------------
     # Step 1: Filter by runnability
     # ------------------------------------------------------------------
     eligible = [r for r in scored_repos if r["runnability_score"] >= min_runnability]
+
+    # Select control group: repos with <=1 precondition, prioritizing 0
+    clean_repos = [r for r in eligible if _precondition_count(r) <= 1]
+    clean_repos.sort(key=lambda r: (_precondition_count(r), -r["runnability_score"]))
+    control_group = clean_repos[:control_count]
+    control_ids = {r["repo_id"] for r in control_group}
+
+    # Tag control group
+    for r in control_group:
+        r["group"] = "control"
+
+    # Remaining eligible repos for treatment selection
+    eligible = [r for r in eligible if r["repo_id"] not in control_ids]
+    target = treatment_target
 
     # ------------------------------------------------------------------
     # Step 2: Sort by total score descending
@@ -196,10 +224,20 @@ def select_repos(
     # Final re-sort by score
     selected.sort(key=lambda r: r["selection_score"], reverse=True)
 
+    # Tag treatment group
+    for r in selected:
+        if "group" not in r:
+            r["group"] = "treatment"
+
+    # Merge control + treatment
+    selected = control_group + selected
+
     # ------------------------------------------------------------------
     # Build summary
     # ------------------------------------------------------------------
-    summary = _build_summary(selected, eligible, scored_repos)
+    summary = _build_summary(selected, [r for r in scored_repos if r["runnability_score"] >= min_runnability], scored_repos)
+    summary["control_count"] = len(control_group)
+    summary["treatment_count"] = len(selected) - len(control_group)
     return selected, summary
 
 

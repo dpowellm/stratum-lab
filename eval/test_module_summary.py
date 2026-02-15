@@ -1,5 +1,5 @@
 """Module summary — code inventory for every Python module in the project."""
-import sys, os, ast, importlib
+import sys, os, ast, importlib, re
 from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -53,6 +53,9 @@ def analyze_module(filepath: Path) -> dict:
 
     line_count = len(source.splitlines())
 
+    # Extract @click.option decorators
+    click_options = extract_click_options(source)
+
     return {
         "path": str(rel_path),
         "lines": line_count,
@@ -60,7 +63,37 @@ def analyze_module(filepath: Path) -> dict:
         "functions": functions,
         "classes": classes,
         "imports": sorted(imports),
+        "click_options": click_options,
     }
+
+
+def extract_click_options(source: str) -> list[dict]:
+    """Extract @click.option decorators from source code."""
+    options = []
+    for match in re.finditer(
+        r'@click\.option\(\s*["\'](-[-\w]+)["\'](?:\s*,\s*["\'](-[-\w]+)["\'])?\s*,'
+        r'(.*?)\)',
+        source, re.DOTALL,
+    ):
+        long_name = match.group(1)
+        short_name = match.group(2) or ""
+        rest = match.group(3)
+        # Extract help string if present
+        help_match = re.search(r'help\s*=\s*["\'](.+?)["\']', rest)
+        help_text = help_match.group(1) if help_match else ""
+        # Extract type/default
+        type_match = re.search(r'type\s*=\s*(\w+)', rest)
+        opt_type = type_match.group(1) if type_match else ""
+        default_match = re.search(r'default\s*=\s*([^,\)]+)', rest)
+        default_val = default_match.group(1).strip() if default_match else ""
+        options.append({
+            "name": long_name,
+            "short": short_name,
+            "type": opt_type,
+            "default": default_val,
+            "help": help_text,
+        })
+    return options
 
 
 def main():
@@ -111,6 +144,15 @@ def main():
             print(f"  Functions ({len(info['functions'])}):")
             for func in info["functions"]:
                 print(f"    {func['name']}() (line {func['line']}): {func['docstring']}")
+
+        if info.get("click_options"):
+            print(f"  Click options ({len(info['click_options'])}):")
+            for opt in info["click_options"]:
+                parts = [opt["name"]]
+                if opt.get("short"):
+                    parts.append(opt["short"])
+                desc = opt.get("help") or opt.get("type") or ""
+                print(f"    {'/'.join(parts)}: {desc}")
 
     print(f"\n{'=' * 78}")
     print(f"TOTALS")

@@ -13,11 +13,56 @@ from __future__ import annotations
 
 import importlib
 import os
+import re
 import signal
 import sys
 import time
 import traceback
+from pathlib import Path
 from typing import Any
+
+
+# ---------------------------------------------------------------------------
+# Lazy import detection patterns
+# ---------------------------------------------------------------------------
+
+LAZY_IMPORT_PATTERNS: dict[str, list[str]] = {
+    "openai": [r'import\s+openai', r'from\s+openai', r'import_module\(["\']openai'],
+    "crewai": [r'import\s+crewai', r'from\s+crewai', r'import_module\(["\']crewai'],
+    "langchain": [r'import\s+langchain', r'from\s+langchain', r'import_module\(["\']langchain'],
+    "langgraph": [r'import\s+langgraph', r'from\s+langgraph', r'import_module\(["\']langgraph'],
+    "autogen": [r'import\s+autogen', r'from\s+autogen', r'import_module\(["\']autogen'],
+}
+
+
+def detect_frameworks_in_source(repo_path: str | Path) -> list[str]:
+    """Scan .py files for import patterns including lazy imports.
+
+    Parameters
+    ----------
+    repo_path:
+        Path to the repo directory to scan.
+
+    Returns
+    -------
+    list[str]
+        Detected framework names.
+    """
+    repo_path = Path(repo_path)
+    detected: set[str] = set()
+
+    for py_file in repo_path.rglob("*.py"):
+        try:
+            content = py_file.read_text(encoding="utf-8", errors="replace")
+            for framework, patterns in LAZY_IMPORT_PATTERNS.items():
+                for pattern in patterns:
+                    if re.search(pattern, content):
+                        detected.add(framework)
+                        break
+        except Exception:
+            pass
+
+    return sorted(detected)
 
 
 def _setup_timeout(timeout_seconds: int) -> None:
@@ -77,6 +122,13 @@ def main() -> None:
         import stratum_patcher  # noqa: F401
     except Exception as exc:
         print(f"[stratum-runner] WARNING: failed to load patcher: {exc}", file=sys.stderr)
+
+    # Apply LangChain patches (separate module, safe if langchain not installed)
+    try:
+        from stratum_patcher.langchain_patch import patch_langchain
+        patch_langchain()
+    except Exception:
+        pass
 
     # ---------------------------------------------------------------
     # 2) Set up timeout

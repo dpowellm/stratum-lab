@@ -1,16 +1,16 @@
-Working directory: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_yn7n4osm
+Working directory: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_rfzaak8i
 
 ==============================================================================
 PHASE 1: REPO SELECTION
 ==============================================================================
   Input repos:       30
   Selected repos:    20
-  Frameworks:        {'langchain': 6, 'custom': 6, 'autogen': 5, 'langgraph': 3}
-  Archetypes:        {'parallel_fan_out': 3, 'guardrail_gated_pipeline': 2, 'hierarchical_delegation': 2, 'supervisor_worker': 2, 'debate_consensus': 2, 'reflection_loop': 2, 'blackboard_architecture': 2, 'hub_and_spoke_shared_state': 1, 'sequential_pipeline': 1, 'market_auction': 1, 'single_agent_tool_use': 1, 'human_in_the_loop': 1}
-  Avg structural:    28.02
+  Frameworks:        {'langchain': 6, 'custom': 6, 'autogen': 5, 'langgraph': 2, 'crewai': 1}
+  Archetypes:        {'parallel_fan_out': 2, 'guardrail_gated_pipeline': 2, 'hierarchical_delegation': 2, 'supervisor_worker': 2, 'debate_consensus': 2, 'hub_and_spoke_shared_state': 2, 'reflection_loop': 2, 'single_agent_tool_use': 2, 'sequential_pipeline': 1, 'market_auction': 1, 'blackboard_architecture': 1, 'human_in_the_loop': 1}
+  Avg structural:    27.6
   Avg runnability:   28.5
 
-  -> Saved selection to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_yn7n4osm\selection.json
+  -> Saved selection to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_rfzaak8i\selection.json
 
 ==============================================================================
 PHASE 2: EXECUTION HARNESS (MOCKED)
@@ -18,9 +18,9 @@ PHASE 2: EXECUTION HARNESS (MOCKED)
   Repos executed:    10
   Runs per repo:     3
   Total runs:        30
-  Total events:      1132
+  Total events:      1478
 
-  -> Saved 30 JSONL files to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_yn7n4osm\raw_events
+  -> Saved 30 JSONL files to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_rfzaak8i\raw_events
 
 ==============================================================================
 PHASE 3: DATA COLLECTION
@@ -28,17 +28,17 @@ PHASE 3: DATA COLLECTION
   Run records built: 30
   Repos aggregated:  10
 
-  Sample run record (repo_018_run_1):
-    Total events:    36
-    Event types:     {'execution.start': 1, 'agent.task_start': 5, 'llm.call_start': 5, 'llm.call_end': 5, 'tool.invoked': 5, 'tool.completed': 5, 'agent.task_end': 5, 'delegation.initiated': 4, 'execution.end': 1}
+  Sample run record (repo_013_run_1):
+    Total events:    47
+    Event types:     {'execution.start': 1, 'agent.task_start': 5, 'llm.call_start': 5, 'llm.call_end': 5, 'tool.invoked': 5, 'tool.completed': 5, 'decision.made': 5, 'agent.task_end': 5, 'delegation.initiated': 4, 'data.write': 2, 'data.read': 1, 'external.call': 2, 'guardrail.triggered': 1, 'execution.end': 1}
     LLM calls:       5
     Errors:          0
     Delegations:     4
 
-  Sample repo aggregate (repo_018):
+  Sample repo aggregate (repo_013):
     Num runs:        3
-    Total events:    109
-    Avg events/run:  36.33
+    Total events:    143
+    Avg events/run:  47.67
 
   -> Collection phase complete
 
@@ -46,101 +46,154 @@ PHASE 3: DATA COLLECTION
 PHASE 4: GRAPH OVERLAY
 ==============================================================================
   Graphs enriched:   10
-  Total emergent:    0
-  Total dead:        10
+  Total emergent:    10
+  Total dead:        62
 
-  Sample enriched graph (repo_018):
-    Nodes:           5
-    Edges:           5
-    Emergent edges:  0
-    Dead edges:      1
-    Node agent_agent_0:
-      activation_count:    6
+  Sample enriched graph (repo_013):
+    Nodes:           18
+    Edges:           15
+    Emergent edges:  1
+    Dead edges:      6
+    Node agent_agent_0 (type=agent):
+      activation_count:    12
       activation_rate:     1.0
       failure_rate:        0.0
-    Node agent_agent_1:
+      same_input_activation_consistency: 1.0
+      same_input_path_consistency:       1.0
+    Node cap_tool_agent_0 (type=capability):
       activation_count:    3
       activation_rate:     1.0
       failure_rate:        0.0
+      same_input_activation_consistency: 1.0
+      same_input_path_consistency:       1.0
+    Node ds_shared_memory (type=data_store):
+      activation_count:    9
+      activation_rate:     1.0
+      failure_rate:        0.0
+      same_input_activation_consistency: 1.0
+      same_input_path_consistency:       1.0
+    Node ext_api_service (type=external):
+      activation_count:    6
+      activation_rate:     1.0
+      failure_rate:        0.0
+      same_input_activation_consistency: 1.0
+      same_input_path_consistency:       1.0
+    Node guard_output_filter (type=guardrail):
+      activation_count:    3
+      activation_rate:     1.0
+      failure_rate:        0.0
+      same_input_activation_consistency: 1.0
+      same_input_path_consistency:       1.0
+      guardrail_trigger_count:  3
+      guardrail_prevented:      1
+    Emergent: agent_agent_4 -> ext_api_service (count=0)
 
-  -> Saved 10 enriched graphs to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_yn7n4osm\enriched_graphs
+  -> Saved 10 enriched graphs to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_rfzaak8i\enriched_graphs
 
 ==============================================================================
 PHASE 5: KNOWLEDGE BASE
 ==============================================================================
-  Patterns found:    1
+  Patterns found:    3
+    shared_state_without_arbitration: prevalence=1.00, failure_rate=1.00, risk=medium
     linear_delegation_chain: prevalence=1.00, failure_rate=1.00, risk=medium
+    trust_boundary_crossing: prevalence=1.00, failure_rate=1.00, risk=medium
 
   Taxonomy preconditions with data: 2
     shared_state_no_arbitration: P(manifest)=1.0, CI=[0.7225, 1.0], n=10
     no_timeout_on_delegation: P(manifest)=1.0, CI=[0.6457, 1.0], n=7
 
-  Novel patterns:    2
-    repo_019: anomaly_score=2.91, dim=avg_latency_p50
-    repo_022: anomaly_score=2.33, dim=avg_failure_rate
+  Novel patterns:    1
+    repo_022: anomaly_score=2.27, dim=avg_propagation_rate
 
-  Framework comparisons: 1
+  Framework comparisons: 3
+    shared_state_without_arbitration: frameworks=['autogen', 'custom', 'langchain']
     linear_delegation_chain: frameworks=['autogen', 'custom', 'langchain']
+    trust_boundary_crossing: frameworks=['autogen', 'custom', 'langchain']
 
-  Fragility entries: 3
-    connector_node: sensitivity=0.0000, repos=10
+  Fragility entries: 5
+    hub_node: sensitivity=0.0000, repos=10
     chain_node: sensitivity=0.0000, repos=10
     leaf_node: sensitivity=0.0000, repos=10
 
-  -> Saved knowledge base to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_yn7n4osm\knowledge_base
+  -> Saved knowledge base to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_rfzaak8i\knowledge_base
 
 ==============================================================================
 PHASE 6: QUERY LAYER
 ==============================================================================
   Customer graph fingerprint:
     feature_vector length: 20
-    motifs:               ['linear_delegation_chain']
-    topology_hash:        3704ffa59280971a...
+    motifs:               ['linear_delegation_chain', 'shared_state_without_arbitration', 'trust_boundary_crossing']
+    topology_hash:        aeb061adddb29efe...
     structural_metrics:   {
     "agent_count": 5,
-    "capability_count": 0,
-    "data_store_count": 0,
-    "external_service_count": 0,
-    "guardrail_count": 0,
-    "total_edges": 5,
+    "capability_count": 10,
+    "data_store_count": 1,
+    "external_service_count": 1,
+    "guardrail_count": 1,
+    "total_edges": 15,
     "delegation_depth_max": 5.0,
     "delegation_depth_mean": 5.0,
-    "control_coverage_ratio": 0.0,
-    "observability_coverage_ratio": 0.0,
-    "shared_state_writer_count": 0,
-    "trust_boundary_crossing_count": 0,
+    "control_coverage_ratio": 0.0714,
+    "observability_coverage_ratio": 0.0667,
+    "shared_state_writer_count": 2,
+    "trust_boundary_crossing_count": 1,
     "feedback_loop_count": 1,
-    "hub_spoke_ratio": 1.0,
-    "betweenness_centrality_max": 0.5,
-    "betweenness_centrality_mean": 0.5,
-    "error_propagation_path_count": 0,
+    "hub_spoke_ratio": 3.0,
+    "betweenness_centrality_max": 0.1213,
+    "betweenness_centrality_mean": 0.0288,
+    "error_propagation_path_count": 1,
     "irreversible_capability_count": 0,
-    "agent_to_capability_ratio": 0.0,
+    "agent_to_capability_ratio": 0.5,
     "has_human_checkpoint": 0
 }
 
-  Top matches (3):
+  Top matches (5):
+    shared_state_without_arbitration: score=1.000, type=exact_motif, repos=10
     linear_delegation_chain: score=1.000, type=exact_motif, repos=10
+    trust_boundary_crossing: score=1.000, type=exact_motif, repos=10
     structural_match_unknown: score=1.000, type=structural_similarity, repos=1
-    linear_pipeline: score=1.000, type=archetype, repos=9
+    hierarchical_delegation: score=1.000, type=archetype, repos=9
 
   Risk prediction:
-    overall_risk_score: 0.0
-    predicted_risks:   0
+    overall_risk_score: 22.2
+    predicted_risks:   2
     positive_signals:  3
+      shared_state_no_arbitration: P=1.00, severity=low
+      no_timeout_on_delegation: P=1.00, severity=low
 
-  Risk report generated: 11426 chars (JSON)
+  Risk report generated: 7289 chars (JSON)
+
+==============================================================================
+PHASE 6B: BATCH REPORTS
+==============================================================================
+  Batch reports generated: 10
+  Errors:                0
+  Sample report (repo_003):
+    risk_score:  22.22
+    risk_level:  LOW
+    risk_count:  1
+  Risk distribution: {'LOW': 10}
+
+==============================================================================
+PILOT MODE TEST
+==============================================================================
+  Pilot input repos:    10
+  Pilot selected repos: 10
+  Pilot control count:  0
+  Pilot treatment count:0
+  PILOT MODE TEST: PASS
 
 ==============================================================================
 PIPELINE INTEGRATION SUMMARY
 ==============================================================================
   Phase 1 (Selection):    30 scanned -> 20 selected
-  Phase 2 (Execution):    10 repos x 3 runs = 30 runs, 1132 events
+  Phase 2 (Execution):    10 repos x 3 runs = 30 runs, 1478 events
   Phase 3 (Collection):   30 run records, 10 repo aggregates
-  Phase 4 (Overlay):      10 enriched graphs, 0 emergent edges, 10 dead edges
-  Phase 5 (Knowledge):    1 patterns, 2 taxonomy entries, 2 novel, 3 fragility entries
-  Phase 6 (Query):        fingerprint + 3 matches + risk prediction + report
+  Phase 4 (Overlay):      10 enriched graphs, 10 emergent edges, 62 dead edges
+  Phase 5 (Knowledge):    3 patterns, 2 taxonomy entries, 1 novel, 5 fragility entries
+  Phase 6 (Query):        fingerprint + 5 matches + risk prediction + report
+  Phase 6B (Batch):       10 per-repo reports
 
-  All outputs saved to: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_yn7n4osm
+  All outputs saved to: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_rfzaak8i
 
-  RESULT: ALL 6 PHASES COMPLETED SUCCESSFULLY
+  RESULT: ALL PHASES COMPLETED SUCCESSFULLY

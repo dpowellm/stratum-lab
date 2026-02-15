@@ -259,7 +259,7 @@ def compute_graph_fingerprint(graph: dict[str, Any]) -> dict[str, Any]:
 
 def normalize_feature_vector(
     feature_vector: list[float],
-    normalization_constants: dict[str, dict[str, float]],
+    normalization_constants: dict[str, Any],
 ) -> list[float]:
     """Normalize a feature vector to [0, 1] using stored min/max constants.
 
@@ -268,28 +268,25 @@ def normalize_feature_vector(
     feature_vector:
         A 20-element raw feature vector.
     normalization_constants:
-        Dict mapping feature index (as string) to ``{"min": ..., "max": ...}``.
+        Dict with ``"min"`` and ``"max"`` lists.
 
     Returns
     -------
     A 20-element list of floats in [0, 1].
     """
+    mins = normalization_constants.get("min", [])
+    maxs = normalization_constants.get("max", [])
+
+    if len(mins) != len(feature_vector) or len(maxs) != len(feature_vector):
+        return feature_vector  # can't normalize, return raw
+
     normalized: list[float] = []
-
-    for i, value in enumerate(feature_vector):
-        key = str(i)
-        constants = normalization_constants.get(key, {})
-        min_val = constants.get("min", 0.0)
-        max_val = constants.get("max", 1.0)
-
-        range_val = max_val - min_val
-        if range_val > 0:
-            norm = (value - min_val) / range_val
+    for v, lo, hi in zip(feature_vector, mins, maxs):
+        span = hi - lo
+        if span > 0:
+            norm = (v - lo) / span
         else:
-            # All values identical; map to 0.0 (or 0.5 if value == min_val)
             norm = 0.0
-
-        # Clamp to [0, 1]
         normalized.append(max(0.0, min(1.0, norm)))
 
     return normalized
@@ -297,7 +294,7 @@ def normalize_feature_vector(
 
 def compute_normalization_constants(
     fingerprints: list[dict[str, Any]],
-) -> dict[str, dict[str, float]]:
+) -> dict[str, list[float]]:
     """Compute per-feature min/max from a collection of fingerprints.
 
     Parameters
@@ -307,24 +304,18 @@ def compute_normalization_constants(
 
     Returns
     -------
-    Dict mapping feature index (as string) to ``{"min": ..., "max": ...}``.
+    Dict with ``"min"`` and ``"max"`` lists of floats, one per feature dimension.
     """
     if not fingerprints:
-        return {}
+        return {"min": [], "max": []}
 
     vectors = [fp["feature_vector"] for fp in fingerprints]
     vector_length = len(vectors[0])
 
-    constants: dict[str, dict[str, float]] = {}
+    mins = [float(min(v[i] for v in vectors)) for i in range(vector_length)]
+    maxs = [float(max(v[i] for v in vectors)) for i in range(vector_length)]
 
-    for i in range(vector_length):
-        values = [v[i] for v in vectors]
-        constants[str(i)] = {
-            "min": float(min(values)),
-            "max": float(max(values)),
-        }
-
-    return constants
+    return {"min": mins, "max": maxs}
 
 
 # ---------------------------------------------------------------------------

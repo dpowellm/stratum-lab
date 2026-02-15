@@ -112,14 +112,24 @@ def main() -> None:
         )),
         ("agent.task_end", dict(
             source_node=src_agent,
-            payload={"agent_role": "Researcher", "latency_ms": 567.8, "status": "success"},
+            payload={
+                "agent_role": "Researcher", "latency_ms": 567.8, "status": "success",
+                "output_hash": "abc123", "output_type": "short_text",
+                "output_size_bytes": 42, "output_preview": "result text",
+                "classification_fields": None,
+            },
             parent_event_id="__agent.task_start__",
         )),
         ("delegation.initiated", dict(
             source_node=src_agent,
             target_node=tgt_agent,
             edge_type="delegates_to",
-            payload={"delegator": "TestAgent", "delegate": "WorkerAgent"},
+            payload={
+                "delegator": "TestAgent", "delegate": "WorkerAgent",
+                "context_hash": "def456", "context_type": "structured_json",
+                "context_size_bytes": 128, "context_source_node": "test:Agent:main.py:1",
+                "has_classification_dependency": False,
+            },
         )),
         ("delegation.completed", dict(
             source_node=src_agent,
@@ -155,6 +165,9 @@ def main() -> None:
                 "model_requested": "gpt-4", "model_actual": "gpt-4",
                 "latency_ms": 450.1, "input_tokens": 500, "output_tokens": 200,
                 "finish_reason": "stop",
+                "output_hash": "abc789", "output_type": "short_text",
+                "output_size_bytes": 100, "output_preview": "LLM response text",
+                "output_structure": None, "classification_fields": None,
             },
             parent_event_id="__llm.call_start__",
         )),

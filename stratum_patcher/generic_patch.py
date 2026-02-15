@@ -34,6 +34,14 @@ _FRAMEWORK = "generic"
 # We only log file I/O under this prefix to avoid noise from system files.
 _APP_PREFIX = "/app/"
 
+# Known LLM API endpoints for bare HTTP interception
+LLM_API_PATTERNS = [
+    "api.openai.com/v1/chat/completions",
+    "api.openai.com/v1/completions",
+    "api.anthropic.com/v1/messages",
+    "generativelanguage.googleapis.com",
+]
+
 
 # ---------------------------------------------------------------------------
 # HTTP helper
@@ -349,6 +357,61 @@ def patch() -> None:
                 wrapped = _wrap_requests_method(orig, method_name)
                 wrapped._stratum_patched = True  # type: ignore[attr-defined]
                 setattr(requests, method_name, wrapped)
+    except ImportError:
+        pass
+    except Exception:
+        pass
+
+    # ------------------------------------------------------------------
+    # 1b) Bare HTTP interception for known LLM API endpoints
+    # ------------------------------------------------------------------
+    try:
+        import requests as _req_mod
+
+        _orig_requests_post = getattr(_req_mod, "_stratum_orig_post", None) or _req_mod.post
+
+        def _llm_aware_post(url: Any, *args: Any, **kwargs: Any) -> Any:
+            is_llm = any(pattern in str(url) for pattern in LLM_API_PATTERNS)
+            logger_inst = EventLogger.get()
+            node_id_val = None
+            start_id = None
+            if is_llm:
+                hostname = str(url).split("//")[-1].split("/")[0]
+                node_id_val = f"generic:http:{hostname}:external.py:1"
+                source = make_node("capability", node_id_val, f"http:{hostname}")
+                start_id = logger_inst.log_event(
+                    "llm.call_start",
+                    source_node=source,
+                    payload={"url": str(url)[:200]},
+                )
+            try:
+                result = _orig_requests_post(url, *args, **kwargs)
+                if is_llm and node_id_val:
+                    source = make_node("capability", node_id_val, f"http:{str(url).split('//')[- 1].split('/')[0]}")
+                    logger_inst.log_event(
+                        "llm.call_end",
+                        source_node=source,
+                        payload={"status_code": getattr(result, "status_code", None)},
+                        parent_event_id=start_id,
+                    )
+                return result
+            except Exception as e:
+                if is_llm and node_id_val:
+                    source = make_node("capability", node_id_val, f"http:{str(url).split('//')[- 1].split('/')[0]}")
+                    logger_inst.log_event(
+                        "llm.call_end",
+                        source_node=source,
+                        payload={"error": str(e)[:300]},
+                        parent_event_id=start_id,
+                    )
+                raise
+
+        # Only install if not already wrapped by our LLM-aware wrapper
+        if not getattr(_req_mod.post, "_stratum_llm_patched", False):
+            _req_mod._stratum_orig_post = _orig_requests_post  # type: ignore[attr-defined]
+            _llm_aware_post._stratum_patched = True  # type: ignore[attr-defined]
+            _llm_aware_post._stratum_llm_patched = True  # type: ignore[attr-defined]
+            _req_mod.post = _llm_aware_post  # type: ignore[attr-defined]
     except ImportError:
         pass
     except Exception:
