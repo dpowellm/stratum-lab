@@ -9,7 +9,7 @@ Projects\stratum-observability\stratum-lab\eval\outputs\patcher-unit-tests.txt
   PASS  run_id from env  --  got 'test-run-001'
   PASS  repo_id from env  --  got 'test-repo-001'
   PASS  framework from env  --  got 'test-framework'
-  PASS  log_event returns evt_ prefixed id  --  got 'evt_185a6011cbaf49c8'
+  PASS  log_event returns evt_ prefixed id  --  got 'evt_56c916ea193a4ae2'
   PASS  Event written to JSONL file  --  found 1 events
   PASS  Event has all required fields  --  all present
   PASS  event_id matches returned value

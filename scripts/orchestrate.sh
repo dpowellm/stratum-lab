@@ -434,7 +434,8 @@ launch_container() {
             $DOCKER_NETWORK_FLAG \
             "${MOUNT_ARGS[@]}" \
             --add-host=host.docker.internal:host-gateway \
-            -e "STRATUM_EVENTS_FILE=/app/output/stratum_events.jsonl" \
+            -e "STRATUM_EVENTS_FILE=/app/output/events_run_${run_number}.jsonl" \
+            -e "STRATUM_RUN_NUMBER=$run_number" \
             -e "STRATUM_VLLM_MODEL=$VLLM_MODEL" \
             -e "STRATUM_RUN_ID=$RUN_UUID" \
             -e "STRATUM_REPO_ID=$repo_url" \
@@ -703,15 +704,14 @@ write_summary
 if [ -f "$SCRIPT_DIR/aggregate_results.py" ]; then
     echo ""
     echo "[orchestrate] Running aggregate_results.py..."
-    python3 "$SCRIPT_DIR/aggregate_results.py" "$OUTPUT_DIR"
+    local br_flag=""
+    if [ -d "$OUTPUT_DIR/behavioral_records" ]; then
+        br_flag="--behavioral-records-dir $OUTPUT_DIR/behavioral_records"
+    fi
+    python3 "$SCRIPT_DIR/aggregate_results.py" "$RESULTS_DIR" $br_flag
 fi
 
-# Run ecosystem report if available
-if [ -f "$SCRIPT_DIR/ecosystem_report.py" ]; then
-    echo ""
-    echo "[orchestrate] Running ecosystem_report.py..."
-    python3 "$SCRIPT_DIR/ecosystem_report.py" "$OUTPUT_DIR"
-fi
+# ecosystem_report.py removed in v2 — replaced by build_behavioral_records.py (Phase 3)
 
 # Print quick status distribution
 echo ""
