@@ -11,6 +11,7 @@ that URL (typically the local vLLM endpoint).
 from __future__ import annotations
 
 import functools
+import hashlib
 import os
 import time
 from typing import Any
@@ -173,16 +174,46 @@ def _wrap_sync_create(original: Any) -> Any:
         # Map model name to vLLM model
         original_model, mapped_model = _map_model(kwargs)
 
-        start_id = logger.log_event(
-            "llm.call_start",
-            source_node=source,
-            payload={
+        start_payload = {
                 "model_requested": original_model,
                 "model_actual": mapped_model,
                 "model_mapped": original_model != mapped_model,
                 "message_count": len(kwargs.get("messages", [])),
                 "has_tools": bool(kwargs.get("tools") or kwargs.get("functions")),
-            },
+            }
+
+        # Prompt content capture (gated by env var, default off)
+        if os.environ.get("STRATUM_CAPTURE_PROMPTS") == "1":
+            messages = kwargs.get("messages", [])
+            try:
+                sys_msgs = [m for m in messages if m.get("role") == "system"]
+                if sys_msgs:
+                    sys_text = str(sys_msgs[0].get("content", ""))[:200]
+                    start_payload["system_prompt_preview"] = sys_text
+                    start_payload["system_prompt_hash"] = hashlib.sha256(
+                        sys_text.encode()
+                    ).hexdigest()[:16]
+                    trust_signals = []
+                    for pattern in ["verified", "confirmed", "factual", "accurate", "trusted", "reliable"]:
+                        if pattern in sys_text.lower():
+                            trust_signals.append(pattern)
+                    if trust_signals:
+                        start_payload["prompt_trust_signals"] = trust_signals
+
+                user_msgs = [m for m in messages if m.get("role") == "user"]
+                if user_msgs:
+                    last_user = str(user_msgs[-1].get("content", ""))[:200]
+                    start_payload["last_user_message_preview"] = last_user
+                    start_payload["last_user_message_hash"] = hashlib.sha256(
+                        last_user.encode()
+                    ).hexdigest()[:16]
+            except Exception:
+                pass
+
+        start_id = logger.log_event(
+            "llm.call_start",
+            source_node=source,
+            payload=start_payload,
         )
         logger.push_active_node(node_id)
 
@@ -284,16 +315,46 @@ def _wrap_async_create(original: Any) -> Any:
         # Map model name to vLLM model
         original_model, mapped_model = _map_model(kwargs)
 
-        start_id = logger.log_event(
-            "llm.call_start",
-            source_node=source,
-            payload={
+        start_payload = {
                 "model_requested": original_model,
                 "model_actual": mapped_model,
                 "model_mapped": original_model != mapped_model,
                 "message_count": len(kwargs.get("messages", [])),
                 "has_tools": bool(kwargs.get("tools") or kwargs.get("functions")),
-            },
+            }
+
+        # Prompt content capture (gated by env var, default off)
+        if os.environ.get("STRATUM_CAPTURE_PROMPTS") == "1":
+            messages = kwargs.get("messages", [])
+            try:
+                sys_msgs = [m for m in messages if m.get("role") == "system"]
+                if sys_msgs:
+                    sys_text = str(sys_msgs[0].get("content", ""))[:200]
+                    start_payload["system_prompt_preview"] = sys_text
+                    start_payload["system_prompt_hash"] = hashlib.sha256(
+                        sys_text.encode()
+                    ).hexdigest()[:16]
+                    trust_signals = []
+                    for pattern in ["verified", "confirmed", "factual", "accurate", "trusted", "reliable"]:
+                        if pattern in sys_text.lower():
+                            trust_signals.append(pattern)
+                    if trust_signals:
+                        start_payload["prompt_trust_signals"] = trust_signals
+
+                user_msgs = [m for m in messages if m.get("role") == "user"]
+                if user_msgs:
+                    last_user = str(user_msgs[-1].get("content", ""))[:200]
+                    start_payload["last_user_message_preview"] = last_user
+                    start_payload["last_user_message_hash"] = hashlib.sha256(
+                        last_user.encode()
+                    ).hexdigest()[:16]
+            except Exception:
+                pass
+
+        start_id = logger.log_event(
+            "llm.call_start",
+            source_node=source,
+            payload=start_payload,
         )
         logger.push_active_node(node_id)
 

@@ -1,49 +1,54 @@
 #!/usr/bin/env bash
 # ============================================================================
-# run_repo.sh — Stratum Lab Docker ENTRYPOINT
+# run_repo.sh -- Stratum Lab Docker ENTRYPOINT
 #
-# Three-tier execution harness for behavioral scanning of AI agent repos.
-#   Tier 1: Native execution (clone → install → run entry point)
-#   Tier 2: Synthetic harness (extract agent defs → generate script → run)
-#   Tier 3: Unrunnable (classify why and move on)
+# Two-tier execution harness for behavioral scanning of AI agent repos.
+#   Tier 1: Native execution (clone -> install -> detect entry -> run)
+#   Tier 2: Synthetic harness fallback (extract agent defs -> generate -> run)
 #
-# Usage:  run_repo.sh <github_url> [timeout_seconds] [vllm_base_url]
+# Usage:
+#   bash /app/run_repo.sh "$REPO_URL" "$VLLM_HOST" "/app/output" 300
+#
+# Arguments:
+#   $1  REPO_URL   - GitHub URL to clone
+#   $2  VLLM_HOST  - vLLM base URL (e.g. http://host.docker.internal:8000)
+#   $3  OUTPUT_DIR - Directory for all output artifacts
+#   $4  TIMEOUT    - Max seconds per execution attempt (default: 300)
 #
 # CRITICAL: No set -e ANYWHERE. The retry loop MUST survive Python failures.
 # ============================================================================
 
-GITHUB_URL="${1:-}"
-if [ -z "$GITHUB_URL" ]; then
-    echo "Usage: run_repo.sh <github_url> [timeout_seconds] [vllm_base_url]" >&2
+
+# ============================================================================
+# ARGUMENTS
+# ============================================================================
+
+REPO_URL="${1:-}"
+VLLM_HOST="${2:-}"
+OUTPUT_DIR="${3:-/app/output}"
+TIMEOUT="${4:-300}"
+
+if [ -z "$REPO_URL" ]; then
+    echo "Usage: run_repo.sh <REPO_URL> <VLLM_HOST> <OUTPUT_DIR> [TIMEOUT]" >&2
     exit 1
 fi
-TIMEOUT="${2:-${STRATUM_TIMEOUT_SECONDS:-300}}"
-VLLM_BASE_URL="${3:-${OPENAI_BASE_URL:-http://host.docker.internal:8000/v1}}"
+if [ -z "$VLLM_HOST" ]; then
+    echo "ERROR: VLLM_HOST is required" >&2
+    exit 1
+fi
 
-# ── Fixed paths ──────────────────────────────────────────────────────────
-REPO_DIR="/tmp/repo"
-OUTPUT_DIR="/app/output"
 EVENTS_FILE="$OUTPUT_DIR/stratum_events.jsonl"
-RUNNER="/app/runner.py"
-SYNTHETIC="/app/synthetic_harness.py"
-
-# ── Per-repo env vars (Bug #11: set run_id and repo_id) ─────────────────
-RUN_ID="$(python3 -c 'import uuid; print(uuid.uuid4().hex[:16])' 2>/dev/null || echo "run_$$")"
-export STRATUM_RUN_ID="$RUN_ID"
-export STRATUM_REPO_ID="$GITHUB_URL"
-export STRATUM_EVENTS_FILE="$EVENTS_FILE"
-export STRATUM_VLLM_MODEL="${STRATUM_VLLM_MODEL:-mistralai/Mistral-7B-Instruct-v0.3}"
-export OPENAI_BASE_URL="$VLLM_BASE_URL"
-export OPENAI_API_BASE="$VLLM_BASE_URL"
 
 mkdir -p "$OUTPUT_DIR"
 
 START_EPOCH=$(date +%s)
-TIER=1
 
 log() { echo "[stratum] $(date +%H:%M:%S) $*" >&2; }
 
-# ── Output writers ───────────────────────────────────────────────────────
+
+# ============================================================================
+# OUTPUT WRITERS
+# ============================================================================
 
 write_output() {
     local status="$1"
@@ -51,21 +56,25 @@ write_output() {
     local entry_point="${3:-}"
     local tier="${4:-1}"
 
-    echo "$status"     > "$OUTPUT_DIR/status.txt"
-    echo "$exit_code"  > "$OUTPUT_DIR/exit_code.txt"
-    echo "$entry_point"> "$OUTPUT_DIR/entry_point.txt"
-    echo "$tier"       > "$OUTPUT_DIR/tier.txt"
+    # Write individual status files
+    echo "$status"      > "$OUTPUT_DIR/status.txt"
+    echo "$exit_code"   > "$OUTPUT_DIR/exit_code.txt"
+    echo "$entry_point" > "$OUTPUT_DIR/entry_point.txt"
+    echo "$tier"        > "$OUTPUT_DIR/tier.txt"
 
-    # Also write a machine-readable status.json for aggregator
+    # Count events if present
     local event_count=0
     if [ -f "$EVENTS_FILE" ]; then
         event_count=$(wc -l < "$EVENTS_FILE" 2>/dev/null || echo "0")
         event_count=$(echo "$event_count" | tr -d ' ')
     fi
+
+    # Calculate duration
     local end_epoch
     end_epoch=$(date +%s)
     local duration=$(( end_epoch - START_EPOCH ))
 
+    # Write machine-readable status.json
     python3 -c "
 import json, sys, os
 d = {
@@ -80,54 +89,91 @@ d = {
     'vllm_model': os.environ.get('STRATUM_VLLM_MODEL', ''),
     'error_log_tail': '',
 }
-# Read stderr tail
-try:
-    with open('/tmp/run_stderr.log') as f:
-        lines = f.readlines()
-        d['error_log_tail'] = ''.join(lines[-20:])[:2000]
-except: pass
+# Read stderr tail for error context
+for log_path in ['$OUTPUT_DIR/stderr.log', '$OUTPUT_DIR/tier2_stderr.log']:
+    try:
+        with open(log_path) as f:
+            lines = f.readlines()
+            if lines:
+                d['error_log_tail'] = ''.join(lines[-20:])[:2000]
+                break
+    except: pass
 with open(sys.argv[8], 'w') as f:
     json.dump(d, f, indent=2)
-" "$GITHUB_URL" "$status" "$exit_code" "$entry_point" "$tier" \
+" "$REPO_URL" "$status" "$exit_code" "$entry_point" "$tier" \
   "$event_count" "$duration" "$OUTPUT_DIR/status.json" 2>/dev/null \
-  || echo "{\"repo\":\"$GITHUB_URL\",\"status\":\"$status\",\"tier\":$tier}" > "$OUTPUT_DIR/status.json"
+  || echo "{\"repo\":\"$REPO_URL\",\"status\":\"$status\",\"tier\":$tier}" > "$OUTPUT_DIR/status.json"
 }
 
-# ── PIP_NAME_MAP ─────────────────────────────────────────────────────────
+
+# ============================================================================
+# PIP NAME MAPPING TABLE
+# ============================================================================
+
 declare -A PIP_NAME_MAP=(
-    [cv2]=opencv-python  [cv]=opencv-python  [yaml]=pyyaml
-    [dotenv]=python-dotenv  [sklearn]=scikit-learn  [PIL]=Pillow
-    [bs4]=beautifulsoup4  [attr]=attrs  [gi]=PyGObject
-    [Crypto]=pycryptodome  [dateutil]=python-dateutil
-    [jose]=python-jose  [magic]=python-magic  [wx]=wxPython
-    [usb]=pyusb  [serial]=pyserial  [skimage]=scikit-image
-    [Bio]=biopython  [docx]=python-docx  [pptx]=python-pptx
-    [jwt]=PyJWT  [Levenshtein]=python-Levenshtein
-    [faiss]=faiss-cpu  [chromadb]=chromadb
-    [pinecone]=pinecone-client  [weaviate]=weaviate-client
-    [qdrant_client]=qdrant-client
+    # Image / media
+    [cv2]=opencv-python  [cv]=opencv-python  [PIL]=Pillow
+    [skimage]=scikit-image
+
+    # Data / science
+    [sklearn]=scikit-learn  [yaml]=pyyaml  [Bio]=biopython
+    [faiss]=faiss-cpu
+
+    # Web scraping / parsing
+    [bs4]=beautifulsoup4  [newspaper]=newspaper3k
+    [trafilatura]=trafilatura  [lxml]=lxml
+
+    # Dotenv / config
+    [dotenv]=python-dotenv  [pydantic_settings]=pydantic-settings
+
+    # Crypto / auth
+    [Crypto]=pycryptodome  [jose]=python-jose  [jwt]=PyJWT
+
+    # Date / string
+    [dateutil]=python-dateutil  [Levenshtein]=python-Levenshtein
+
+    # System / hardware
+    [gi]=PyGObject  [usb]=pyusb  [serial]=pyserial
+    [magic]=python-magic  [wx]=wxPython
+
+    # Attributes / types
+    [attr]=attrs
+
+    # Documents
+    [docx]=python-docx  [pptx]=python-pptx  [xlrd]=xlrd
+    [openpyxl]=openpyxl  [markdown]=markdown
+
+    # Vector databases
+    [chromadb]=chromadb  [pinecone]=pinecone-client
+    [weaviate]=weaviate-client  [qdrant_client]=qdrant-client
+
+    # LangChain ecosystem
     [langchain_community]=langchain-community
     [langchain_openai]=langchain-openai
     [langchain_anthropic]=langchain-anthropic
     [langchain_experimental]=langchain-experimental
     [langchain_core]=langchain-core
     [langchain_text_splitters]=langchain-text-splitters
+
+    # Search / tools
     [tavily]=tavily-python  [exa_py]=exa-py
     [duckduckgo_search]=duckduckgo-search
-    [newspaper]=newspaper3k  [trafilatura]=trafilatura
-    [unstructured]=unstructured  [litellm]=litellm
-    [tiktoken]=tiktoken  [cohere]=cohere  [together]=together
-    [xlrd]=xlrd  [openpyxl]=openpyxl  [lxml]=lxml
-    [markdown]=markdown  [rich]=rich  [tqdm]=tqdm
-    [click]=click  [typer]=typer  [fire]=fire
-    [colorama]=colorama  [termcolor]=termcolor
-    [pydantic_settings]=pydantic-settings
+
+    # LLM providers / tools
+    [litellm]=litellm  [tiktoken]=tiktoken  [cohere]=cohere
+    [together]=together  [unstructured]=unstructured
+
+    # CrewAI
     [crewai_tools]=crewai-tools
+
+    # CLI / display
+    [rich]=rich  [tqdm]=tqdm  [click]=click  [typer]=typer
+    [fire]=fire  [colorama]=colorama  [termcolor]=termcolor
 )
 
 resolve_pip_name() {
     local module="$1"
-    # 1. Explicit map
+    # 1. Explicit map lookup
     if [ -n "${PIP_NAME_MAP[$module]+x}" ]; then
         echo "${PIP_NAME_MAP[$module]}"; return
     fi
@@ -136,330 +182,501 @@ resolve_pip_name() {
     if [ "$hyphenated" != "$module" ]; then
         echo "$hyphenated"; return
     fi
-    # 3. As-is
+    # 3. Return as-is
     echo "$module"
 }
 
-# ── Phase 1: Clone ──────────────────────────────────────────────────────
 
-log "Cloning $GITHUB_URL ..."
-if ! git clone --depth 1 "$GITHUB_URL" "$REPO_DIR" 2>/tmp/clone.log; then
+# ============================================================================
+# STEP 1: CLONE
+# ============================================================================
+
+log "Step 1: Cloning $REPO_URL ..."
+
+if ! git clone --depth 1 "$REPO_URL" /tmp/repo 2>/dev/null; then
     log "FAIL: Clone failed"
-    cp /tmp/clone.log "$OUTPUT_DIR/stderr.log" 2>/dev/null || true
-    write_output "CLONE_FAILED" 1 "" 1
-    exit 0
+    write_output "CLONE_FAILED" 1 "" 0
+    exit 1
 fi
-cd "$REPO_DIR"
 
-# ── Phase 2: .env handling (early — before any imports) ─────────────────
 
-for tpl in .env.example .env.template .env.sample; do
-    if [ -f "$tpl" ] && [ ! -f .env ]; then
-        log "Creating .env from $tpl"
-        cp "$tpl" .env
-        sed -i 's/=$/=stratum-placeholder/' .env 2>/dev/null || true
-        sed -i 's/=""$/="stratum-placeholder"/' .env 2>/dev/null || true
-        sed -i "s/=''$/='stratum-placeholder'/" .env 2>/dev/null || true
-        break
-    fi
-done
-# Also check subdirectories for .env.example
-find "$REPO_DIR" -maxdepth 2 -name '.env.example' -print0 2>/dev/null | while IFS= read -r -d '' envex; do
-    target="$(dirname "$envex")/.env"
+# ============================================================================
+# STEP 2: ENVIRONMENT SETUP
+# ============================================================================
+
+log "Step 2: Setting environment variables ..."
+
+# -- LLM provider keys (placeholders to prevent KeyError crashes) --
+export OPENAI_API_KEY="sk-placeholder"
+export OPENAI_BASE_URL="${VLLM_HOST}/v1"
+export OPENAI_API_BASE="${VLLM_HOST}/v1"
+export ANTHROPIC_API_KEY="sk-placeholder"
+
+# -- Search / tool API keys --
+export TAVILY_API_KEY="tvly-placeholder"
+export SERPER_API_KEY="placeholder"
+export EXA_API_KEY="placeholder"
+export GOOGLE_API_KEY="placeholder"
+export BROWSERLESS_API_KEY="placeholder"
+export SERPAPI_API_KEY="placeholder"
+export BING_SUBSCRIPTION_KEY="placeholder"
+export BING_SEARCH_URL="https://placeholder"
+
+# -- Additional LLM providers --
+export GROQ_API_KEY="placeholder"
+export TOGETHER_API_KEY="placeholder"
+export COHERE_API_KEY="placeholder"
+
+# -- Hugging Face --
+export HUGGINGFACEHUB_API_TOKEN="placeholder"
+export HUGGING_FACE_HUB_TOKEN="placeholder"
+
+# -- Vector databases --
+export PINECONE_API_KEY="placeholder"
+export WEAVIATE_API_KEY="placeholder"
+export QDRANT_API_KEY="placeholder"
+
+# -- Browser / scraping --
+export FIRECRAWL_API_KEY="placeholder"
+export BROWSERBASE_API_KEY="placeholder"
+export BROWSERBASE_PROJECT_ID="placeholder"
+
+# -- LangChain / LangSmith --
+export LANGCHAIN_API_KEY="placeholder"
+export LANGCHAIN_TRACING_V2="false"
+export LANGSMITH_API_KEY="placeholder"
+
+# -- Stratum per-repo identifiers --
+RUN_ID=$(python3 -c 'import uuid; print(uuid.uuid4().hex[:16])' 2>/dev/null || echo "run_$$")
+export STRATUM_RUN_ID="$RUN_ID"
+export STRATUM_REPO_ID="$REPO_URL"
+export STRATUM_EVENTS_FILE="$EVENTS_FILE"
+export STRATUM_VLLM_MODEL="${STRATUM_VLLM_MODEL:-mistralai/Mistral-7B-Instruct-v0.3}"
+
+log "  RUN_ID=$RUN_ID  MODEL=$STRATUM_VLLM_MODEL"
+
+
+# ============================================================================
+# STEP 3: .env FILE HANDLING
+# ============================================================================
+
+log "Step 3: Handling .env files ..."
+
+# Copy any .env.example / .env.sample / env.example files found in the repo
+find /tmp/repo -name '.env.example' -o -name '.env.sample' -o -name 'env.example' | while read envfile; do
+    target="$(dirname "$envfile")/.env"
     if [ ! -f "$target" ]; then
-        cp "$envex" "$target" 2>/dev/null || true
-        sed -i 's/=$/=stratum-placeholder/' "$target" 2>/dev/null || true
+        log "  Creating $target from $envfile"
+        cp "$envfile" "$target"
+        sed -i 's/=$/=placeholder/g' "$target"
+        sed -i 's/=""$/="placeholder"/g' "$target"
+        sed -i "s/=''$/='placeholder'/g" "$target"
     fi
 done
 
-# ── Phase 3: Entry point detection ──────────────────────────────────────
-
-declare -A CANDIDATES  # path -> score
-
-# Strategy A: __main__ + framework call (score 10 — BEST signal)
-while IFS= read -r pyfile; do
-    if grep -q '__name__.*__main__' "$pyfile" 2>/dev/null; then
-        if grep -qE '\.kickoff\s*\(|\.invoke\s*\(|initiate_chat\s*\(|\.run\s*\(' "$pyfile" 2>/dev/null; then
-            cur="${CANDIDATES[$pyfile]:-0}"; [ 10 -gt "$cur" ] && CANDIDATES["$pyfile"]=10
-        elif grep -qE '(import|from)\s+(crewai|langchain|langgraph|autogen|openai)\b' "$pyfile" 2>/dev/null; then
-            cur="${CANDIDATES[$pyfile]:-0}"; [ 8 -gt "$cur" ] && CANDIDATES["$pyfile"]=8
-        fi
-    fi
-done < <(find . -maxdepth 4 -name '*.py' \
-    -not -path '*/\.*' -not -path '*/node_modules/*' \
-    -not -path '*/venv/*' -not -path '*/.venv/*' \
-    -not -path '*/test*' -not -path '*/__pycache__/*' \
-    -not -name 'setup.py' -not -name 'conftest.py' 2>/dev/null || true)
-
-# Strategy B: README parsing (score 9)
-for readme in README.md README.rst readme.md; do
-    if [ -f "$readme" ]; then
-        while IFS= read -r match; do
-            [ -f "$match" ] || continue
-            cur="${CANDIDATES[$match]:-0}"; [ 9 -gt "$cur" ] && CANDIDATES["$match"]=9
-        done < <(grep -oP 'python3?\s+\K\S+\.py' "$readme" 2>/dev/null | sort -u || true)
-        break
-    fi
-done
-
-# Strategy C: pyproject.toml scripts (score 8)
-if [ -f pyproject.toml ]; then
-    while IFS= read -r script_ref; do
-        mod_path=$(echo "$script_ref" | sed 's/:.*//' | tr '.' '/')
-        for c in "${mod_path}.py" "${mod_path}/__main__.py"; do
-            [ -f "$c" ] || continue
-            cur="${CANDIDATES[$c]:-0}"; [ 8 -gt "$cur" ] && CANDIDATES["$c"]=8
-        done
-    done < <(grep -A5 '\[project\.scripts\]\|\[tool\.poetry\.scripts\]' pyproject.toml 2>/dev/null \
-             | grep -oP '=\s*"\K[^"]+' 2>/dev/null || true)
+# Ensure a root-level .env always exists
+if [ ! -f /tmp/repo/.env ]; then
+    log "  Creating default /tmp/repo/.env"
+    echo "OPENAI_API_KEY=sk-placeholder" > /tmp/repo/.env
+    echo "OPENAI_BASE_URL=${VLLM_HOST}/v1" >> /tmp/repo/.env
 fi
 
-# Strategy D: Known filenames at root (score 6)
-for name in main.py app.py run.py agent.py crew.py start.py cli.py; do
-    if [ -f "$name" ]; then
-        # SKIP server-based files
-        if grep -qE 'uvicorn\.|flask\.|FastAPI\(|Starlette\(|gunicorn' "$name" 2>/dev/null; then
-            continue
-        fi
-        cur="${CANDIDATES[$name]:-0}"; [ 6 -gt "$cur" ] && CANDIDATES["$name"]=6
-    fi
+
+# ============================================================================
+# STEP 4: DEPENDENCY INSTALLATION
+# ============================================================================
+
+log "Step 4: Installing dependencies ..."
+
+# Install all requirements*.txt files found within 3 levels
+find /tmp/repo -maxdepth 3 -name 'requirements*.txt' | while read reqfile; do
+    log "  Installing $reqfile"
+    pip install -r "$reqfile" --quiet 2>&1 | tail -5
 done
 
-# Strategy E: Known filenames in subdirs (score 4)
-for subdir in src app agents crew; do
-    [ -d "$subdir" ] || continue
-    for name in main.py app.py run.py agent.py crew.py start.py __main__.py; do
-        [ -f "$subdir/$name" ] || continue
-        if grep -qE 'uvicorn\.|flask\.|FastAPI\(|Starlette\(' "$subdir/$name" 2>/dev/null; then
-            continue
-        fi
-        cur="${CANDIDATES[$subdir/$name]:-0}"; [ 4 -gt "$cur" ] && CANDIDATES["$subdir/$name"]=4
-    done
-done
-
-# Strategy F: Any __main__ guard (score 2 — last resort)
-while IFS= read -r pyfile; do
-    if grep -q '__name__.*__main__' "$pyfile" 2>/dev/null; then
-        if grep -qE 'uvicorn\.|flask\.|FastAPI\(' "$pyfile" 2>/dev/null; then
-            continue  # Skip server files
-        fi
-        cur="${CANDIDATES[$pyfile]:-0}"; [ 2 -gt "$cur" ] && CANDIDATES["$pyfile"]=2
-    fi
-done < <(find . -maxdepth 3 -name '*.py' \
-    -not -path '*/\.*' -not -path '*/venv/*' -not -path '*/.venv/*' \
-    -not -path '*/test*' -not -path '*/__pycache__/*' \
-    -not -name 'setup.py' -not -name 'conftest.py' 2>/dev/null || true)
-
-# Pick best candidate
-ENTRY_POINT=""
-BEST_SCORE=0
-for path in "${!CANDIDATES[@]}"; do
-    score=${CANDIDATES[$path]}
-    if [ "$score" -gt "$BEST_SCORE" ]; then
-        BEST_SCORE=$score
-        ENTRY_POINT="$path"
-    fi
-done
-ENTRY_POINT="${ENTRY_POINT#./}"
-
-TIER1_FAILED=""
-if [ -z "$ENTRY_POINT" ]; then
-    log "No entry point found — will try Tier 2"
-    TIER1_FAILED="no_entry_point"
-else
-    log "Entry point: $ENTRY_POINT (score=$BEST_SCORE)"
+# Install the repo itself if it has pyproject.toml or setup.py
+if [ -f /tmp/repo/pyproject.toml ] || [ -f /tmp/repo/setup.py ]; then
+    log "  Installing repo package (editable)"
+    pip install -e /tmp/repo --quiet 2>&1 | tail -5 || true
 fi
 
-# ── Phase 4: Check for server-based repo ─────────────────────────────────
 
-IS_SERVER=false
-if [ -n "$ENTRY_POINT" ] && [ -f "$ENTRY_POINT" ]; then
-    if grep -qE '(uvicorn\.run|app\.run\(|flask\.Flask|FastAPI\(\)|Starlette\(|gunicorn)' "$ENTRY_POINT" 2>/dev/null; then
-        IS_SERVER=true
-        log "Server-based repo detected — skipping native execution"
-        TIER1_FAILED="server"
-    fi
-fi
+# ============================================================================
+# STEP 5: ENTRY POINT DETECTION (SCORING)
+# ============================================================================
 
-# ── Phase 5: Install dependencies ───────────────────────────────────────
+log "Step 5: Detecting entry point ..."
 
-install_deps() {
-    # Root requirements.txt
-    if [ -f requirements.txt ]; then
-        log "Installing requirements.txt ..."
-        pip install --no-cache-dir -r requirements.txt 2>&1 | tail -5 | while read -r l; do log "  pip: $l"; done
-        if [ ${PIPESTATUS[0]} -ne 0 ]; then
-            log "WARNING: requirements.txt install had errors, trying line-by-line"
-            while IFS= read -r req; do
-                req=$(echo "$req" | sed 's/#.*//' | xargs)
-                [ -z "$req" ] && continue
-                [[ "$req" == -* ]] && continue
-                pip install --no-cache-dir "$req" 2>/dev/null || log "  SKIP: $req"
-            done < requirements.txt
-        fi
-    fi
+# We use a temp file to accumulate candidates with scores.
+# Format: SCORE<TAB>PATH (one per line, highest score wins)
+CANDIDATES_FILE=$(mktemp)
 
-    # Nested requirements files
-    while IFS= read -r reqfile; do
-        [ "$reqfile" = "./requirements.txt" ] && continue
-        log "Installing $reqfile ..."
-        pip install --no-cache-dir -r "$reqfile" 2>/dev/null || true
-    done < <(find . -maxdepth 3 -name 'requirements*.txt' \
-        -not -path '*/venv/*' -not -path '*/.venv/*' 2>/dev/null || true)
-
-    # pyproject.toml / setup.py fallback
-    if [ ! -f requirements.txt ]; then
-        if [ -f pyproject.toml ]; then
-            log "Installing from pyproject.toml ..."
-            pip install --no-cache-dir -e . 2>/dev/null || pip install --no-cache-dir . 2>/dev/null || true
-        elif [ -f setup.py ]; then
-            log "Installing from setup.py ..."
-            pip install --no-cache-dir -e . 2>/dev/null || pip install --no-cache-dir . 2>/dev/null || true
-        fi
-    fi
+# Helper: add a candidate with a given score
+add_candidate() {
+    local score="$1"
+    local path="$2"
+    echo -e "${score}\t${path}" >> "$CANDIDATES_FILE"
 }
 
-if [ "$IS_SERVER" = false ] && [ -n "$ENTRY_POINT" ]; then
-    install_deps
+# Helper: count directory depth relative to /tmp/repo
+dir_depth() {
+    local relpath="${1#/tmp/repo/}"
+    echo "$relpath" | tr '/' '\n' | wc -l
+}
+
+# Helper: count lines in a file
+line_count() {
+    wc -l < "$1" 2>/dev/null || echo "0"
+}
+
+# Scan all Python files (exclude hidden dirs, venv, node_modules, __pycache__)
+ALL_PY_FILES=$(mktemp)
+find /tmp/repo -maxdepth 5 -name '*.py' \
+    -not -path '*/\.*' -not -path '*/node_modules/*' \
+    -not -path '*/venv/*' -not -path '*/.venv/*' \
+    -not -path '*/__pycache__/*' \
+    -not -name 'setup.py' -not -name 'conftest.py' \
+    2>/dev/null > "$ALL_PY_FILES" || true
+
+while IFS= read -r pyfile; do
+    [ -z "$pyfile" ] && continue
+    [ -f "$pyfile" ] || continue
+
+    score=0
+    relpath="${pyfile#/tmp/repo/}"
+    basename_file=$(basename "$pyfile")
+    dirpath=$(dirname "$pyfile")
+    reldirpath="${dirpath#/tmp/repo}"
+    reldirpath="${reldirpath#/}"  # strip leading slash
+
+    has_main_guard=false
+    has_framework_call=false
+    has_server_import=false
+
+    # Check file content (single pass with grep)
+    if grep -q '__name__.*__main__\|__name__.*==.*"__main__"' "$pyfile" 2>/dev/null; then
+        has_main_guard=true
+    fi
+    if grep -qE '\.kickoff\s*\(|\.invoke\s*\(|initiate_chat\s*\(' "$pyfile" 2>/dev/null; then
+        has_framework_call=true
+    fi
+    if grep -qE 'import\s+(uvicorn|flask|fastapi|gunicorn)|from\s+(uvicorn|flask|fastapi|gunicorn)' "$pyfile" 2>/dev/null; then
+        has_server_import=true
+    fi
+
+    # +10: has __main__ guard AND framework call
+    if [ "$has_main_guard" = true ] && [ "$has_framework_call" = true ]; then
+        score=$((score + 10))
+    # +7: has framework call (standalone file, no main guard needed)
+    elif [ "$has_framework_call" = true ]; then
+        score=$((score + 7))
+    # +2: has __main__ guard (generic)
+    elif [ "$has_main_guard" = true ]; then
+        score=$((score + 2))
+    else
+        # No main guard, no framework call -- not a candidate
+        continue
+    fi
+
+    # +5: named main.py/app.py/run.py at repo root
+    if [ -z "$reldirpath" ] || [ "$reldirpath" = "." ]; then
+        case "$basename_file" in
+            main.py|app.py|run.py) score=$((score + 5)) ;;
+        esac
+    fi
+
+    # +3: named main.py/app.py/run.py in src/ or examples/
+    case "$reldirpath" in
+        src|src/*|examples|examples/*)
+            case "$basename_file" in
+                main.py|app.py|run.py) score=$((score + 3)) ;;
+            esac
+            ;;
+    esac
+
+    # -20: imports uvicorn/flask/fastapi/gunicorn (server-based)
+    if [ "$has_server_import" = true ]; then
+        score=$((score - 20))
+    fi
+
+    # -10: is in test/tests directory
+    case "$relpath" in
+        test/*|tests/*|*/test/*|*/tests/*) score=$((score - 10)) ;;
+    esac
+
+    # -5: deeply nested (>3 dirs deep from repo root)
+    depth=$(dir_depth "$pyfile")
+    if [ "$depth" -gt 3 ]; then
+        score=$((score - 5))
+    fi
+
+    # -5: file size > 500 lines
+    lines=$(line_count "$pyfile")
+    lines=$(echo "$lines" | tr -d ' ')
+    if [ "$lines" -gt 500 ]; then
+        score=$((score - 5))
+    fi
+
+    add_candidate "$score" "$pyfile"
+
+done < "$ALL_PY_FILES"
+
+rm -f "$ALL_PY_FILES"
+
+# Pick the best candidate (highest score)
+ENTRY=""
+BEST_SCORE=-999
+
+if [ -s "$CANDIDATES_FILE" ]; then
+    while IFS=$'\t' read -r cand_score cand_path; do
+        [ -z "$cand_score" ] && continue
+        if [ "$cand_score" -gt "$BEST_SCORE" ]; then
+            BEST_SCORE=$cand_score
+            ENTRY="$cand_path"
+        fi
+    done < "$CANDIDATES_FILE"
 fi
 
-# ── Phase 6: PYTHONPATH (Bug #4: NEVER add entry point directory) ────────
+rm -f "$CANDIDATES_FILE"
 
-export PYTHONPATH="$REPO_DIR:${PYTHONPATH:-}"
-if [ -d "$REPO_DIR/src" ]; then
-    export PYTHONPATH="$REPO_DIR/src:$PYTHONPATH"
+# Report detection result
+TIER1_SKIP=""
+if [ -z "$ENTRY" ]; then
+    log "  No entry point found -- will skip to Tier 2"
+    TIER1_SKIP="no_entry_point"
+elif [ "$BEST_SCORE" -lt 0 ]; then
+    log "  Top candidate has negative score ($BEST_SCORE): $ENTRY -- server-based, skipping"
+    write_output "SERVER_BASED" 0 "$ENTRY" 0
+    TIER1_SKIP="server_based"
+else
+    log "  Entry point: $ENTRY (score=$BEST_SCORE)"
 fi
 
-# ── Phase 7: Tier 1 — Native execution with retry loop ──────────────────
 
-MAX_ATTEMPTS=5
+# ============================================================================
+# STEP 6: PYTHONPATH CONFIGURATION
+# ============================================================================
+
+log "Step 6: Configuring PYTHONPATH ..."
+
+export PYTHONPATH="/tmp/repo:/tmp/repo/src:${PYTHONPATH:-}"
+
+# Walk up from entry point dir to find and install the nearest package root
+if [ -n "$ENTRY" ] && [ -z "$TIER1_SKIP" ]; then
+    ENTRY_DIR=$(dirname "$ENTRY")
+    SEARCH_DIR="$ENTRY_DIR"
+    while [ "$SEARCH_DIR" != "/tmp" ] && [ "$SEARCH_DIR" != "/" ]; do
+        if [ -f "$SEARCH_DIR/pyproject.toml" ] || [ -f "$SEARCH_DIR/setup.py" ]; then
+            log "  Installing package at $SEARCH_DIR"
+            pip install -e "$SEARCH_DIR" --quiet 2>&1 | tail -5 || true
+            break
+        fi
+        SEARCH_DIR=$(dirname "$SEARCH_DIR")
+    done
+fi
+
+log "  PYTHONPATH=$PYTHONPATH"
+
+
+# ============================================================================
+# STEP 7: TIER 1 -- NATIVE EXECUTION WITH AUTO-RETRY
+# ============================================================================
+
+MAX_RETRIES=5
 ATTEMPT=0
 ATTEMPTED_MODULES=""
-RUN_EXIT_CODE=0
+EXIT_CODE=0
 TIER1_STATUS=""
+TIER=1
 
-if [ -n "$TIER1_FAILED" ]; then
-    if [ "$TIER1_FAILED" = "server" ]; then
+if [ -n "$TIER1_SKIP" ]; then
+    # Already classified above (no entry point or server-based)
+    if [ "$TIER1_SKIP" = "server_based" ]; then
         TIER1_STATUS="SERVER_BASED"
     else
         TIER1_STATUS="NO_ENTRY_POINT"
     fi
+    TIER=0
 else
-    for (( ATTEMPT=1; ATTEMPT<=MAX_ATTEMPTS; ATTEMPT++ )); do
-        log "Tier 1 attempt $ATTEMPT/$MAX_ATTEMPTS"
+    log "Step 7: Executing Tier 1 (native) ..."
 
-        # NO set -e. Capture exit code directly.
-        timeout "$TIMEOUT" python "$RUNNER" "$ENTRY_POINT" \
-            >"$OUTPUT_DIR/stdout.log" 2>/tmp/run_stderr.log
-        RUN_EXIT_CODE=$?
+    for (( ATTEMPT=1; ATTEMPT<=MAX_RETRIES; ATTEMPT++ )); do
+        log "  Attempt $ATTEMPT/$MAX_RETRIES: python $(basename "$ENTRY")"
 
-        # Append stderr to output
-        cp /tmp/run_stderr.log "$OUTPUT_DIR/stderr.log" 2>/dev/null || true
+        # Run from the entry point's directory
+        cd "$(dirname "$ENTRY")"
+        timeout "$TIMEOUT" python "$(basename "$ENTRY")" \
+            > "$OUTPUT_DIR/stdout.log" \
+            2> "$OUTPUT_DIR/stderr.log"
+        EXIT_CODE=$?
 
-        # Check for ModuleNotFoundError
-        MISSING_MODULE=""
-        if [ $RUN_EXIT_CODE -ne 0 ] && [ -f /tmp/run_stderr.log ]; then
-            MISSING_MODULE=$(grep -oP "No module named '\\K[^'.]+" /tmp/run_stderr.log 2>/dev/null | head -1 || true)
+        # ── Check for events regardless of exit code ──
+        HAS_EVENTS=false
+        if [ -f "$EVENTS_FILE" ] && [ -s "$EVENTS_FILE" ]; then
+            HAS_EVENTS=true
         fi
 
-        # If success or not an import error, stop retrying
-        if [ -z "$MISSING_MODULE" ]; then
+        # ── Classify the result ──
+
+        # Exit 0: clean success
+        if [ $EXIT_CODE -eq 0 ]; then
+            if [ "$HAS_EVENTS" = true ]; then
+                TIER1_STATUS="SUCCESS"
+            else
+                TIER1_STATUS="NO_EVENTS"
+            fi
             break
         fi
 
-        # Duplicate detection
+        # Exit 124: timeout
+        if [ $EXIT_CODE -eq 124 ]; then
+            if [ "$HAS_EVENTS" = true ]; then
+                TIER1_STATUS="PARTIAL_SUCCESS"
+            else
+                TIER1_STATUS="TIMEOUT_NO_EVENTS"
+            fi
+            break
+        fi
+
+        # ── Check for ModuleNotFoundError (retryable) ──
+        MISSING_MODULE=""
+        if [ -f "$OUTPUT_DIR/stderr.log" ]; then
+            MISSING_MODULE=$(grep -oP "No module named '\\K[^'.]+" "$OUTPUT_DIR/stderr.log" 2>/dev/null | head -1 || true)
+        fi
+
+        # Not an import error -- stop retrying
+        if [ -z "$MISSING_MODULE" ]; then
+            if [ "$HAS_EVENTS" = true ]; then
+                TIER1_STATUS="PARTIAL_SUCCESS"
+            else
+                TIER1_STATUS="RUNTIME_ERROR"
+            fi
+            break
+        fi
+
+        # Duplicate module detection (already tried installing this one)
         if echo " $ATTEMPTED_MODULES " | grep -q " $MISSING_MODULE "; then
-            log "Module '$MISSING_MODULE' already attempted — unresolvable"
+            log "  Module '$MISSING_MODULE' already attempted -- unresolvable"
             TIER1_STATUS="UNRESOLVABLE_IMPORT"
-            TIER1_FAILED="import:$MISSING_MODULE"
             break
         fi
         ATTEMPTED_MODULES="$ATTEMPTED_MODULES $MISSING_MODULE"
 
+        # Resolve pip package name and install
         PIP_NAME=$(resolve_pip_name "$MISSING_MODULE")
-        log "Auto-installing: $MISSING_MODULE → pip install $PIP_NAME"
+        log "  Auto-installing: $MISSING_MODULE -> pip install $PIP_NAME"
 
-        pip install --no-cache-dir "$PIP_NAME" 2>/dev/null
+        pip install "$PIP_NAME" --quiet 2>/dev/null
         if [ $? -ne 0 ]; then
-            # Try raw module name if mapped name failed
+            # Fallback: try raw module name if mapped name failed
             if [ "$PIP_NAME" != "$MISSING_MODULE" ]; then
-                pip install --no-cache-dir "$MISSING_MODULE" 2>/dev/null
+                pip install "$MISSING_MODULE" --quiet 2>/dev/null
                 if [ $? -ne 0 ]; then
+                    log "  Failed to install $MISSING_MODULE -- unresolvable"
                     TIER1_STATUS="UNRESOLVABLE_IMPORT"
-                    TIER1_FAILED="import:$MISSING_MODULE"
                     break
                 fi
             else
+                log "  Failed to install $PIP_NAME -- unresolvable"
                 TIER1_STATUS="UNRESOLVABLE_IMPORT"
-                TIER1_FAILED="import:$MISSING_MODULE"
                 break
             fi
         fi
+
+        log "  Installed $PIP_NAME -- retrying ..."
     done
-fi
 
-# ── Phase 8: Classify Tier 1 ────────────────────────────────────────────
-
-if [ -z "$TIER1_STATUS" ]; then
-    if [ $RUN_EXIT_CODE -eq 0 ]; then
-        if [ -f "$EVENTS_FILE" ] && [ -s "$EVENTS_FILE" ]; then
-            TIER1_STATUS="SUCCESS"
-        else
-            TIER1_STATUS="NO_EVENTS"
-            TIER1_FAILED="no_events"
-        fi
-    elif [ $RUN_EXIT_CODE -eq 124 ]; then
-        if [ -f "$EVENTS_FILE" ] && [ -s "$EVENTS_FILE" ]; then
-            TIER1_STATUS="PARTIAL_SUCCESS"
-        else
-            TIER1_STATUS="TIMEOUT_NO_EVENTS"
-            TIER1_FAILED="timeout"
-        fi
-    else
-        TIER1_STATUS="RUNTIME_ERROR"
-        TIER1_FAILED="runtime:$RUN_EXIT_CODE"
+    # If we exhausted all retries without setting a status
+    if [ -z "$TIER1_STATUS" ]; then
+        TIER1_STATUS="MAX_RETRIES_EXCEEDED"
     fi
 fi
 
-log "Tier 1 result: $TIER1_STATUS"
+log "  Tier 1 result: $TIER1_STATUS (exit_code=$EXIT_CODE)"
 
-# ── Phase 9: Tier 2 — Synthetic harness fallback ────────────────────────
+
+# ============================================================================
+# STEP 8: TIER 2 -- SYNTHETIC HARNESS FALLBACK
+# ============================================================================
 
 FINAL_STATUS="$TIER1_STATUS"
-TIER=1
+FINAL_EXIT_CODE="$EXIT_CODE"
 
-if [ -n "$TIER1_FAILED" ] && [ -f "$SYNTHETIC" ]; then
-    log "Tier 1 failed ($TIER1_FAILED) — invoking Tier 2 synthetic harness"
+# Determine if Tier 1 was a success (no need for Tier 2)
+TIER1_SUCCESS=false
+case "$TIER1_STATUS" in
+    SUCCESS|PARTIAL_SUCCESS) TIER1_SUCCESS=true ;;
+esac
 
-    # Clear partial events from failed Tier 1
+if [ "$TIER1_SUCCESS" = false ] && [ -f /app/synthetic_harness.py ]; then
+    log "Step 8: Tier 1 failed ($TIER1_STATUS) -- invoking Tier 2 synthetic harness ..."
+
+    # Clear any partial events from failed Tier 1
     rm -f "$EVENTS_FILE"
 
-    timeout "$TIMEOUT" python "$SYNTHETIC" "$REPO_DIR" "$EVENTS_FILE" \
-        >"$OUTPUT_DIR/tier2_stdout.log" 2>"$OUTPUT_DIR/tier2_stderr.log"
+    timeout "$TIMEOUT" python /app/synthetic_harness.py /tmp/repo "$VLLM_HOST" "$OUTPUT_DIR" \
+        > "$OUTPUT_DIR/tier2_stdout.log" \
+        2> "$OUTPUT_DIR/tier2_stderr.log"
     T2_EXIT=$?
 
-    if [ $T2_EXIT -eq 0 ] && [ -f "$EVENTS_FILE" ] && [ -s "$EVENTS_FILE" ]; then
+    T2_HAS_EVENTS=false
+    if [ -f "$EVENTS_FILE" ] && [ -s "$EVENTS_FILE" ]; then
+        T2_HAS_EVENTS=true
+    fi
+
+    if [ "$T2_HAS_EVENTS" = true ]; then
         FINAL_STATUS="TIER2_SUCCESS"
+        FINAL_EXIT_CODE=$T2_EXIT
         TIER=2
-        log "Tier 2 succeeded!"
-    elif [ $T2_EXIT -eq 124 ] && [ -f "$EVENTS_FILE" ] && [ -s "$EVENTS_FILE" ]; then
-        FINAL_STATUS="TIER2_PARTIAL"
-        TIER=2
-        log "Tier 2 partial (timeout with events)"
+        log "  Tier 2 succeeded! (events captured)"
     else
-        log "Tier 2 also failed (exit=$T2_EXIT)"
-        # Keep original Tier 1 status
+        FINAL_STATUS="TIER2_FAILED"
+        FINAL_EXIT_CODE=$T2_EXIT
+        TIER=0
+        log "  Tier 2 also failed (no events, exit=$T2_EXIT)"
+    fi
+else
+    if [ "$TIER1_SUCCESS" = true ]; then
+        log "Step 8: Skipping Tier 2 (Tier 1 succeeded)"
+    elif [ ! -f /app/synthetic_harness.py ]; then
+        log "Step 8: Skipping Tier 2 (synthetic_harness.py not found)"
+        TIER=0
     fi
 fi
 
-# ── Phase 10: Build graph (if we have events) ───────────────────────────
 
+# ============================================================================
+# STEP 9: FINAL STATUS & GRAPH BUILDING
+# ============================================================================
+
+log "Step 9: Writing final output ..."
+log "  Final status: $FINAL_STATUS (tier=$TIER, exit_code=$FINAL_EXIT_CODE)"
+
+write_output "$FINAL_STATUS" "$FINAL_EXIT_CODE" "${ENTRY:-}" "$TIER"
+
+# Build behavioral graph from events (if any)
 if [ -f "$EVENTS_FILE" ] && [ -s "$EVENTS_FILE" ] && [ -f /app/graph_builder.py ]; then
+    log "  Building behavioral graph from $(wc -l < "$EVENTS_FILE" | tr -d ' ') events ..."
     python3 /app/graph_builder.py "$EVENTS_FILE" "$OUTPUT_DIR/graph.json" 2>/dev/null || true
 fi
 
-# ── Phase 11: Write final output ────────────────────────────────────────
+EVENT_COUNT=0
+if [ -f "$EVENTS_FILE" ]; then
+    EVENT_COUNT=$(wc -l < "$EVENTS_FILE" 2>/dev/null || echo "0")
+    EVENT_COUNT=$(echo "$EVENT_COUNT" | tr -d ' ')
+fi
 
-log "Final: $FINAL_STATUS (tier=$TIER)"
-write_output "$FINAL_STATUS" "$RUN_EXIT_CODE" "$ENTRY_POINT" "$TIER"
+END_EPOCH=$(date +%s)
+DURATION=$(( END_EPOCH - START_EPOCH ))
+
+log "============================================"
+log "  Repo:        $REPO_URL"
+log "  Status:      $FINAL_STATUS"
+log "  Tier:        $TIER"
+log "  Entry:       ${ENTRY:-<none>}"
+log "  Events:      $EVENT_COUNT"
+log "  Duration:    ${DURATION}s"
+log "  Run ID:      $RUN_ID"
+log "============================================"
+
 exit 0

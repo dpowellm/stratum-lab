@@ -2,71 +2,17 @@ FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y git build-essential curl && rm -rf /var/lib/apt/lists/*
 
-# Separate pip layers to avoid 20-minute resolver backtracking
-RUN pip install --no-cache-dir openai anthropic requests httpx pydantic python-dotenv pyyaml
+# Separate layers to avoid pip resolver backtracking
+RUN pip install --no-cache-dir openai anthropic requests httpx pydantic python-dotenv
 RUN pip install --no-cache-dir litellm
 RUN pip install --no-cache-dir crewai crewai-tools
 RUN pip install --no-cache-dir langchain langchain-openai langchain-community langgraph
 RUN pip install --no-cache-dir pyautogen
 
-# Common transitive deps that repos expect at import time
-RUN pip install --no-cache-dir \
-    tiktoken beautifulsoup4 Pillow numpy pandas scikit-learn lxml aiohttp \
-    python-docx openpyxl PyJWT faiss-cpu chromadb tavily-python \
-    duckduckgo-search trafilatura newspaper3k unstructured
-
-# Patcher injection — confirmed working via .pth file.
-# Adds /opt to sys.path so `import stratum_patcher` works at startup.
+# Patcher injection — DO NOT CHANGE, confirmed working
 COPY stratum_patcher/ /opt/stratum_patcher/
 RUN echo "/opt" > $(python -c "import site; print(site.getsitepackages()[0])")/stratum.pth
 RUN echo "import stratum_patcher" > $(python -c "import site; print(site.getsitepackages()[0])")/sitecustomize.py
 
-# Execution harness scripts
-COPY run_repo.sh /app/run_repo.sh
-COPY stratum_patcher/runner.py /app/runner.py
-COPY scripts/synthetic_harness.py /app/synthetic_harness.py
-COPY scripts/graph_builder.py /app/graph_builder.py
-RUN chmod +x /app/run_repo.sh
-
-# vLLM / OpenAI-compatible endpoint
-ENV OPENAI_API_KEY="sk-stratum-local"
-ENV OPENAI_BASE_URL="http://host.docker.internal:8000/v1"
-ENV OPENAI_API_BASE="http://host.docker.internal:8000/v1"
-ENV ANTHROPIC_API_KEY="sk-stratum-local"
-
-# Dummy API keys — prevent import-time crashes.
-# The patcher intercepts calls; these never leave the container.
-ENV TAVILY_API_KEY="tvly-stratum-dummy"
-ENV SERPER_API_KEY="stratum-dummy-serper"
-ENV EXA_API_KEY="stratum-dummy-exa"
-ENV GOOGLE_API_KEY="stratum-dummy-google"
-ENV GOOGLE_CSE_ID="stratum-dummy-cse"
-ENV BRAVE_API_KEY="stratum-dummy-brave"
-ENV BING_API_KEY="stratum-dummy-bing"
-ENV BING_SUBSCRIPTION_KEY="stratum-dummy-bing"
-ENV SERPAPI_API_KEY="stratum-dummy-serpapi"
-ENV WOLFRAM_ALPHA_APPID="stratum-dummy-wolfram"
-ENV LANGCHAIN_API_KEY="stratum-dummy-langchain"
-ENV LANGCHAIN_TRACING_V2="false"
-ENV COHERE_API_KEY="stratum-dummy-cohere"
-ENV HUGGINGFACE_API_KEY="stratum-dummy-hf"
-ENV HUGGINGFACEHUB_API_TOKEN="stratum-dummy-hf"
-ENV PINECONE_API_KEY="stratum-dummy-pinecone"
-ENV WEAVIATE_API_KEY="stratum-dummy-weaviate"
-ENV QDRANT_API_KEY="stratum-dummy-qdrant"
-ENV TOGETHER_API_KEY="stratum-dummy-together"
-ENV GROQ_API_KEY="stratum-dummy-groq"
-ENV FIREWORKS_API_KEY="stratum-dummy-fireworks"
-ENV FIRECRAWL_API_KEY="stratum-dummy-firecrawl"
-ENV BROWSERLESS_API_KEY="stratum-dummy-browserless"
-ENV VOYAGE_API_KEY="stratum-dummy-voyage"
-ENV JINA_API_KEY="stratum-dummy-jina"
-
-# Stratum runtime defaults (run_repo.sh overrides per-repo)
-ENV STRATUM_EVENTS_FILE="/app/output/stratum_events.jsonl"
-ENV STRATUM_VLLM_MODEL="mistralai/Mistral-7B-Instruct-v0.3"
-
 RUN mkdir -p /app/output
 WORKDIR /app
-
-ENTRYPOINT ["/app/run_repo.sh"]

@@ -10,7 +10,7 @@ This is LEGITIMATE because it exercises the REAL agent definitions from the
 repo -- just without broken dependencies, missing API keys, or custom tools.
 
 Usage:
-    python synthetic_harness.py <repo_path> <events_file>
+    python synthetic_harness.py <repo_path> <vllm_host> <output_dir>
 
 Exit codes:
     0   = script generated and executed successfully (events captured)
@@ -508,15 +508,17 @@ def generate_openai_script() -> str:
 
 def main() -> int:
     """Entry point.  Returns 0 on success, 1 on failure."""
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 4:
         print(
-            "Usage: synthetic_harness.py <repo_path> <events_file>",
+            "Usage: synthetic_harness.py <repo_path> <vllm_host> <output_dir>",
             file=sys.stderr,
         )
         return 1
 
     repo_path = Path(sys.argv[1])
-    events_file = sys.argv[2]
+    vllm_host = sys.argv[2]
+    output_dir = sys.argv[3]
+    events_file = os.path.join(output_dir, "stratum_events.jsonl")
 
     if not repo_path.is_dir():
         print(f"[synthetic] Error: {repo_path} is not a directory", file=sys.stderr)
@@ -524,6 +526,7 @@ def main() -> int:
 
     # -- Environment for the patcher / collector ---------------------------
     os.environ["STRATUM_EVENTS_FILE"] = events_file
+    os.environ["OPENAI_BASE_URL"] = f"{vllm_host}/v1"
     os.environ["STRATUM_FRAMEWORK"] = "synthetic"
     # Ensure STRATUM_REPO_ROOT is set so runner.py adds it to PYTHONPATH.
     if "STRATUM_REPO_ROOT" not in os.environ:

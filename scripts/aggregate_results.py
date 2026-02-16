@@ -1,32 +1,41 @@
 #!/usr/bin/env python3
-"""Post-scan aggregator -- produces scan_report.json from per-repo results.
+"""Post-scan aggregator -- reads ALL results/*/ directories and produces scan_report.json.
 
-Reads all results/<repo_hash>/ directories and produces a comprehensive
-scan report including overview, status/tier/framework breakdowns, event
-statistics, graph quality metrics, topology patterns, failure reasons,
-and a list of successful repos.
+Separates Tier 1 and Tier 2 results across ALL statistics: execution results,
+framework distributions, event counts, topology census, and successful repos.
 
 Usage:
-    python aggregate_results.py <output_dir>
+    python aggregate_results.py <results_dir> [-o scan_report.json]
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-# Statuses that count as "successful" (produced usable events)
+# ---------------------------------------------------------------------------
+# Statuses that produced usable events
+# ---------------------------------------------------------------------------
+
 SUCCESS_STATUSES = {"SUCCESS", "PARTIAL_SUCCESS", "TIER2_SUCCESS", "TIER2_PARTIAL"}
 
+# Cost per hour: RunPod GPU + DigitalOcean droplet
+COST_PER_HOUR = 0.38
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 def _load_jsonl(path: Path) -> list[dict]:
     """Load a JSONL file, skipping malformed lines."""
     events: list[dict] = []
     try:
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if not line:
@@ -43,73 +52,203 @@ def _load_jsonl(path: Path) -> list[dict]:
 def _load_json(path: Path) -> dict | None:
     """Load a JSON file, returning None on failure."""
     try:
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
     except (json.JSONDecodeError, OSError):
         return None
 
 
-def _classify_failure(status: str, error_tail: str) -> str:
-    """Classify a failure into a human-readable reason."""
-    if status == "CLONE_FAILED":
-        return "clone_failed"
-    if status == "NO_ENTRY_POINT":
-        return "no_entry_point"
-    if status == "UNRESOLVABLE_IMPORT":
-        return "missing_module"
-    if status == "SERVER_BASED":
-        return "server_based_repo"
-    if status == "TIMEOUT_NO_EVENTS":
-        return "timeout_no_events"
-    if status == "NO_EVENTS":
-        return "no_events_captured"
-    if status == "RUNTIME_ERROR":
-        low = error_tail.lower()
-        if "api" in low or "connection" in low:
-            return "api_connection_error"
-        if "permission" in low:
-            return "permission_error"
-        if "syntax" in low:
-            return "syntax_error"
-        return "runtime_error"
-    return status.lower()
+def _read_tier(repo_dir: Path, status_data: dict) -> int:
+    """Resolve tier from status.json or fallback to tier.txt."""
+    tier = status_data.get("tier")
+    if tier is not None:
+        return int(tier)
+    tier_file = repo_dir / "tier.txt"
+    if tier_file.exists():
+        try:
+            return int(tier_file.read_text().strip())
+        except (ValueError, OSError):
+            pass
+    return 1
 
 
-def _grade_graph(graph: dict) -> str:
-    """Grade a graph as RICH, BASIC, or EMPTY."""
-    nodes = graph.get("nodes", [])
-    edges = graph.get("edges", [])
-    n_nodes = len(nodes)
-    n_edges = len(edges)
-    if n_nodes >= 3 and n_edges >= 2:
+# ---------------------------------------------------------------------------
+# Trace grading
+# ---------------------------------------------------------------------------
+
+def _grade_trace(events: list[dict]) -> str:
+    """Grade a trace as RICH, BASIC, or EMPTY.
+
+    RICH  -- 2+ agent nodes AND output_hash on agent.task_end AND content flow
+    BASIC -- has at least one llm.call_end event
+    EMPTY -- zero events or lifecycle-only
+    """
+    if not events:
+        return "EMPTY"
+
+    agent_node_ids: set[str] = set()
+    has_output_hash = False
+    has_content_flow = False
+    has_llm_call_end = False
+
+    # Collect all agent.task_end node_ids that have output_hash, and all
+    # agent.task_start events that have input_source (content flow indicator).
+    task_end_nodes_with_hash: set[str] = set()
+
+    for event in events:
+        event_type = event.get("event_type", "")
+        payload = event.get("payload") or {}
+        source_node = event.get("source_node") or {}
+        node_id = source_node.get("node_id", "")
+        node_type = source_node.get("node_type", "")
+
+        # Count agent nodes
+        if node_type == "agent" and node_id:
+            agent_node_ids.add(node_id)
+
+        if event_type == "agent.task_end":
+            if payload.get("output_hash"):
+                has_output_hash = True
+                if node_id:
+                    task_end_nodes_with_hash.add(node_id)
+
+        if event_type == "agent.task_start":
+            if payload.get("input_source"):
+                has_content_flow = True
+
+        if event_type == "llm.call_end":
+            has_llm_call_end = True
+
+    if len(agent_node_ids) >= 2 and has_output_hash and has_content_flow:
         return "RICH"
-    if n_nodes >= 1:
+    if has_llm_call_end:
         return "BASIC"
+
+    # Check for lifecycle-only (only execution.start / execution.end)
+    lifecycle_types = {"execution.start", "execution.end"}
+    all_types = {e.get("event_type", "") for e in events}
+    if all_types <= lifecycle_types:
+        return "EMPTY"
+
+    # Has some events but no llm.call_end -- still BASIC if non-trivial
+    if len(events) >= 3:
+        return "BASIC"
+
     return "EMPTY"
 
 
-def aggregate(output_dir: Path) -> dict:
-    """Aggregate all per-repo results into a scan report."""
-    status_counts: Counter[str] = Counter()
-    tier_counts: Counter[int] = Counter()
-    framework_counts: Counter[str] = Counter()
-    error_reasons: Counter[str] = Counter()
-    event_type_counts: Counter[str] = Counter()
-    successful_repos: list[dict] = []
-    total_events = 0
+# ---------------------------------------------------------------------------
+# Topology classification (from graph.json)
+# ---------------------------------------------------------------------------
+
+def _classify_topology(graph: dict) -> str | None:
+    """Classify topology from graph.json structure.
+
+    Returns one of: single_agent, sequential_2_agent, sequential_3_agent,
+    hub_and_spoke, with_delegation, or None if unclassifiable.
+    """
+    nodes = graph.get("nodes", [])
+    edges = graph.get("edges", [])
+    if isinstance(nodes, dict):
+        nodes = list(nodes.values())
+    if isinstance(edges, dict):
+        edges = list(edges.values())
+
+    agent_nodes = [
+        n for n in nodes
+        if isinstance(n, dict) and n.get("type") in ("agent", "orchestrator")
+    ]
+    n_agents = len(agent_nodes)
+
+    if n_agents == 0:
+        return None
+
+    has_delegation = any(
+        isinstance(e, dict) and e.get("type") == "delegates_to"
+        for e in edges
+    )
+
+    if has_delegation:
+        return "with_delegation"
+
+    if n_agents == 1:
+        return "single_agent"
+
+    # Compute max fan-out among agent nodes
+    agent_ids = {n["id"] for n in agent_nodes if "id" in n}
+    fan_out: dict[str, int] = defaultdict(int)
+    for e in edges:
+        if isinstance(e, dict):
+            src = e.get("source", "")
+            if src in agent_ids:
+                fan_out[src] += 1
+
+    max_fan = max(fan_out.values()) if fan_out else 0
+
+    if max_fan > 2:
+        return "hub_and_spoke"
+
+    if n_agents == 2:
+        return "sequential_2_agent"
+    if n_agents == 3:
+        return "sequential_3_agent"
+
+    # 4+ agents in a sequential-ish pattern -- classify by count
+    return f"sequential_{n_agents}_agent"
+
+
+# ---------------------------------------------------------------------------
+# Core aggregation
+# ---------------------------------------------------------------------------
+
+def aggregate(results_dir: Path) -> dict:
+    """Aggregate all per-repo results into a scan_report.json structure."""
+
+    # ---- Execution result counters ----
+    tier1_success = 0
+    tier1_partial = 0
+    tier2_success = 0
+    clone_failed = 0
+    no_entry_point = 0
+    unresolvable_import = 0
+    runtime_error = 0
+    timeout_no_events = 0
+    server_based = 0
+    tier2_failed = 0  # Tier 2 repos that failed for any reason
     total_repos = 0
 
-    # Graph quality accumulators
-    graph_grade_counts: Counter[str] = Counter()
-    graph_node_counts: list[int] = []
-    graph_edge_counts: list[int] = []
+    # ---- Tier breakdown accumulators ----
+    tier1_events_total = 0
+    tier1_with_events = 0
+    tier1_framework: Counter[str] = Counter()
+    tier1_rich = 0
+    tier1_basic = 0
+    tier1_empty = 0
 
-    # Topology accumulators
-    node_type_counts: Counter[str] = Counter()
-    edge_type_counts: Counter[str] = Counter()
-    unique_nodes_per_repo: list[int] = []
+    tier2_events_total = 0
+    tier2_with_events = 0
+    tier2_framework: Counter[str] = Counter()
 
-    for repo_dir in sorted(output_dir.iterdir()):
+    # ---- Event statistics ----
+    total_events = 0
+    event_type_dist: Counter[str] = Counter()
+    unique_agent_nodes: set[str] = set()
+    repos_with_delegation = 0
+    repos_with_tool_calls = 0
+    repos_with_output_hashes = 0
+
+    # ---- Topology census ----
+    topology_counts: dict[str, dict[str, int]] = defaultdict(lambda: {"count": 0, "tier1": 0, "tier2": 0})
+
+    # ---- Successful repos list ----
+    successful_repos: list[dict] = []
+
+    # ---- Timing: track earliest and latest status.json mtime ----
+    earliest_mtime: float | None = None
+    latest_mtime: float | None = None
+
+    # ---- Walk results directories ----
+    for repo_dir in sorted(results_dir.iterdir()):
         if not repo_dir.is_dir():
             continue
 
@@ -120,130 +259,245 @@ def aggregate(output_dir: Path) -> dict:
         total_repos += 1
         status_data = _load_json(status_file)
         if status_data is None:
-            status_counts["PARSE_ERROR"] += 1
             continue
 
+        # Track modification times for duration calculation
+        try:
+            mtime = status_file.stat().st_mtime
+            if earliest_mtime is None or mtime < earliest_mtime:
+                earliest_mtime = mtime
+            if latest_mtime is None or mtime > latest_mtime:
+                latest_mtime = mtime
+        except OSError:
+            pass
+
         status = status_data.get("status", "UNKNOWN")
-        tier = status_data.get("tier", 1)
-        event_count = status_data.get("event_count", 0)
+        tier = _read_tier(repo_dir, status_data)
         repo_url = status_data.get("repo", "")
-        entry_point = status_data.get("entry_point", "")
-        duration = status_data.get("duration_seconds", 0)
 
-        status_counts[status] += 1
-        tier_counts[tier] += 1
-
-        if status in SUCCESS_STATUSES:
-            # -- Parse events for framework and event type stats --
-            events_file = repo_dir / "stratum_events.jsonl"
-            events = _load_jsonl(events_file) if events_file.exists() else []
-            repo_event_count = len(events) if events else event_count
-
-            for event in events:
-                et = event.get("event_type", "unknown")
-                event_type_counts[et] += 1
-                fw = event.get("framework", "")
-                if fw and fw != "unknown":
-                    framework_counts[fw] += 1
-
-            total_events += repo_event_count
-
-            successful_repos.append({
-                "repo": repo_url,
-                "status": status,
-                "tier": tier,
-                "event_count": repo_event_count,
-                "entry_point": entry_point,
-                "duration_seconds": duration,
-            })
-
-            # -- Graph quality and topology --
-            graph_file = repo_dir / "graph.json"
-            if graph_file.exists():
-                graph = _load_json(graph_file)
-                if graph is not None:
-                    nodes = graph.get("nodes", [])
-                    edges = graph.get("edges", [])
-                    # graph_builder outputs lists, not dicts
-                    node_list = list(nodes.values()) if isinstance(nodes, dict) else nodes
-                    edge_list = list(edges.values()) if isinstance(edges, dict) else edges
-                    n_nodes = len(node_list)
-                    n_edges = len(edge_list)
-
-                    graph_node_counts.append(n_nodes)
-                    graph_edge_counts.append(n_edges)
-                    graph_grade_counts[_grade_graph(graph)] += 1
-                    unique_nodes_per_repo.append(n_nodes)
-
-                    # Topology: node types
-                    for nd in node_list:
-                        if isinstance(nd, dict):
-                            node_type_counts[nd.get("node_type", "unknown")] += 1
-                    # Topology: edge types
-                    for ed in edge_list:
-                        if isinstance(ed, dict):
-                            edge_type_counts[ed.get("edge_type", "unknown")] += 1
+        # ---- Classify into execution_results buckets ----
+        if status == "SUCCESS":
+            tier1_success += 1
+        elif status == "PARTIAL_SUCCESS":
+            tier1_partial += 1
+        elif status == "TIER2_SUCCESS" or status == "TIER2_PARTIAL":
+            tier2_success += 1
+        elif status == "CLONE_FAILED":
+            clone_failed += 1
+        elif status == "NO_ENTRY_POINT":
+            no_entry_point += 1
+        elif status == "UNRESOLVABLE_IMPORT":
+            unresolvable_import += 1
+        elif status == "RUNTIME_ERROR":
+            runtime_error += 1
+        elif status == "TIMEOUT_NO_EVENTS":
+            timeout_no_events += 1
+        elif status == "SERVER_BASED":
+            server_based += 1
         else:
-            error_tail = status_data.get("error_log_tail", "")
-            reason = _classify_failure(status, error_tail)
-            error_reasons[reason] += 1
+            # Any other failure status
+            if tier == 2:
+                tier2_failed += 1
 
-    # -- Build report --
-    num_success = len(successful_repos)
-    success_rate = (num_success / total_repos * 100) if total_repos > 0 else 0.0
-    repos_with_graphs = len(graph_node_counts)
+        # For non-success tier 2 statuses that we already counted above,
+        # also increment tier2_failed
+        if tier == 2 and status not in SUCCESS_STATUSES and status not in (
+            "CLONE_FAILED", "NO_ENTRY_POINT", "UNRESOLVABLE_IMPORT",
+            "RUNTIME_ERROR", "TIMEOUT_NO_EVENTS", "SERVER_BASED",
+        ):
+            pass  # Already counted in the else branch above
+        elif tier == 2 and status not in SUCCESS_STATUSES:
+            tier2_failed += 1
 
-    report = {
-        "overview": {
-            "total_repos_attempted": total_repos,
-            "total_successful": num_success,
-            "success_rate_percent": round(success_rate, 1),
-            "scan_timestamp": datetime.now(timezone.utc).strftime(
-                "%Y-%m-%dT%H:%M:%SZ"
-            ),
-            "total_events": total_events,
+        # ---- Process successful repos (those with events) ----
+        if status not in SUCCESS_STATUSES:
+            continue
+
+        events_file = repo_dir / "stratum_events.jsonl"
+        events = _load_jsonl(events_file) if events_file.exists() else []
+        event_count = len(events) if events else status_data.get("event_count", 0)
+
+        if event_count == 0:
+            continue
+
+        total_events += event_count
+
+        # Framework detection
+        repo_framework = ""
+        repo_has_delegation = False
+        repo_has_tool_calls = False
+        repo_has_output_hash = False
+        repo_agent_nodes: set[str] = set()
+
+        for event in events:
+            event_type = event.get("event_type", "")
+            payload = event.get("payload") or {}
+            source_node = event.get("source_node") or {}
+
+            # Event type distribution
+            if event_type:
+                event_type_dist[event_type] += 1
+
+            # Framework detection (first non-empty, non-unknown)
+            fw = event.get("framework", "")
+            if fw and fw != "unknown" and not repo_framework:
+                repo_framework = fw
+
+            # Agent node counting
+            node_id = source_node.get("node_id", "")
+            node_type = source_node.get("node_type", "")
+            if node_type == "agent" and node_id:
+                repo_agent_nodes.add(node_id)
+                unique_agent_nodes.add(node_id)
+
+            # Also check target_node for agent nodes
+            target_node = event.get("target_node") or {}
+            t_node_id = target_node.get("node_id", "")
+            t_node_type = target_node.get("node_type", "")
+            if t_node_type == "agent" and t_node_id:
+                repo_agent_nodes.add(t_node_id)
+                unique_agent_nodes.add(t_node_id)
+
+            # Delegation detection
+            if event_type == "delegation.initiated":
+                repo_has_delegation = True
+
+            # Tool call detection
+            if event_type == "tool.invoked":
+                repo_has_tool_calls = True
+
+            # Output hash detection
+            if payload.get("output_hash"):
+                repo_has_output_hash = True
+
+        if repo_has_delegation:
+            repos_with_delegation += 1
+        if repo_has_tool_calls:
+            repos_with_tool_calls += 1
+        if repo_has_output_hash:
+            repos_with_output_hashes += 1
+
+        # Grade the trace
+        grade = _grade_trace(events)
+
+        # ---- Tier-specific accumulation ----
+        if tier == 1:
+            tier1_with_events += 1
+            tier1_events_total += event_count
+            if repo_framework:
+                tier1_framework[repo_framework] += 1
+            if grade == "RICH":
+                tier1_rich += 1
+            elif grade == "BASIC":
+                tier1_basic += 1
+            else:
+                tier1_empty += 1
+        else:
+            tier2_with_events += 1
+            tier2_events_total += event_count
+            if repo_framework:
+                tier2_framework[repo_framework] += 1
+
+        # ---- Topology from graph.json ----
+        graph_file = repo_dir / "graph.json"
+        topo_type = None
+        if graph_file.exists():
+            graph = _load_json(graph_file)
+            if graph is not None:
+                topo_type = _classify_topology(graph)
+
+        if topo_type:
+            topology_counts[topo_type]["count"] += 1
+            if tier == 1:
+                topology_counts[topo_type]["tier1"] += 1
+            else:
+                topology_counts[topo_type]["tier2"] += 1
+
+        # ---- Build repo hash from directory name ----
+        repo_hash = repo_dir.name
+
+        successful_repos.append({
+            "repo": repo_url,
+            "hash": repo_hash,
+            "framework": repo_framework,
+            "tier": tier,
+            "events": event_count,
+            "agents": len(repo_agent_nodes),
+            "grade": grade,
+        })
+
+    # ---- Compute total_with_events ----
+    total_with_events = tier1_with_events + tier2_with_events
+
+    # ---- Compute scan duration ----
+    total_duration_hours = 0.0
+    if earliest_mtime is not None and latest_mtime is not None:
+        total_duration_hours = round((latest_mtime - earliest_mtime) / 3600.0, 1)
+
+    # ---- Compute cost estimate ----
+    cost_estimate = round(total_duration_hours * COST_PER_HOUR, 2)
+
+    # ---- Build report ----
+    report: dict = {
+        "scan_metadata": {
+            "total_repos": total_repos,
+            "scan_date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+            "total_duration_hours": total_duration_hours,
+            "compute_cost_estimate": f"${cost_estimate:.2f}",
         },
-        "status_breakdown": dict(status_counts.most_common()),
+        "execution_results": {
+            "tier1_success": tier1_success,
+            "tier1_partial": tier1_partial,
+            "tier2_success": tier2_success,
+            "clone_failed": clone_failed,
+            "no_entry_point": no_entry_point,
+            "unresolvable_import": unresolvable_import,
+            "runtime_error": runtime_error,
+            "timeout_no_events": timeout_no_events,
+            "server_based": server_based,
+            "tier2_failed": tier2_failed,
+            "total_with_events": total_with_events,
+        },
         "tier_breakdown": {
-            f"tier_{k}": v for k, v in sorted(tier_counts.items())
+            "tier1": {
+                "total_with_events": tier1_with_events,
+                "framework_distribution": dict(tier1_framework.most_common()),
+                "avg_events_per_repo": (
+                    round(tier1_events_total / tier1_with_events)
+                    if tier1_with_events > 0 else 0
+                ),
+                "rich_traces": tier1_rich,
+                "basic_traces": tier1_basic,
+                "empty_traces": tier1_empty,
+            },
+            "tier2": {
+                "total_with_events": tier2_with_events,
+                "framework_distribution": dict(tier2_framework.most_common()),
+                "avg_events_per_repo": (
+                    round(tier2_events_total / tier2_with_events)
+                    if tier2_with_events > 0 else 0
+                ),
+                "note": "Tier 2 traces reflect framework default behavior, not repo-specific architecture",
+            },
         },
-        "framework_breakdown": dict(framework_counts.most_common()),
         "event_statistics": {
             "total_events": total_events,
-            "avg_events_per_success": (
-                round(total_events / num_success, 1) if num_success > 0 else 0
-            ),
-            "event_type_distribution": dict(event_type_counts.most_common(20)),
+            "event_type_distribution": dict(event_type_dist.most_common()),
+            "unique_agent_nodes": len(unique_agent_nodes),
+            "repos_with_delegation": repos_with_delegation,
+            "repos_with_tool_calls": repos_with_tool_calls,
+            "repos_with_output_hashes": repos_with_output_hashes,
         },
-        "graph_quality": {
-            "repos_with_graphs": repos_with_graphs,
-            "avg_nodes_per_graph": (
-                round(sum(graph_node_counts) / repos_with_graphs, 1)
-                if repos_with_graphs > 0
-                else 0
-            ),
-            "avg_edges_per_graph": (
-                round(sum(graph_edge_counts) / repos_with_graphs, 1)
-                if repos_with_graphs > 0
-                else 0
-            ),
-            "grade_distribution": dict(graph_grade_counts.most_common()),
+        "topology_census": {
+            topo: {"count": v["count"], "tier1": v["tier1"], "tier2": v["tier2"]}
+            for topo, v in sorted(
+                topology_counts.items(), key=lambda x: x[1]["count"], reverse=True
+            )
         },
-        "topology_patterns": {
-            "common_node_types": dict(node_type_counts.most_common()),
-            "common_edge_types": dict(edge_type_counts.most_common()),
-            "avg_unique_nodes_per_repo": (
-                round(
-                    sum(unique_nodes_per_repo) / len(unique_nodes_per_repo), 1
-                )
-                if unique_nodes_per_repo
-                else 0
-            ),
-        },
-        "common_failure_reasons": dict(error_reasons.most_common(10)),
         "successful_repos": sorted(
             successful_repos,
-            key=lambda x: x["event_count"],
+            key=lambda x: x["events"],
             reverse=True,
         ),
     }
@@ -251,83 +505,136 @@ def aggregate(output_dir: Path) -> dict:
     return report
 
 
+# ---------------------------------------------------------------------------
+# Human-readable summary on stderr
+# ---------------------------------------------------------------------------
+
 def _print_summary(report: dict) -> None:
     """Print a human-readable summary to stderr."""
-    ov = report["overview"]
+    meta = report["scan_metadata"]
+    er = report["execution_results"]
+    tb = report["tier_breakdown"]
     es = report["event_statistics"]
-    gq = report["graph_quality"]
+    tc = report["topology_census"]
 
-    print(f"\n{'=' * 60}", file=sys.stderr)
-    print("SCAN REPORT", file=sys.stderr)
-    print(f"{'=' * 60}", file=sys.stderr)
-    print(f"Total repos:     {ov['total_repos_attempted']}", file=sys.stderr)
-    print(
-        f"Successful:      {ov['total_successful']} "
-        f"({ov['success_rate_percent']}%)",
-        file=sys.stderr,
-    )
-    print(f"Total events:    {es['total_events']}", file=sys.stderr)
-    print(f"Avg events/repo: {es['avg_events_per_success']}", file=sys.stderr)
-    print(f"Graphs built:    {gq['repos_with_graphs']}", file=sys.stderr)
-    print(file=sys.stderr)
+    w = sys.stderr.write
 
-    total = ov["total_repos_attempted"] or 1
-    print("Status breakdown:", file=sys.stderr)
-    for status, count in sorted(
-        report["status_breakdown"].items(), key=lambda x: x[1], reverse=True
-    ):
-        pct = count / total * 100
-        bar = "#" * min(int(pct / 2), 30)
-        print(f"  {status:<25s} {count:>5d} ({pct:5.1f}%) {bar}", file=sys.stderr)
+    w(f"\n{'=' * 65}\n")
+    w("SCAN REPORT\n")
+    w(f"{'=' * 65}\n")
+    w(f"Date:             {meta['scan_date']}\n")
+    w(f"Total repos:      {meta['total_repos']}\n")
+    w(f"Duration:         {meta['total_duration_hours']} hours\n")
+    w(f"Cost estimate:    {meta['compute_cost_estimate']}\n")
+    w(f"Model:            {meta['vllm_model']}\n")
+    w("\n")
 
-    if report["framework_breakdown"]:
-        print("\nFramework breakdown:", file=sys.stderr)
-        for fw, count in list(
-            sorted(
-                report["framework_breakdown"].items(),
-                key=lambda x: x[1],
-                reverse=True,
-            )
-        )[:10]:
-            print(f"  {fw:<20s} {count:>5d} events", file=sys.stderr)
+    # Execution results
+    w("--- Execution Results ---\n")
+    w(f"  Tier 1 success:       {er['tier1_success']:>5d}\n")
+    w(f"  Tier 1 partial:       {er['tier1_partial']:>5d}\n")
+    w(f"  Tier 2 success:       {er['tier2_success']:>5d}\n")
+    w(f"  Clone failed:         {er['clone_failed']:>5d}\n")
+    w(f"  No entry point:       {er['no_entry_point']:>5d}\n")
+    w(f"  Unresolvable import:  {er['unresolvable_import']:>5d}\n")
+    w(f"  Runtime error:        {er['runtime_error']:>5d}\n")
+    w(f"  Timeout (no events):  {er['timeout_no_events']:>5d}\n")
+    w(f"  Server-based:         {er['server_based']:>5d}\n")
+    w(f"  Tier 2 failed:        {er['tier2_failed']:>5d}\n")
+    w(f"  Total with events:    {er['total_with_events']:>5d}\n")
+    w("\n")
 
-    if gq["grade_distribution"]:
-        print("\nGraph quality grades:", file=sys.stderr)
-        for grade, count in sorted(
-            gq["grade_distribution"].items(), key=lambda x: x[1], reverse=True
-        ):
-            print(f"  {grade:<10s} {count:>5d}", file=sys.stderr)
+    # Tier 1 breakdown
+    t1 = tb["tier1"]
+    w("--- Tier 1 ---\n")
+    w(f"  Repos with events:  {t1['total_with_events']}\n")
+    w(f"  Avg events/repo:    {t1['avg_events_per_repo']}\n")
+    w(f"  RICH traces:        {t1['rich_traces']}\n")
+    w(f"  BASIC traces:       {t1['basic_traces']}\n")
+    w(f"  EMPTY traces:       {t1['empty_traces']}\n")
+    if t1["framework_distribution"]:
+        w("  Frameworks:\n")
+        for fw, cnt in sorted(t1["framework_distribution"].items(), key=lambda x: x[1], reverse=True):
+            w(f"    {fw:<20s} {cnt:>5d}\n")
+    w("\n")
 
-    if report["common_failure_reasons"]:
-        print("\nTop failure reasons:", file=sys.stderr)
-        for reason, count in sorted(
-            report["common_failure_reasons"].items(),
-            key=lambda x: x[1],
-            reverse=True,
-        ):
-            print(f"  {reason:<30s} {count:>5d}", file=sys.stderr)
+    # Tier 2 breakdown
+    t2 = tb["tier2"]
+    w("--- Tier 2 ---\n")
+    w(f"  Repos with events:  {t2['total_with_events']}\n")
+    w(f"  Avg events/repo:    {t2['avg_events_per_repo']}\n")
+    if t2["framework_distribution"]:
+        w("  Frameworks:\n")
+        for fw, cnt in sorted(t2["framework_distribution"].items(), key=lambda x: x[1], reverse=True):
+            w(f"    {fw:<20s} {cnt:>5d}\n")
+    w("\n")
 
+    # Event statistics
+    w("--- Event Statistics ---\n")
+    w(f"  Total events:          {es['total_events']}\n")
+    w(f"  Unique agent nodes:    {es['unique_agent_nodes']}\n")
+    w(f"  Repos w/ delegation:   {es['repos_with_delegation']}\n")
+    w(f"  Repos w/ tool calls:   {es['repos_with_tool_calls']}\n")
+    w(f"  Repos w/ output hash:  {es['repos_with_output_hashes']}\n")
+    if es["event_type_distribution"]:
+        w("  Event types (top 10):\n")
+        for et, cnt in list(es["event_type_distribution"].items())[:10]:
+            w(f"    {et:<30s} {cnt:>6d}\n")
+    w("\n")
+
+    # Topology census
+    if tc:
+        w("--- Topology Census ---\n")
+        for topo, vals in tc.items():
+            w(f"  {topo:<25s}  total={vals['count']:>4d}  T1={vals['tier1']:>4d}  T2={vals['tier2']:>4d}\n")
+        w("\n")
+
+    # Top successful repos
+    top_n = 10
+    repos = report["successful_repos"][:top_n]
+    if repos:
+        w(f"--- Top {min(top_n, len(repos))} Successful Repos (by event count) ---\n")
+        for r in repos:
+            w(f"  [{r['grade']}] T{r['tier']} {r['repo']:<45s} "
+              f"events={r['events']:<5d} agents={r['agents']}\n")
+        w("\n")
+
+
+# ---------------------------------------------------------------------------
+# CLI entry point
+# ---------------------------------------------------------------------------
 
 def main() -> None:
-    if len(sys.argv) < 2:
-        print("Usage: aggregate_results.py <output_dir>", file=sys.stderr)
+    parser = argparse.ArgumentParser(
+        description="Post-scan aggregator. Reads results/*/ and produces scan_report.json.",
+    )
+    parser.add_argument(
+        "results_dir",
+        help="Directory containing per-repo result subdirectories",
+    )
+    parser.add_argument(
+        "-o", "--output",
+        default=None,
+        help="Output path for scan_report.json (default: <results_dir>/scan_report.json)",
+    )
+    args = parser.parse_args()
+
+    results_dir = Path(args.results_dir)
+    if not results_dir.is_dir():
+        print(f"Error: {results_dir} is not a directory", file=sys.stderr)
         sys.exit(1)
 
-    output_dir = Path(sys.argv[1])
-    if not output_dir.is_dir():
-        print(f"Error: {output_dir} is not a directory", file=sys.stderr)
-        sys.exit(1)
+    report = aggregate(results_dir)
 
-    report = aggregate(output_dir)
+    # Determine output path
+    output_path = Path(args.output) if args.output else results_dir / "scan_report.json"
 
-    # Write report
-    report_path = output_dir / "scan_report.json"
-    with open(report_path, "w") as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
 
-    # Print summary to stderr
+    # Print human-readable summary to stderr
     _print_summary(report)
-    print(f"\nReport saved to: {report_path}", file=sys.stderr)
+    print(f"Report saved to: {output_path}", file=sys.stderr)
 
 
 if __name__ == "__main__":
