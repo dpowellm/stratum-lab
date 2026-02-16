@@ -16,6 +16,7 @@ from typing import Any
 from stratum_patcher.event_logger import (
     EventLogger,
     capture_output_signature,
+    classify_error,
     generate_node_id,
     make_node,
 )
@@ -48,11 +49,16 @@ def patch_langchain(event_logger: Any = None) -> None:
                 logger = EventLogger.get()
                 node_id = generate_node_id(_FRAMEWORK, self.__class__.__name__, __file__, 0)
                 source = make_node("agent", node_id, self.__class__.__name__)
+                logger.push_active_node(node_id)
 
                 start_id = logger.log_event(
                     "agent.task_start",
                     source_node=source,
-                    payload={"input_preview": str(input)[:500]},
+                    payload={
+                        "input_preview": str(input)[:500],
+                        "node_id": node_id,
+                        "parent_node_id": logger.parent_node(),
+                    },
                 )
 
                 t0 = time.perf_counter()
@@ -69,6 +75,7 @@ def patch_langchain(event_logger: Any = None) -> None:
                     payload: dict[str, Any] = {
                         "status": "error" if error else "success",
                         "latency_ms": round(latency_ms, 2),
+                        "error_type": classify_error(error) if error else None,
                     }
                     if error:
                         payload["error"] = str(error)[:500]
@@ -88,6 +95,9 @@ def patch_langchain(event_logger: Any = None) -> None:
                         payload=payload,
                         parent_event_id=start_id,
                     )
+                    logger.pop_active_node()
+                    if error:
+                        logger.record_error_context(node_id=node_id, error_type=classify_error(error), error_msg=str(error))
 
             if not getattr(Chain.invoke, "_stratum_patched", False):
                 _patched_invoke._stratum_patched = True  # type: ignore[attr-defined]

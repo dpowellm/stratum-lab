@@ -15,13 +15,13 @@ def main():
 @click.argument("input_dir", type=click.Path(exists=True))
 @click.option("-o", "--output", "output_file", default="data/execution_metadata/selection.json",
               help="Output selection file path.")
-@click.option("-n", "--target", default=1500, help="Target number of repos to select.")
+@click.option("-n", "--target", default=1000, help="Target number of repos to select.")
 @click.option("--min-runnability", default=15, help="Minimum runnability score filter.")
 @click.option("--max-per-archetype", default=200, help="Max repos per archetype.")
 def select(input_dir, output_file, target, min_runnability, max_per_archetype):
-    """Phase 1: Select repos from 50k structural scan output.
+    """Phase 1: Select repos for graph discovery coverage.
 
-    INPUT_DIR is the directory containing structural scan JSON files.
+    INPUT_DIR is the directory containing reliability scanner output JSONs.
     """
     from stratum_lab.selection.cli import run_selection
     run_selection(input_dir, output_file, target, min_runnability, max_per_archetype)
@@ -39,8 +39,10 @@ def select(input_dir, output_file, target, min_runnability, max_per_archetype):
 @click.option("--timeout", default=600, help="Per-execution timeout in seconds.")
 @click.option("--runs", default=5, help="Runs per repo (3 diverse + 2 repeat).")
 @click.option("--dry-run", is_flag=True, help="Print what would be executed without running.")
+@click.option("--resume", is_flag=True, default=False,
+              help="Resume from scan_checkpoint.json, skipping completed repos.")
 def execute(selection_file, output_dir, vllm_url, concurrent, max_concurrent,
-            timeout, runs, dry_run):
+            timeout, runs, dry_run, resume):
     """Phase 2: Execute selected repos in sandboxed containers.
 
     SELECTION_FILE is the JSON file from the 'select' phase.
@@ -147,14 +149,15 @@ def query(structural_graph, knowledge_base, output_format, output):
 
 
 @main.command()
-@click.argument("input_dir", type=click.Path(exists=True))
+@click.argument("scan_results", type=click.Path(exists=True))
+@click.option("--target", default=1000, help="Target number of repos to select.")
 @click.option("--vllm-url", default="http://host.docker.internal:8000/v1",
               help="vLLM endpoint URL.")
 @click.option("--concurrent", default=5, help="Concurrent containers.")
 @click.option("--max-concurrent", default=5, type=int,
               help="Max concurrent container executions.")
 @click.option("--timeout", default=600, help="Execution timeout seconds.")
-@click.option("--pilot", is_flag=True,
+@click.option("--pilot/--no-pilot", default=True,
               help="Run pilot batch with quality gate before full scan.")
 @click.option("--pilot-size", default=20, type=int,
               help="Number of repos in pilot batch.")
@@ -172,23 +175,31 @@ def query(structural_graph, knowledge_base, output_format, output):
               help="Max repos to probe (from triage pool).")
 @click.option("--probe-timeout", default=30, type=int,
               help="Probe timeout in seconds.")
-def pipeline(input_dir, vllm_url, concurrent, max_concurrent, timeout,
+@click.option("--output-dir", type=click.Path(), default="./results",
+              help="Output directory for all pipeline artifacts.")
+@click.option("--resume", is_flag=True, default=False,
+              help="Resume from scan_checkpoint.json, skipping completed repos.")
+def pipeline(scan_results, target, vllm_url, concurrent, max_concurrent, timeout,
              pilot, pilot_size, max_instrumentation_failure_rate, max_model_failure_rate,
-             enterprise_outreach, triage, probe, probe_batch_size, probe_timeout):
-    """Run the full pipeline: triage -> probe -> select -> execute -> collect -> overlay -> knowledge -> reports."""
+             enterprise_outreach, triage, probe, probe_batch_size, probe_timeout,
+             output_dir, resume):
+    """Run the full stratum-lab pipeline.
+
+    SCAN_RESULTS is the directory of reliability scanner output JSONs (50k scan results).
+    """
     import json
     from pathlib import Path
     from rich.console import Console
 
     console = Console()
-    data_dir = Path("data")
+    data_dir = Path(output_dir)
+    data_dir.mkdir(parents=True, exist_ok=True)
 
-    # Phase 0: Static Triage
+    # ---- Phase 0: Static Triage (unchanged) ----
     if triage:
         console.print("[bold]Phase 0: Static Triage[/bold]")
         from stratum_lab.triage.static_analyzer import triage_batch
-        # Load structural scans from input_dir
-        structural_scans = _load_structural_scans(input_dir)
+        structural_scans = _load_structural_scans(scan_results)
         triage_results = triage_batch(structural_scans)
         qualified = (
             triage_results["likely_runnable"]
@@ -199,9 +210,9 @@ def pipeline(input_dir, vllm_url, concurrent, max_concurrent, timeout,
             f"{len(qualified)} qualified for probing"
         )
     else:
-        qualified = None  # Will use normal selection flow
+        qualified = None
 
-    # Phase 0.5: Probe Execution
+    # ---- Phase 0.5: Probe Execution (unchanged) ----
     if probe and qualified is not None:
         console.print("[bold]Phase 0.5: Probe Execution[/bold]")
         from stratum_lab.triage.probe import probe_batch as run_probe_batch
@@ -211,15 +222,32 @@ def pipeline(input_dir, vllm_url, concurrent, max_concurrent, timeout,
             f"{probe_results['passed']} passed ({probe_results['pass_rate']:.0%})"
         )
 
-    console.print("[bold]Phase 1: Repo Selection[/bold]")
+    # ---- Phase 1: Discovery-Optimized Selection (NEW) ----
+    console.print("\n[bold]Phase 1: Discovery-Optimized Selection[/bold]")
     from stratum_lab.selection.cli import run_selection
     selection_file = str(data_dir / "execution_metadata" / "selection.json")
-    target = pilot_size if pilot else 1500
-    run_selection(input_dir, selection_file, target, 15, 200)
+    sel_target = pilot_size if pilot else target
+    run_selection(scan_results, selection_file, sel_target, 15, 200)
 
     if pilot:
         console.print(f"\n[bold yellow]PILOT MODE: using first {pilot_size} repos[/bold yellow]")
 
+    # ---- Phase 1.5: GitHub Metadata Enrichment (if enterprise_outreach) ----
+    if enterprise_outreach:
+        console.print("\n[bold]Phase 1.5: GitHub Metadata Enrichment[/bold]")
+        console.print("  (Requires GITHUB_TOKEN env var for API access)")
+        from stratum_lab.outreach.github_enricher import GitHubEnricher
+        enricher_gh = GitHubEnricher()
+        metadata_dir = data_dir / "metadata"
+        with open(selection_file, "r", encoding="utf-8") as fh:
+            sel_data = json.load(fh)
+        sel_repos = sel_data.get("selection", sel_data.get("repos", []))
+        enrichment = enricher_gh.enrich_batch(
+            repos=sel_repos, output_dir=metadata_dir,
+        )
+        console.print(f"  Enriched: {enrichment['enriched']}/{enrichment['total']}")
+
+    # ---- Phase 2: Execution (unchanged — patcher captures enhanced events) ----
     console.print("\n[bold]Phase 2: Execution[/bold]")
     from stratum_lab.harness.cli import run_execution
     events_dir = str(data_dir / "raw_events")
@@ -227,9 +255,7 @@ def pipeline(input_dir, vllm_url, concurrent, max_concurrent, timeout,
                   max_concurrent, timeout, 5, False)
 
     if pilot:
-        # Quality gate after execution
         console.print("\n[bold]Pilot Quality Gate[/bold]")
-        import json
         meta_dir = data_dir / "execution_metadata"
         runs_csv = meta_dir / "runs.csv"
         run_records = []
@@ -249,72 +275,78 @@ def pipeline(input_dir, vllm_url, concurrent, max_concurrent, timeout,
             console.print("[bold red]Pilot failed. Aborting pipeline.[/bold red]")
             return
 
+    # ---- Phase 3: Data Collection (minor revisions — parses new event types) ----
     console.print("\n[bold]Phase 3: Data Collection[/bold]")
     from stratum_lab.collection.cli import run_collection
     runs_file = str(data_dir / "execution_metadata" / "runs.json")
     run_collection(events_dir, runs_file)
 
-    console.print("\n[bold]Phase 4: Graph Overlay[/bold]")
+    # ---- Phase 4: Behavioral Analysis (MAJOR REVISION) ----
+    console.print("\n[bold]Phase 4: Behavioral Analysis[/bold]")
     from stratum_lab.overlay.cli import run_overlay
     enriched_dir = str(data_dir / "enriched_graphs")
-    run_overlay(input_dir, events_dir, enriched_dir)
+    run_overlay(scan_results, events_dir, enriched_dir)
 
-    console.print("\n[bold]Phase 5: Knowledge Base[/bold]")
-    from stratum_lab.knowledge.cli import run_knowledge_build
-    kb_dir = str(data_dir / "pattern_knowledge_base")
-    run_knowledge_build(enriched_dir, kb_dir)
+    # Phase 4 sub-steps: edge validation, emergent edges, node activation,
+    # error propagation, failure modes, monitoring baselines
+    # (These are computed inside the overlay enricher)
+    console.print("  4a. Edge validation matrix")
+    console.print("  4b. Emergent edge detection + classification")
+    console.print("  4c. Node activation topology")
+    console.print("  4d. Error propagation tracing")
+    console.print("  4e. Failure mode classification")
+    console.print("  4f. Monitoring baseline extraction")
 
-    console.print("\n[bold]Phase 6: Per-Repo Risk Reports[/bold]")
-    from stratum_lab.query.batch_report import generate_batch_reports
-    reports_dir = str(data_dir / "reports")
-    report_summary = generate_batch_reports(
-        enriched_graphs_dir=Path(enriched_dir),
-        knowledge_base_dir=Path(kb_dir),
-        output_dir=Path(reports_dir),
-    )
-    console.print(f"  Reports generated: {report_summary['reports_generated']}")
-    console.print(f"  Errors: {report_summary['errors']}")
-
-    console.print("\n[bold]Phase 6.5: Dataset Quality Validation[/bold]")
-    from stratum_lab.knowledge.dataset_quality import validate_dataset_quality
-    # Load enriched graphs and run records for quality check
+    # Build per-repo behavioral records
+    console.print("\n  Building per-repo behavioral records...")
+    from stratum_lab.output.behavioral_record import build_behavioral_record
     enriched_graph_list = _load_enriched_graphs(enriched_dir)
-    run_record_list = _load_run_records(data_dir / "execution_metadata" / "runs.json")
-    quality = validate_dataset_quality(enriched_graph_list, run_record_list, {})
-    console.print(f"  Verdict: {quality['verdict']}")
-    console.print(
-        f"  Usable runs: {quality['usable_runs']}/{quality['total_runs']} "
-        f"({quality['usable_run_rate']:.0%})"
-    )
-    claims_met = sum(
-        1 for c in quality["per_claim_quality"].values() if c.get("sufficient", False)
-    )
-    console.print(
-        f"  Claims supported: {claims_met}/{len(quality['per_claim_quality'])}"
-    )
-
-    if enterprise_outreach:
-        console.print("\n[bold]Phase 1.5: GitHub Metadata Enrichment[/bold]")
-        console.print("  (Requires GITHUB_TOKEN env var for API access)")
-        from stratum_lab.outreach.github_enricher import GitHubEnricher
-        enricher_gh = GitHubEnricher()
-        metadata_dir = data_dir / "metadata"
-        # Load selected repos
-        with open(selection_file, "r", encoding="utf-8") as fh:
-            sel_data = json.load(fh)
-        sel_repos = sel_data.get("selections", sel_data.get("repos", []))
-        enrichment = enricher_gh.enrich_batch(
-            repos=sel_repos, output_dir=metadata_dir,
+    behavioral_records = []
+    for graph in enriched_graph_list:
+        record = build_behavioral_record(
+            repo_full_name=graph.get("repo_id", "unknown"),
+            execution_metadata={
+                "framework": graph.get("framework", "unknown"),
+                "num_runs": len(graph.get("run_metadata", [])),
+            },
+            edge_validation=graph.get("edge_validation", {}),
+            emergent_edges=graph.get("emergent_edges", []),
+            node_activation=graph.get("node_activation", {}),
+            error_propagation=graph.get("error_propagation", []),
+            failure_modes=graph.get("failure_modes", []),
+            monitoring_baselines=graph.get("monitoring_baselines", []),
         )
-        console.print(f"  Enriched: {enrichment['enriched']}/{enrichment['total']}")
+        behavioral_records.append(record)
+    console.print(f"  Built {len(behavioral_records)} behavioral records")
 
+    # ---- Phase 5: Feedback Export (NEW — replaces knowledge base) ----
+    console.print("\n[bold]Phase 5: Feedback Export[/bold]")
+    from stratum_lab.feedback.exporter import export_feedback
+    feedback_dir = str(data_dir / "feedback")
+    files_written = export_feedback(behavioral_records, feedback_dir)
+    for fname, fpath in files_written.items():
+        console.print(f"  Written: {fname}")
+
+    # ---- Phase 6: Per-Repo Reports (revised) ----
+    console.print("\n[bold]Phase 6: Per-Repo Behavioral Records[/bold]")
+    reports_dir = data_dir / "reports"
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    for record in behavioral_records:
+        repo_name = record["repo_full_name"].replace("/", "_")
+        report_path = reports_dir / f"{repo_name}_behavioral.json"
+        with open(report_path, "w", encoding="utf-8") as fh:
+            json.dump(record, fh, indent=2, default=str, ensure_ascii=False)
+    console.print(f"  Written {len(behavioral_records)} behavioral records to {reports_dir}")
+
+    # ---- Phase 7: Enterprise Outreach (unchanged) ----
+    if enterprise_outreach:
         console.print("\n[bold]Phase 7: Enterprise Outreach[/bold]")
         from stratum_lab.outreach.enterprise_classifier import classify_batch
         from stratum_lab.outreach.contact_extractor import extract_contacts
         from stratum_lab.outreach.teaser_report import generate_teaser
         from stratum_lab.outreach.queue import build_outreach_queue, save_queue
 
-        # Load metadata files
+        metadata_dir = data_dir / "metadata"
         repo_metadata_by_id = {}
         for md_file in metadata_dir.glob("*_metadata.json"):
             with open(md_file) as fh:
@@ -333,7 +365,7 @@ def pipeline(input_dir, vllm_url, concurrent, max_concurrent, timeout,
 
         teasers = {}
         for repo_id in all_contacts:
-            report_path = Path(reports_dir) / f"{repo_id}_report.json"
+            report_path = reports_dir / f"{repo_id}_behavioral.json"
             if report_path.exists():
                 with open(report_path) as fh:
                     full_report = json.load(fh)
@@ -342,7 +374,7 @@ def pipeline(input_dir, vllm_url, concurrent, max_concurrent, timeout,
         enterprise_list = [r for r in enterprise_results["classifications"] if r["is_enterprise"]]
         all_reports = {}
         for r in enterprise_list:
-            rp = Path(reports_dir) / f"{r['repo_id']}_report.json"
+            rp = reports_dir / f"{r['repo_id']}_behavioral.json"
             if rp.exists():
                 with open(rp) as fh:
                     all_reports[r["repo_id"]] = json.load(fh)
@@ -379,22 +411,32 @@ def _check_pilot_quality(run_records, thresholds):
     classifications = Counter(r.get("status", "UNKNOWN") for r in run_records)
     total = len(run_records)
 
-    instr_rate = classifications.get("INSTRUMENTATION_FAILURE", 0) / total
-    model_rate = classifications.get("MODEL_FAILURE", 0) / total
-    timeout_rate = classifications.get("TIMEOUT", 0) / total
-    success_rate = (
-        classifications.get("SUCCESS", 0) + classifications.get("PARTIAL_SUCCESS", 0)
-    ) / total
+    success_count = classifications.get("SUCCESS", 0)
+    partial_count = classifications.get("PARTIAL_SUCCESS", 0)
+    instr_count = classifications.get("INSTRUMENTATION_FAILURE", 0)
+    model_count = classifications.get("MODEL_FAILURE", 0)
+    crash_count = classifications.get("CRASH", 0)
+    timeout_count = classifications.get("TIMEOUT", 0)
+    dep_count = classifications.get("DEPENDENCY_FAILURE", 0)
+    entry_count = classifications.get("ENTRY_POINT_FAILURE", 0)
 
-    print(f"\n{'='*60}")
-    print(f"PILOT QUALITY GATE ({total} runs)")
-    print(f"{'='*60}")
-    print(f"  SUCCESS + PARTIAL:       {success_rate:.0%}")
-    print(f"  INSTRUMENTATION_FAILURE: {instr_rate:.0%}  (threshold: {thresholds['instr']:.0%})")
-    print(f"  MODEL_FAILURE:           {model_rate:.0%}  (threshold: {thresholds['model']:.0%})")
-    print(f"  TIMEOUT:                 {timeout_rate:.0%}")
-    other_rate = 1 - success_rate - instr_rate - model_rate - timeout_rate
-    print(f"  Other:                   {other_rate:.0%}")
+    success_rate = success_count / total
+    partial_rate = partial_count / total
+    instr_rate = instr_count / total
+    model_rate = model_count / total
+    crash_rate = crash_count / total
+    timeout_rate = timeout_count / total
+
+    print(f"\nPILOT QUALITY GATE ({total} runs)")
+    print(f"  FULL SUCCESS (>=10 events + interaction): {success_rate:.0%}")
+    print(f"  PARTIAL SUCCESS (ran, thin data):         {partial_rate:.0%}")
+    print(f"  INSTRUMENTATION_FAILURE:                  {instr_rate:.0%}  (threshold: {thresholds['instr']:.0%})")
+    print(f"  MODEL_FAILURE:                            {model_rate:.0%}  (threshold: {thresholds['model']:.0%})")
+    print(f"  CRASH:                                    {crash_rate:.0%}")
+    print(f"  TIMEOUT:                                  {timeout_rate:.0%}")
+    if dep_count or entry_count:
+        print(f"  DEPENDENCY_FAILURE:                       {dep_count / total:.0%}")
+        print(f"  ENTRY_POINT_FAILURE:                      {entry_count / total:.0%}")
 
     issues = []
     if instr_rate > thresholds["instr"]:
@@ -407,13 +449,13 @@ def _check_pilot_quality(run_records, thresholds):
         )
 
     if issues:
-        print(f"\n⚠ PILOT FAILED:")
+        print(f"\n  PILOT FAILED:")
         for issue in issues:
-            print(f"  - {issue}")
-        print(f"\nRecommendation: Fix patcher/vLLM before running full scan.")
+            print(f"    - {issue}")
+        print(f"\n  Recommendation: Fix patcher/vLLM before running full scan.")
         return False
     else:
-        print(f"\n✓ PILOT PASSED: proceeding to full scan.")
+        print(f"\n  PILOT PASSED: proceeding to full scan.")
         return True
 
 

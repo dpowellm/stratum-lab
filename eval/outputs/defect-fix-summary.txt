@@ -1,0 +1,104 @@
+STRATUM-LAB DEFECT FIX SUMMARY
+===============================
+Date: 2026-02-15
+Context: Pre-scan hardening pass across 232+ eval checks
+
+Three defects identified that would cause problems at 1k-repo scan scale.
+All three fixed and validated across all 8 eval suites (zero regressions).
+
+==============================================================================
+DEFECT 1: FINDING_NAMES mapping incorrect
+==============================================================================
+Severity: HIGH (wrong labels ship to feedback exports)
+Root cause: config.py FINDING_NAMES had incorrect human-readable labels for
+8 finding IDs. Labels didn't match their taxonomy categories.
+
+Corrections applied:
+  STRAT-EA-001: "Unhandled tool failure"       -> "Transitive authority escalation"
+  STRAT-EA-002: "Single point of failure"      -> "Authority concentration at bottleneck"
+  STRAT-EA-003: "Missing external fallback"    -> "Unbounded external service scope"
+  STRAT-AB-001: "Missing rate limiting"        -> "Unbounded aggregate volume"
+  STRAT-AB-002: "Unbounded retry loop"         -> "Aggregate retry amplification"
+  STRAT-OC-001: "Shared tool concurrency"      -> "Competing resource access without coordination"
+  STRAT-DC-002: "Missing delegation timeout"   -> "Irreversible action without checkpoint"
+  STRAT-DC-004: "Missing guardrail"            -> "Missing human oversight checkpoint"
+
+Files modified:
+  - stratum_lab/config.py (lines 110-136): Fixed 8 FINDING_NAMES entries
+  - stratum_lab/overlay/failure_modes.py: Import names from config (single source of truth)
+
+Hardened tests:
+  - E2E CHECK 21: Validates every finding name contains a keyword matching its
+    taxonomy category (DC->delegation/checkpoint, EA->authority/scope, etc.)
+
+==============================================================================
+DEFECT 2: Error propagation tracer shallow (max depth 1)
+==============================================================================
+Severity: HIGH (error laundering invisible at runtime)
+Root cause: _observe_propagation() only followed explicit error events.
+Downstream nodes that processed degraded input without throwing errors were
+invisible. Additionally, runtime-vs-structural node ID mismatch prevented
+structural graph traversal from finding downstream nodes.
+
+Fix applied:
+  1. Added name-to-structural-ID resolution (_build_name_to_structural_id,
+     _resolve_to_structural_id) to bridge runtime IDs (e.g.,
+     "crewai:Researcher:agents.py:10") with structural IDs ("agent_researcher")
+  2. _observe_propagation() now follows structural edges after finding explicit
+     error events, detecting "error laundering" — nodes that ran after an
+     upstream error without throwing their own (STRAT-SI-001)
+  3. trace_error_propagation() now resolves source node for predicted_path
+
+Files modified:
+  - stratum_lab/overlay/error_propagation.py: Added ID resolution helpers,
+    enhanced _observe_propagation() for error laundering detection
+
+Hardened tests:
+  - E2E CHECK 22: At least one error trace has cascade_depth >= 2 (path >= 3)
+  - Graph overlay: At least one trace has cascade_depth >= 2
+
+Verification:
+  - E2E: Planner -> Writer -> Reviewer cascade detected (depth=2)
+  - Graph overlay: Planner -> Coder -> Reviewer cascade detected (depth=2)
+
+==============================================================================
+DEFECT 3: Cross-pattern interaction never fires
+==============================================================================
+Severity: MEDIUM (all 136 pairs show "N/A (gated)" in output)
+Root cause: compute_interaction_matrix() only computed interaction_effect when
+legacy_probabilities=True, a parameter no caller used. Default mode skipped
+all statistical computation.
+
+Fix applied:
+  1. Removed legacy_probabilities parameter entirely
+  2. Added MIN_CO_OCCURRENCE = 5 constant as sample-size gate
+  3. Default mode now computes interaction_effect when co-occurrence >= 5
+  4. Below threshold, fields are omitted (shows as "N/A (gated)")
+
+Files modified:
+  - stratum_lab/knowledge/interactions.py: Rewrote to always compute with gate
+
+Hardened tests:
+  - Knowledge base CHECK 29: At least one interaction pair has computed
+    interaction_effect (non-gated)
+  - Test repos increased from 20 -> 40 with common preconditions to ensure
+    sufficient co-occurrence counts
+
+Verification:
+  - 34 pairs with computed interaction_effect
+  - 29 synergistic pairs (>1.5x)
+  - Top: circular_delegation + no_timeout_on_delegation (effect=66.67)
+
+==============================================================================
+VALIDATION RESULTS (all 8 suites)
+==============================================================================
+  test_end_to_end.py        22/22 checks passed
+  test_graph_overlay.py     70/70 checks passed
+  test_knowledge_base.py    CHECK 28 + CHECK 29 passed
+  test_patchers.py          181/181 checks passed
+  test_event_schema.py      26/26 checks passed
+  test_query_demo.py        96/96 checks passed
+  test_repo_selection.py    9/9 checks passed
+  test_pipeline_integration.py  11/11 checks passed
+
+  TOTAL: 415+ checks, 0 failures, 0 regressions

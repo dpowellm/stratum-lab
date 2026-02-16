@@ -70,6 +70,7 @@ from stratum_lab.config import (
     DEFAULT_RUNS_PER_REPO,
     EXECUTION_META_DIR,
     ExecutionStatus,
+    MIN_EVENT_THRESHOLD,
 )
 from stratum_lab.harness.container import RunResult, run_container
 from stratum_lab.harness.input_generator import (
@@ -137,6 +138,10 @@ class Orchestrator:
 
         # Metadata tracking
         self._meta_dir = self.output_dir.parent / "execution_metadata"
+
+        # Checkpoint for resume (v6.3 B2)
+        self._checkpoint_file = self.output_dir.parent / "scan_checkpoint.json"
+        self._completed_repos: set[str] = set()
 
     # ------------------------------------------------------------------
     # Main entry
@@ -257,6 +262,7 @@ class Orchestrator:
         run_number: int,
         input_data: str,
         run_id: str | None = None,
+        timeout_override: int | None = None,
     ) -> RunResult:
         """Execute a single run for a repo.
 
@@ -285,6 +291,7 @@ class Orchestrator:
             framework = repo_selection.get("framework", "unknown")
             entry_point = repo_selection.get("detected_entry_point", "main.py")
             run_id = run_id or f"{repo_id}_run_{run_number}_{uuid.uuid4().hex[:8]}"
+            timeout = timeout_override or self.timeout
 
             t0 = time.perf_counter()
             result = run_container(
@@ -294,7 +301,7 @@ class Orchestrator:
                 repo_id=repo_id,
                 framework=framework,
                 input_data=input_data,
-                timeout=self.timeout,
+                timeout=timeout,
                 vllm_url=self.vllm_url,
             )
             latency_ms = (time.perf_counter() - t0) * 1000.0
@@ -321,6 +328,67 @@ class Orchestrator:
             with self._active_lock:
                 self.active_count -= 1
             self._semaphore.release()
+
+    # ------------------------------------------------------------------
+    # Probe-before-commit (v6.3 B1)
+    # ------------------------------------------------------------------
+
+    def execute_repo_with_probe(
+        self,
+        repo_selection: dict[str, Any],
+        planned_runs: list[dict] | None = None,
+    ) -> list[RunResult]:
+        """Run a quick probe first. Only proceed to full runs if probe produces events.
+
+        Parameters
+        ----------
+        repo_selection:
+            Repo selection dict from Phase 1.
+        planned_runs:
+            Optional pre-planned run schedule. If None, generates one internally.
+        """
+        repo_id = repo_selection.get("repo_id", "unknown")
+
+        if planned_runs is None:
+            inputs = self._generate_repo_inputs(repo_selection)
+            run_schedule = plan_runs(inputs, total_runs=self.runs_per_repo)
+        else:
+            run_schedule = planned_runs
+
+        if not run_schedule:
+            return []
+
+        # Probe with shorter timeout (60s or 1/5 of configured timeout, whichever is larger)
+        probe_timeout = max(60, self.timeout // 5)
+        probe_input, probe_run_number = run_schedule[0]
+        probe_run_id = f"{repo_id}_probe_{uuid.uuid4().hex[:8]}"
+
+        probe_result = self.execute_repo(
+            repo_selection, probe_run_number, probe_input, probe_run_id,
+            timeout_override=probe_timeout,
+        )
+
+        if probe_result.status in (
+            ExecutionStatus.CRASH,
+            ExecutionStatus.DEPENDENCY_FAILURE,
+            ExecutionStatus.INSTRUMENTATION_FAILURE,
+        ):
+            logger.info(
+                f"[PROBE FAIL] {repo_id}: {probe_result.status} "
+                f"— skipping {len(run_schedule) - 1} remaining runs"
+            )
+            return [probe_result]
+
+        # Probe passed — execute remaining runs with full timeout
+        results: list[RunResult] = [probe_result]
+        for input_data, run_number in run_schedule[1:]:
+            run_id = f"{repo_id}_run_{run_number}_{uuid.uuid4().hex[:8]}"
+            result = self.execute_repo(
+                repo_selection, run_number, input_data, run_id,
+            )
+            results.append(result)
+
+        return results
 
     # ------------------------------------------------------------------
     # Entry point resolution with fallback chain (Issue 21)
@@ -354,6 +422,12 @@ class Orchestrator:
     # Status classification
     # ------------------------------------------------------------------
 
+    INTERACTION_EVENT_TYPES = frozenset({
+        "delegation.initiated", "delegation.completed",
+        "tool.invoked", "tool.completed",
+        "data.read", "data.write",
+    })
+
     def classify_status(self, run_result: RunResult) -> str:
         """Determine execution status from exit code, events, and errors.
 
@@ -366,6 +440,7 @@ class Orchestrator:
 
         # Check events count
         events_count = _count_events(run_result.events_file_path)
+        events = _load_events(run_result.events_file_path)
 
         stderr = run_result.stderr.lower()
 
@@ -420,16 +495,18 @@ class Orchestrator:
         ):
             return ExecutionStatus.INSTRUMENTATION_FAILURE
 
-        # Success with events
-        if run_result.exit_code == 0 and events_count > 0:
+        # Check for interaction events
+        has_interaction = any(
+            e.get("event_type") in self.INTERACTION_EVENT_TYPES
+            for e in events
+        )
+
+        # Success with rich data — enough events AND at least one interaction
+        if run_result.exit_code == 0 and events_count >= MIN_EVENT_THRESHOLD and has_interaction:
             return ExecutionStatus.SUCCESS
 
-        # Partial success — process exited OK but no/few events
-        if run_result.exit_code == 0 and events_count == 0:
-            return ExecutionStatus.PARTIAL_SUCCESS
-
-        # Non-zero exit with some events captured
-        if run_result.exit_code is not None and run_result.exit_code != 0 and events_count > 0:
+        # Partial success — process ran but thin data
+        if run_result.exit_code == 0 or events_count > 0:
             return ExecutionStatus.PARTIAL_SUCCESS
 
         return ExecutionStatus.CRASH
@@ -582,6 +659,57 @@ class Orchestrator:
         """Create output and metadata directories."""
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self._meta_dir.mkdir(parents=True, exist_ok=True)
+
+    # ------------------------------------------------------------------
+    # Checkpoint / resume (v7)
+    # ------------------------------------------------------------------
+
+    CHECKPOINT_FILENAME = "scan_checkpoint.json"
+
+    def _load_checkpoint(self, output_dir: Path) -> dict:
+        """Load checkpoint from output directory."""
+        path = output_dir / self.CHECKPOINT_FILENAME
+        if path.exists():
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+                self._completed_repos = set(data.get("completed_repos", []))
+                console.print(
+                    f"[green]Resumed from checkpoint:[/green] "
+                    f"{len(self._completed_repos)} repos already completed"
+                )
+                return data
+            except Exception as exc:
+                logger.warning(f"Failed to load checkpoint: {exc}")
+        return {"completed_repos": [], "status_counts": {}, "version": 1}
+
+    def _save_checkpoint(self, output_dir: Path, checkpoint: dict) -> None:
+        """Save checkpoint to output directory."""
+        checkpoint["last_updated"] = datetime.now(timezone.utc).isoformat()
+        checkpoint["total_completed"] = len(checkpoint["completed_repos"])
+        try:
+            (output_dir / self.CHECKPOINT_FILENAME).write_text(
+                json.dumps(checkpoint, indent=2), encoding="utf-8"
+            )
+        except Exception as exc:
+            logger.warning(f"Failed to save checkpoint: {exc}")
+
+    def load_checkpoint(self) -> None:
+        """Load completed repo IDs from checkpoint file (backward compat)."""
+        self._load_checkpoint(self.output_dir.parent)
+
+    def save_checkpoint(self, repo_id: str) -> None:
+        """Save a completed repo to the checkpoint file (backward compat)."""
+        self._completed_repos.add(repo_id)
+        checkpoint = {
+            "completed_repos": sorted(self._completed_repos),
+            "status_counts": {},
+            "version": 1,
+        }
+        self._save_checkpoint(self.output_dir.parent, checkpoint)
+
+    def is_repo_completed(self, repo_id: str) -> bool:
+        """Check if a repo has already been completed."""
+        return repo_id in self._completed_repos
 
     def _print_dry_run(self) -> None:
         """Print dry-run summary without executing anything."""

@@ -103,6 +103,245 @@ def detect_emergent_edges(
     return emergent_edges
 
 
+def detect_emergent_edges_v2(
+    structural_graph: dict[str, Any],
+    events: list[dict[str, Any]],
+    run_count: int,
+) -> list[dict[str, Any]]:
+    """Detect runtime interactions with no structural counterpart.
+
+    Discovery types:
+    - error_triggered_fallback: delegation that only occurs when upstream errors
+    - dynamic_delegation: LLM-chosen routing not in static graph
+    - implicit_data_sharing: agents access same state without structural shares_with
+    - framework_internal_routing: framework orchestrator creates undeclared paths
+    """
+    structural_edges = structural_graph.get("edges", {})
+    structural_edge_set = set()
+    for edge_data in structural_edges.values():
+        s = edge_data.get("source", "")
+        t = edge_data.get("target", "")
+        if s and t:
+            structural_edge_set.add((s, t))
+
+    run_count = max(run_count, 1)
+    emergent = []
+
+    # 1. Detect from delegation events
+    delegation_events = [e for e in events if e.get("event_type") == "delegation.initiated"]
+    seen_pairs: set[tuple[str, str]] = set()
+    for event in delegation_events:
+        data = event.get("payload", {})
+        source = data.get("source_node_id", "")
+        target = data.get("target_node_id", "")
+        if not source:
+            src_node = event.get("source_node", {})
+            source = src_node.get("node_id", "") or src_node.get("node_name", "")
+        if not target:
+            tgt_node = event.get("target_node", {})
+            target = tgt_node.get("node_id", "") or tgt_node.get("node_name", "")
+
+        if not source or not target:
+            continue
+        if (source, target) in structural_edge_set or (source, target) in seen_pairs:
+            continue
+
+        # Check if it also doesn't match via fuzzy matching
+        if _fuzzy_match_structural(source, target, structural_edge_set):
+            continue
+
+        seen_pairs.add((source, target))
+        discovery_type = _classify_emergent_type(event, events)
+        activation_count = sum(
+            1 for e in delegation_events
+            if (e.get("payload", {}).get("source_node_id", "") == source or
+                (e.get("source_node", {}).get("node_name", "") == source))
+            and (e.get("payload", {}).get("target_node_id", "") == target or
+                 (e.get("target_node", {}).get("node_name", "") == target))
+        )
+
+        emergent.append({
+            "edge_id": f"emergent_{len(emergent):03d}",
+            "source_node": source,
+            "target_node": target,
+            "edge_type": "delegates_to",
+            "activation_count": activation_count,
+            "activation_rate": round(activation_count / run_count, 4),
+            "trigger_condition": _describe_emergent_trigger(event, events),
+            "discovery_type": discovery_type,
+            "detection_heuristic": _generate_detection_heuristic(discovery_type, source, target),
+        })
+
+    # 2. Detect from shared state access patterns
+    state_events = [e for e in events if e.get("event_type") == "state.access"]
+    implicit_shares = _detect_implicit_sharing_v2(state_events, structural_edge_set)
+    for share in implicit_shares:
+        emergent.append({
+            "edge_id": f"emergent_{len(emergent):03d}",
+            "source_node": share["writer"],
+            "target_node": share["reader"],
+            "edge_type": "shares_with",
+            "activation_count": share["interaction_count"],
+            "activation_rate": round(share["interaction_count"] / run_count, 4),
+            "trigger_condition": f"both agents access state key '{share['state_key']}'",
+            "discovery_type": "implicit_data_sharing",
+            "detection_heuristic": (
+                f"Monitor for agents accessing the same state key "
+                f"'{share['state_key']}' — structural graph should have "
+                f"a shares_with edge between {share['writer']} and {share['reader']}"
+            ),
+            "shared_state_key": share["state_key"],
+        })
+
+    # 3. Detect from routing decisions
+    routing_events = [e for e in events if e.get("event_type") == "routing.decision"]
+    for event in routing_events:
+        data = event.get("payload", {})
+        source = data.get("source_node", "")
+        target = data.get("target_node", "")
+
+        if not source or not target:
+            continue
+        if (source, target) in structural_edge_set or (source, target) in seen_pairs:
+            continue
+        if _fuzzy_match_structural(source, target, structural_edge_set):
+            continue
+
+        seen_pairs.add((source, target))
+        routing_type = data.get("routing_type", "unknown")
+        basis = data.get("decision_basis", "unknown")
+
+        emergent.append({
+            "edge_id": f"emergent_{len(emergent):03d}",
+            "source_node": source,
+            "target_node": target,
+            "edge_type": "delegates_to",
+            "activation_count": 1,
+            "activation_rate": round(1 / run_count, 4),
+            "trigger_condition": f"routing decision ({routing_type}) based on {basis}",
+            "discovery_type": ("dynamic_delegation" if basis == "llm_output"
+                              else "framework_internal_routing"),
+            "detection_heuristic": _generate_routing_heuristic(routing_type, basis, source, target),
+        })
+
+    return emergent
+
+
+def _fuzzy_match_structural(source: str, target: str, structural_edge_set: set) -> bool:
+    """Check if source->target fuzzy-matches any structural edge."""
+    from stratum_lab.node_ids import normalize_name
+    src_norm = normalize_name(source)
+    tgt_norm = normalize_name(target)
+    for (s, t) in structural_edge_set:
+        s_norm = normalize_name(s.replace("agent_", "").replace("cap_", ""))
+        t_norm = normalize_name(t.replace("agent_", "").replace("cap_", ""))
+        if (src_norm == s_norm or src_norm in s_norm or s_norm in src_norm) and \
+           (tgt_norm == t_norm or tgt_norm in t_norm or t_norm in tgt_norm):
+            return True
+    return False
+
+
+def _classify_emergent_type(event: dict, all_events: list[dict]) -> str:
+    """Classify an emergent delegation type."""
+    data = event.get("payload", {})
+    timestamp = event.get("timestamp_ns", event.get("timestamp", 0))
+    source = data.get("source_node_id", "")
+    if not source:
+        source = event.get("source_node", {}).get("node_name", "")
+
+    recent_errors = [
+        e for e in all_events
+        if e.get("event_type", "").startswith("error.")
+        and abs(e.get("timestamp_ns", e.get("timestamp", 0)) - timestamp) < 5_000_000_000
+    ]
+    if recent_errors:
+        return "error_triggered_fallback"
+
+    delegation_type = data.get("delegation_type", "")
+    if delegation_type == "framework_internal":
+        return "framework_internal_routing"
+
+    return "dynamic_delegation"
+
+
+def _describe_emergent_trigger(event: dict, all_events: list[dict]) -> str:
+    """Describe what triggers this emergent edge."""
+    dtype = _classify_emergent_type(event, all_events)
+    if dtype == "error_triggered_fallback":
+        return "error in upstream node triggered fallback delegation"
+    elif dtype == "framework_internal_routing":
+        return "framework orchestrator created routing path"
+    return "LLM-chosen or dynamic routing decision"
+
+
+def _generate_detection_heuristic(discovery_type: str, source: str, target: str) -> str:
+    """Generate a detection heuristic importable by the reliability scanner."""
+    if discovery_type == "error_triggered_fallback":
+        return (
+            f"Monitor for delegation to '{target}' when '{source}' errors. "
+            f"Structural graph should add a conditional delegates_to edge "
+            f"with error_triggered=True."
+        )
+    elif discovery_type == "dynamic_delegation":
+        return (
+            f"Monitor for LLM-chosen routing from '{source}' to '{target}'. "
+            f"Consider adding delegates_to edge with dynamic=True in structural graph."
+        )
+    elif discovery_type == "framework_internal_routing":
+        return (
+            f"Framework orchestrator routes from '{source}' to '{target}'. "
+            f"This is a framework-internal path not visible in user code."
+        )
+    return f"Emergent interaction between '{source}' and '{target}'."
+
+
+def _generate_routing_heuristic(routing_type: str, basis: str, source: str, target: str) -> str:
+    """Generate heuristic for routing-discovered edges."""
+    return (
+        f"Routing decision ({routing_type}) based on {basis}: "
+        f"'{source}' -> '{target}'. Consider adding structural edge."
+    )
+
+
+def _detect_implicit_sharing_v2(state_events: list[dict], structural_edge_set: set) -> list[dict]:
+    """Detect implicit data sharing from state.access events."""
+    from collections import defaultdict
+
+    writes: dict[str, list[str]] = defaultdict(list)
+    reads: dict[str, list[str]] = defaultdict(list)
+
+    for event in state_events:
+        data = event.get("payload", {})
+        node_id = data.get("node_id", "")
+        state_key = data.get("state_key", "")
+        access_type = data.get("access_type", "")
+
+        if not node_id or not state_key:
+            continue
+
+        if access_type in ("write", "read_write"):
+            writes[state_key].append(node_id)
+        if access_type in ("read", "read_write"):
+            reads[state_key].append(node_id)
+
+    shares = []
+    for state_key in set(writes.keys()) & set(reads.keys()):
+        writers = set(writes[state_key])
+        readers = set(reads[state_key])
+        for w in writers:
+            for r in readers:
+                if w != r and (w, r) not in structural_edge_set:
+                    interaction_count = min(len(writes[state_key]), len(reads[state_key]))
+                    shares.append({
+                        "writer": w,
+                        "reader": r,
+                        "state_key": state_key,
+                        "interaction_count": interaction_count,
+                    })
+
+    return shares
+
+
 # ---------------------------------------------------------------------------
 # Dead edge detection
 # ---------------------------------------------------------------------------

@@ -1,240 +1,2629 @@
-Working directory: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_2ff5c7na
+Working directory: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_eval_ybp_ys32
 
 ==============================================================================
-PHASE 1: REPO SELECTION
+STEP 1: BUILD SYNTHETIC BEHAVIORAL RECORDS
 ==============================================================================
-  Input repos:       30
-  Selected repos:    20
-  Frameworks:        {'langchain': 6, 'custom': 6, 'autogen': 5, 'langgraph': 2, 'crewai': 1}
-  Archetypes:        {'parallel_fan_out': 2, 'guardrail_gated_pipeline': 2, 'hierarchical_delegation': 2, 'supervisor_worker': 2, 'debate_consensus': 2, 'hub_and_spoke_shared_state': 2, 'reflection_loop': 2, 'single_agent_tool_use': 2, 'sequential_pipeline': 1, 'market_auction': 1, 'blackboard_architecture': 1, 'human_in_the_loop': 1}
-  Avg structural:    27.6
-  Avg runnability:   28.5
+  Records created:     10
+  Schema version:      v6
+                              Behavioral Records Summary                               
+┌───────────────────┬───────────┬──────────────┬──────────┬───────────────┬───────────┐
+│ Repo              │ Framework │ Struct Edges │ Emergent │ Failure Modes │ Baselines │
+├───────────────────┼───────────┼──────────────┼──────────┼───────────────┼───────────┤
+│ test-org/repo_000 │ crewai    │ 8            │ 1        │ 5             │ 5         │
+│ test-org/repo_001 │ langgraph │ 9            │ 4        │ 5             │ 5         │
+│ test-org/repo_002 │ autogen   │ 10           │ 2        │ 5             │ 5         │
+│ test-org/repo_003 │ crewai    │ 11           │ 1        │ 5             │ 5         │
+│ test-org/repo_004 │ langgraph │ 12           │ 2        │ 5             │ 5         │
+│ test-org/repo_005 │ autogen   │ 13           │ 2        │ 5             │ 5         │
+│ test-org/repo_006 │ crewai    │ 14           │ 2        │ 5             │ 5         │
+│ test-org/repo_007 │ langgraph │ 15           │ 1        │ 5             │ 5         │
+│ test-org/repo_008 │ autogen   │ 16           │ 1        │ 5             │ 5         │
+│ test-org/repo_009 │ crewai    │ 17           │ 3        │ 5             │ 5         │
+└───────────────────┴───────────┴──────────────┴──────────┴───────────────┴───────────┘
 
-  -> Saved selection to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_2ff5c7na\selection.json
-
-==============================================================================
-PHASE 2: EXECUTION HARNESS (MOCKED)
-==============================================================================
-  Repos executed:    10
-  Runs per repo:     3
-  Total runs:        30
-  Total events:      1478
-
-  -> Saved 30 JSONL files to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_2ff5c7na\raw_events
-
-==============================================================================
-PHASE 3: DATA COLLECTION
-==============================================================================
-  Run records built: 30
-  Repos aggregated:  10
-
-  Sample run record (repo_013_run_1):
-    Total events:    47
-    Event types:     {'execution.start': 1, 'agent.task_start': 5, 'llm.call_start': 5, 'llm.call_end': 5, 'tool.invoked': 5, 'tool.completed': 5, 'decision.made': 5, 'agent.task_end': 5, 'delegation.initiated': 4, 'data.write': 2, 'data.read': 1, 'external.call': 2, 'guardrail.triggered': 1, 'execution.end': 1}
-    LLM calls:       5
-    Errors:          0
-    Delegations:     4
-
-  Sample repo aggregate (repo_013):
-    Num runs:        3
-    Total events:    143
-    Avg events/run:  47.67
-
-  -> Collection phase complete
+  Sample record (repo_000):
+    edge_validation.structural_edges_total:    8
+    edge_validation.structural_edges_activated:8
+    edge_validation.activation_rates keys:     ['delegates_to', 'uses', 'writes_to', 'reads_from', 'calls', 
+'filtered_by']
+    emergent_edges count:                      1
+    node_activation.structural_prediction_match_rate: 0.5149
+    error_propagation entries:                 2
+    failure_modes entries:                     5
+    monitoring_baselines entries:              5
 
 ==============================================================================
-PHASE 4: GRAPH OVERLAY
+STEP 2: EXPORT FEEDBACK
 ==============================================================================
-  Graphs enriched:   10
-  Total emergent:    10
-  Total dead:        62
-
-  Sample enriched graph (repo_013):
-    Nodes:           18
-    Edges:           15
-    Emergent edges:  1
-    Dead edges:      6
-    Node agent_agent_0 (type=agent):
-      activation_count:    12
-      activation_rate:     1.0
-      failure_rate:        0.0
-      same_input_activation_consistency: 1.0
-      same_input_path_consistency:       1.0
-    Node cap_tool_agent_0 (type=capability):
-      activation_count:    3
-      activation_rate:     1.0
-      failure_rate:        0.0
-      same_input_activation_consistency: 1.0
-      same_input_path_consistency:       1.0
-    Node ds_shared_memory (type=data_store):
-      activation_count:    9
-      activation_rate:     1.0
-      failure_rate:        0.0
-      same_input_activation_consistency: 1.0
-      same_input_path_consistency:       1.0
-    Node ext_api_service (type=external):
-      activation_count:    6
-      activation_rate:     1.0
-      failure_rate:        0.0
-      same_input_activation_consistency: 1.0
-      same_input_path_consistency:       1.0
-    Node guard_output_filter (type=guardrail):
-      activation_count:    3
-      activation_rate:     1.0
-      failure_rate:        0.0
-      same_input_activation_consistency: 1.0
-      same_input_path_consistency:       1.0
-      guardrail_trigger_count:  3
-      guardrail_prevented:      1
-    Emergent: agent_agent_4 -> ext_api_service (count=0)
-
-  -> Saved 10 enriched graphs to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_2ff5c7na\enriched_graphs
+  Output directory:    C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_eval_ybp_ys32\feedback
+  Files written:       5
+    emergent_heuristics.json                  6,214 bytes
+    edge_confidence_weights.json              1,293 bytes
+    failure_mode_catalog.json                57,781 bytes
+    monitoring_baselines.json                13,990 bytes
+    prediction_match_report.json                626 bytes
 
 ==============================================================================
-PHASE 5: KNOWLEDGE BASE
+CHECK 13: emergent_heuristics.json
 ==============================================================================
-  Patterns found:    3
-    shared_state_without_arbitration: prevalence=1.00, failure_rate=1.00, risk=medium
-    linear_delegation_chain: prevalence=1.00, failure_rate=1.00, risk=medium
-    trust_boundary_crossing: prevalence=1.00, failure_rate=1.00, risk=medium
+  File exists:                  YES
+  Has total_emergent_edges:      True
+  Has by_discovery_type:          True
+  Has non-empty heuristics list:  True (count=19)
+  Grouped by discovery_type:      True
+    by_discovery_type:             {'error_triggered_fallback': 11, 'dynamic_delegation': 6, 'implicit_data_sharing': 2}
 
-  Taxonomy preconditions with data: 2
-    shared_state_no_arbitration: P(manifest)=1.0, CI=[0.7225, 1.0], n=10
-    no_timeout_on_delegation: P(manifest)=1.0, CI=[0.6457, 1.0], n=7
+  Sample heuristics (first 3):
+    test-org/repo_000: agent_0_a0 -> agent_0_a1  rate=0.5724
+    test-org/repo_001: agent_1_a0 -> agent_1_a1  rate=0.163
+    test-org/repo_001: agent_1_a1 -> agent_1_a2  rate=0.7635
 
-  Novel patterns:    1
-    repo_022: anomaly_score=2.39, dim=avg_latency_p50
-
-  Framework comparisons: 3
-    shared_state_without_arbitration: frameworks=['autogen', 'custom', 'langchain']
-    linear_delegation_chain: frameworks=['autogen', 'custom', 'langchain']
-    trust_boundary_crossing: frameworks=['autogen', 'custom', 'langchain']
-
-  Fragility entries: 5
-    hub_node: sensitivity=0.0000, repos=10
-    chain_node: sensitivity=0.0000, repos=10
-    leaf_node: sensitivity=0.0000, repos=10
-
-  -> Saved knowledge base to C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_2ff5c7na\knowledge_base
+  CHECK 13: PASS
 
 ==============================================================================
-PHASE 6: QUERY LAYER
+CHECK 24: DISCOVERY TYPE TAXONOMY VALID
 ==============================================================================
-  Customer graph fingerprint:
-    feature_vector length: 20
-    motifs:               ['linear_delegation_chain', 'shared_state_without_arbitration', 'trust_boundary_crossing']
-    topology_hash:        aeb061adddb29efe...
-    structural_metrics:   {
-    "agent_count": 5,
-    "capability_count": 10,
-    "data_store_count": 1,
-    "external_service_count": 1,
-    "guardrail_count": 1,
-    "total_edges": 15,
-    "delegation_depth_max": 5.0,
-    "delegation_depth_mean": 5.0,
-    "control_coverage_ratio": 0.0714,
-    "observability_coverage_ratio": 0.0667,
-    "shared_state_writer_count": 2,
-    "trust_boundary_crossing_count": 1,
-    "feedback_loop_count": 1,
-    "hub_spoke_ratio": 3.0,
-    "betweenness_centrality_max": 0.1213,
-    "betweenness_centrality_mean": 0.0288,
-    "error_propagation_path_count": 1,
-    "irreversible_capability_count": 0,
-    "agent_to_capability_ratio": 0.5,
-    "has_human_checkpoint": 0
+  by_discovery_type keys:  {'implicit_data_sharing', 'error_triggered_fallback', 'dynamic_delegation'}
+  Valid taxonomy set:       {'implicit_data_sharing', 'error_triggered_fallback', 'dynamic_delegation', 
+'framework_internal_routing'}
+  Is subset:                True
+
+  CHECK 24: PASS
+
+==============================================================================
+CHECK 25: MODEL CONTEXT IN ALL FEEDBACK FILES
+==============================================================================
+  emergent_heuristics.json                 model_context.model_tier: True
+  edge_confidence_weights.json             model_context.model_tier: True
+  failure_mode_catalog.json                model_context.model_tier: True
+  monitoring_baselines.json                model_context.model_tier: True
+  prediction_match_report.json             model_context.model_tier: True
+
+  CHECK 25: PASS
+
+==============================================================================
+CHECK 14: edge_confidence_weights.json
+==============================================================================
+  File exists:                  YES
+  Has edge_types:                True
+  Has repos_analyzed:             True (value=10)
+  Per-type activation rates:      True
+  Edge types found:               6
+
+  Per-type weights:
+    delegates_to          mean=0.6272  min=0.4150  max=0.9831  n=10
+    uses                  mean=0.6616  min=0.4283  max=0.9247  n=10
+    writes_to             mean=0.6467  min=0.4351  max=0.8375  n=10
+    reads_from            mean=0.7127  min=0.4638  max=0.8848  n=10
+    calls                 mean=0.7762  min=0.4366  max=0.9294  n=10
+    filtered_by           mean=0.7459  min=0.4587  max=0.9937  n=10
+
+  CHECK 14: PASS
+
+==============================================================================
+CHECK 15: failure_mode_catalog.json
+==============================================================================
+  File exists:                  YES
+  Has non-empty catalog:         True (count=5)
+  Has examples:                  True
+  repos_analyzed:                10
+
+  Failure mode catalog:
+    STRAT-DC-001                              repos_affected=8  total_manifestations=33  examples=8
+    STRAT-SI-001                              repos_affected=3  total_manifestations=19  examples=3
+    STRAT-AB-001                              repos_affected=6  total_manifestations=19  examples=6
+    STRAT-OC-002                              repos_affected=5  total_manifestations=25  examples=5
+    STRAT-EA-001                              repos_affected=8  total_manifestations=30  examples=8
+
+  CHECK 15: PASS
+
+==============================================================================
+CHECK 19: CATALOG EXAMPLE ERROR PROPAGATION
+==============================================================================
+  Found in STRAT-DC-001: path=['agent_0_a0', 'agent_0_a1']
+
+  CHECK 19: PASS
+
+==============================================================================
+CHECK 20: CATALOG METADATA
+==============================================================================
+  metadata.model_tier: True (value=weak)
+  metadata.caveat:     True
+    caveat: Failure modes are structural (architecture-dependent). Propagation paths transfer to production. Tri...
+  finding_name human-readable:  True
+
+  CHECK 20: PASS
+
+==============================================================================
+CHECK 16: monitoring_baselines.json
+==============================================================================
+  File exists:                  YES
+  Has non-empty baselines list:  True (count=5)
+  Has per-finding aggregates:    True
+  repos_analyzed:                10
+
+  Monitoring baselines:
+    max_delegation_depth                           mean=    0.5574  sample_repos=10  finding=STRAT-DC-001
+    error_swallow_rate                             mean=    0.5090  sample_repos=10  finding=STRAT-SI-001
+    total_llm_calls_per_run                        mean=    0.3768  sample_repos=10  finding=STRAT-AB-001
+    concurrent_state_write_rate                    mean=    0.4801  sample_repos=10  finding=STRAT-OC-002
+    tool_call_failure_rate                         mean=    0.5694  sample_repos=10  finding=STRAT-EA-001
+
+  CHECK 16: PASS
+
+==============================================================================
+CHECK 23: STRAT- PREFIX ON ALL FINDING IDS
+==============================================================================
+  All finding_ids start with STRAT-: True
+
+  CHECK 23: PASS
+
+==============================================================================
+CHECK 17: prediction_match_report.json
+==============================================================================
+  File exists:                         YES
+  Has overall_edge_activation_rate:      True (value=0.88)
+  Has mean_node_prediction_match_rate:   True (value=0.7804)
+  Has total/activated/dead edges:         True
+    total_structural_edges:               125
+    activated_edges:                      110
+    dead_edges:                           15
+    repos_analyzed:                       10
+
+  CHECK 17: PASS
+
+==============================================================================
+CHECK 22: PILOT QUALITY GATE
+==============================================================================
+  Synthetic pilot runs:          30
+    CRASH                           1
+    DEPENDENCY_FAILURE              1
+    INSTRUMENTATION_FAILURE         2
+    MODEL_FAILURE                   1
+    PARTIAL_SUCCESS                 2
+    SUCCESS                         22
+    TIMEOUT                         1
+
+  --- Test A: thresholds instr=20%, model=15% (expect PASS) ---
+
+PILOT QUALITY GATE (30 runs)
+  FULL SUCCESS (>=10 events + interaction): 73%
+  PARTIAL SUCCESS (ran, thin data):         7%
+  INSTRUMENTATION_FAILURE:                  7%  (threshold: 20%)
+  MODEL_FAILURE:                            3%  (threshold: 15%)
+  CRASH:                                    3%
+  TIMEOUT:                                  3%
+  DEPENDENCY_FAILURE:                       3%
+  ENTRY_POINT_FAILURE:                      0%
+
+  PILOT PASSED: proceeding to full scan.
+  _check_pilot_quality returned: True
+
+  --- Test B: thresholds instr=1%, model=1% (expect FAIL) ---
+
+PILOT QUALITY GATE (30 runs)
+  FULL SUCCESS (>=10 events + interaction): 73%
+  PARTIAL SUCCESS (ran, thin data):         7%
+  INSTRUMENTATION_FAILURE:                  7%  (threshold: 1%)
+  MODEL_FAILURE:                            3%  (threshold: 1%)
+  CRASH:                                    3%
+  TIMEOUT:                                  3%
+  DEPENDENCY_FAILURE:                       3%
+  ENTRY_POINT_FAILURE:                      0%
+
+  PILOT FAILED:
+    - Instrumentation failure rate 7% exceeds 1%
+    - Model failure rate 3% exceeds 1%
+
+  Recommendation: Fix patcher/vLLM before running full scan.
+  _check_pilot_quality returned: False
+
+  --- Test C: empty run records (expect PASS) ---
+
+No run records found for pilot quality gate.
+  _check_pilot_quality returned: True
+
+  CHECK 22: PASS
+
+==============================================================================
+FEEDBACK FILE CONTENTS (FULL)
+==============================================================================
+
+--- emergent_heuristics.json ---
+{
+  "total_emergent_edges": 19,
+  "by_discovery_type": {
+    "error_triggered_fallback": 11,
+    "dynamic_delegation": 6,
+    "implicit_data_sharing": 2
+  },
+  "heuristics": [
+    {
+      "repo": "test-org/repo_000",
+      "source_node": "agent_0_a0",
+      "target_node": "agent_0_a1",
+      "discovery_type": "error_triggered_fallback",
+      "detection_heuristic": "Detected via error_triggered_fallback analysis on repo 0",
+      "activation_rate": 0.5724
+    },
+    {
+      "repo": "test-org/repo_001",
+      "source_node": "agent_1_a0",
+      "target_node": "agent_1_a1",
+      "discovery_type": "error_triggered_fallback",
+      "detection_heuristic": "Detected via error_triggered_fallback analysis on repo 1",
+      "activation_rate": 0.163
+    },
+    {
+      "repo": "test-org/repo_001",
+      "source_node": "agent_1_a1",
+      "target_node": "agent_1_a2",
+      "discovery_type": "dynamic_delegation",
+      "detection_heuristic": "Detected via dynamic_delegation analysis on repo 1",
+      "activation_rate": 0.7635
+    },
+    {
+      "repo": "test-org/repo_001",
+      "source_node": "agent_1_a2",
+      "target_node": "agent_1_a3",
+      "discovery_type": "implicit_data_sharing",
+      "detection_heuristic": "Detected via implicit_data_sharing analysis on repo 1",
+      "activation_rate": 0.8084
+    },
+    {
+      "repo": "test-org/repo_001",
+      "source_node": "agent_1_a3",
+      "target_node": "agent_1_a4",
+      "discovery_type": "error_triggered_fallback",
+      "detection_heuristic": "Detected via error_triggered_fallback analysis on repo 1",
+      "activation_rate": 0.5619
+    },
+    {
+      "repo": "test-org/repo_002",
+      "source_node": "agent_2_a0",
+      "target_node": "agent_2_a1",
+      "discovery_type": "error_triggered_fallback",
+      "detection_heuristic": "Detected via error_triggered_fallback analysis on repo 2",
+      "activation_rate": 0.6477
+    },
+    {
+      "repo": "test-org/repo_002",
+      "source_node": "agent_2_a1",
+      "target_node": "agent_2_a2",
+      "discovery_type": "dynamic_delegation",
+      "detection_heuristic": "Detected via dynamic_delegation analysis on repo 2",
+      "activation_rate": 0.2832
+    },
+    {
+      "repo": "test-org/repo_003",
+      "source_node": "agent_3_a0",
+      "target_node": "agent_3_a1",
+      "discovery_type": "error_triggered_fallback",
+      "detection_heuristic": "Detected via error_triggered_fallback analysis on repo 3",
+      "activation_rate": 0.4078
+    },
+    {
+      "repo": "test-org/repo_004",
+      "source_node": "agent_4_a0",
+      "target_node": "agent_4_a1",
+      "discovery_type": "error_triggered_fallback",
+      "detection_heuristic": "Detected via error_triggered_fallback analysis on repo 4",
+      "activation_rate": 0.2223
+    },
+    {
+      "repo": "test-org/repo_004",
+      "source_node": "agent_4_a1",
+      "target_node": "agent_4_a2",
+      "discovery_type": "dynamic_delegation",
+      "detection_heuristic": "Detected via dynamic_delegation analysis on repo 4",
+      "activation_rate": 0.5315
+    },
+    {
+      "repo": "test-org/repo_005",
+      "source_node": "agent_5_a0",
+      "target_node": "agent_5_a1",
+      "discovery_type": "error_triggered_fallback",
+      "detection_heuristic": "Detected via error_triggered_fallback analysis on repo 5",
+      "activation_rate": 0.8431
+    },
+    {
+      "repo": "test-org/repo_005",
+      "source_node": "agent_5_a1",
+      "target_node": "agent_5_a2",
+      "discovery_type": "dynamic_delegation",
+      "detection_heuristic": "Detected via dynamic_delegation analysis on repo 5",
+      "activation_rate": 0.6704
+    },
+    {
+      "repo": "test-org/repo_006",
+      "source_node": "agent_6_a0",
+      "target_node": "agent_6_a1",
+      "discovery_type": "error_triggered_fallback",
+      "detection_heuristic": "Detected via error_triggered_fallback analysis on repo 6",
+      "activation_rate": 0.7277
+    },
+    {
+      "repo": "test-org/repo_006",
+      "source_node": "agent_6_a1",
+      "target_node": "agent_6_a2",
+      "discovery_type": "dynamic_delegation",
+      "detection_heuristic": "Detected via dynamic_delegation analysis on repo 6",
+      "activation_rate": 0.2523
+    },
+    {
+      "repo": "test-org/repo_007",
+      "source_node": "agent_7_a0",
+      "target_node": "agent_7_a1",
+      "discovery_type": "error_triggered_fallback",
+      "detection_heuristic": "Detected via error_triggered_fallback analysis on repo 7",
+      "activation_rate": 0.8752
+    },
+    {
+      "repo": "test-org/repo_008",
+      "source_node": "agent_8_a0",
+      "target_node": "agent_8_a1",
+      "discovery_type": "error_triggered_fallback",
+      "detection_heuristic": "Detected via error_triggered_fallback analysis on repo 8",
+      "activation_rate": 0.5673
+    },
+    {
+      "repo": "test-org/repo_009",
+      "source_node": "agent_9_a0",
+      "target_node": "agent_9_a1",
+      "discovery_type": "error_triggered_fallback",
+      "detection_heuristic": "Detected via error_triggered_fallback analysis on repo 9",
+      "activation_rate": 0.4658
+    },
+    {
+      "repo": "test-org/repo_009",
+      "source_node": "agent_9_a1",
+      "target_node": "agent_9_a2",
+      "discovery_type": "dynamic_delegation",
+      "detection_heuristic": "Detected via dynamic_delegation analysis on repo 9",
+      "activation_rate": 0.1075
+    },
+    {
+      "repo": "test-org/repo_009",
+      "source_node": "agent_9_a2",
+      "target_node": "agent_9_a3",
+      "discovery_type": "implicit_data_sharing",
+      "detection_heuristic": "Detected via implicit_data_sharing analysis on repo 9",
+      "activation_rate": 0.8988
+    }
+  ],
+  "model_context": {
+    "model": "unknown",
+    "model_tier": "weak",
+    "purpose": "stress_test",
+    "transferability": {
+      "propagation_paths": "structural \u2014 transfers to production",
+      "failure_modes": "structural \u2014 transfers to production",
+      "trigger_frequencies": "model_dependent \u2014 does NOT transfer",
+      "absolute_baselines": "model_dependent \u2014 use as relative thresholds"
+    }
+  }
 }
 
-  Top matches (5):
-    shared_state_without_arbitration: score=1.000, type=exact_motif, repos=10
-    linear_delegation_chain: score=1.000, type=exact_motif, repos=10
-    trust_boundary_crossing: score=1.000, type=exact_motif, repos=10
-    structural_match_unknown: score=1.000, type=structural_similarity, repos=1
-    hierarchical_delegation: score=1.000, type=archetype, repos=9
+--- edge_confidence_weights.json ---
+{
+  "edge_types": {
+    "delegates_to": {
+      "mean_activation_rate": 0.6272,
+      "sample_size": 10,
+      "min": 0.415,
+      "max": 0.9831
+    },
+    "uses": {
+      "mean_activation_rate": 0.6616,
+      "sample_size": 10,
+      "min": 0.4283,
+      "max": 0.9247
+    },
+    "writes_to": {
+      "mean_activation_rate": 0.6467,
+      "sample_size": 10,
+      "min": 0.4351,
+      "max": 0.8375
+    },
+    "reads_from": {
+      "mean_activation_rate": 0.7127,
+      "sample_size": 10,
+      "min": 0.4638,
+      "max": 0.8848
+    },
+    "calls": {
+      "mean_activation_rate": 0.7762,
+      "sample_size": 10,
+      "min": 0.4366,
+      "max": 0.9294
+    },
+    "filtered_by": {
+      "mean_activation_rate": 0.7459,
+      "sample_size": 10,
+      "min": 0.4587,
+      "max": 0.9937
+    }
+  },
+  "repos_analyzed": 10,
+  "model_context": {
+    "model": "unknown",
+    "model_tier": "weak",
+    "purpose": "stress_test",
+    "transferability": {
+      "propagation_paths": "structural \u2014 transfers to production",
+      "failure_modes": "structural \u2014 transfers to production",
+      "trigger_frequencies": "model_dependent \u2014 does NOT transfer",
+      "absolute_baselines": "model_dependent \u2014 use as relative thresholds"
+    }
+  }
+}
 
-  Risk prediction:
-    overall_risk_score: 22.2
-    predicted_risks:   2
-    positive_signals:  3
-      shared_state_no_arbitration: P=1.00, severity=low
-      no_timeout_on_delegation: P=1.00, severity=low
+--- failure_mode_catalog.json ---
+{
+  "metadata": {
+    "model_tier": "weak",
+    "model": "unknown",
+    "total_repos_analyzed": 10,
+    "caveat": "Failure modes are structural (architecture-dependent). Propagation paths transfer to production. Trigger 
+frequencies are model-dependent and do not transfer."
+  },
+  "catalog": [
+    {
+      "finding_id": "STRAT-DC-001",
+      "finding_name": "Unsupervised delegation chain",
+      "total_manifestations": 33,
+      "repos_affected": 8,
+      "repos_analyzed_with_finding": 10,
+      "failure_types_observed": [
+        "swallowed_error"
+      ],
+      "examples": [
+        {
+          "repo": "test-org/repo_000",
+          "framework": "crewai",
+          "description": "Observed STRAT-DC-001 in repo_000 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_0_a0",
+            "error_type": "RuntimeError",
+            "structural_predicted_path": [
+              "agent_0_a0",
+              "agent_0_a1"
+            ],
+            "actual_observed_path": [
+              "agent_0_a0",
+              "agent_0_a1"
+            ],
+            "propagation_stopped_by": "",
+            "stop_mechanism": "propagated_through",
+            "downstream_impact": {
+              "nodes_affected": 1,
+              "downstream_errors": 1,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 1
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_002",
+          "framework": "autogen",
+          "description": "Observed STRAT-DC-001 in repo_002 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_2_a0",
+            "error_type": "ValueError",
+            "structural_predicted_path": [
+              "agent_2_a0",
+              "agent_2_a1",
+              "agent_2_a2"
+            ],
+            "actual_observed_path": [
+              "agent_2_a0",
+              "agent_2_a1",
+              "agent_2_a2"
+            ],
+            "propagation_stopped_by": "agent_2_a2",
+            "stop_mechanism": "retry",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 3
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_004",
+          "framework": "langgraph",
+          "description": "Observed STRAT-DC-001 in repo_004 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_4_a0",
+            "error_type": "RuntimeError",
+            "structural_predicted_path": [
+              "agent_4_a0",
+              "agent_4_a1",
+              "agent_4_a2"
+            ],
+            "actual_observed_path": [
+              "agent_4_a0",
+              "agent_4_a1",
+              "agent_4_a2"
+            ],
+            "propagation_stopped_by": "",
+            "stop_mechanism": "propagated_through",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 1,
+              "cascade_depth": 2
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_005",
+          "framework": "autogen",
+          "description": "Observed STRAT-DC-001 in repo_005 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_5_a0",
+            "error_type": "TimeoutError",
+            "structural_predicted_path": [
+              "agent_5_a0",
+              "agent_5_a1",
+              "agent_5_a2"
+            ],
+            "actual_observed_path": [
+              "agent_5_a0"
+            ],
+            "propagation_stopped_by": "agent_5_a2",
+            "stop_mechanism": "swallowed_at_source",
+            "downstream_impact": {
+              "nodes_affected": 0,
+              "downstream_errors": 0,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 0
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_006",
+          "framework": "crewai",
+          "description": "Observed STRAT-DC-001 in repo_006 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_6_a0",
+            "error_type": "ValueError",
+            "structural_predicted_path": [
+              "agent_6_a0",
+              "agent_6_a1"
+            ],
+            "actual_observed_path": [
+              "agent_6_a0",
+              "agent_6_a1"
+            ],
+            "propagation_stopped_by": "agent_6_a1",
+            "stop_mechanism": "retry",
+            "downstream_impact": {
+              "nodes_affected": 1,
+              "downstream_errors": 1,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 1
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_007",
+          "framework": "langgraph",
+          "description": "Observed STRAT-DC-001 in repo_007 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_7_a0",
+            "error_type": "SchemaError",
+            "structural_predicted_path": [
+              "agent_7_a0",
+              "agent_7_a1",
+              "agent_7_a2"
+            ],
+            "actual_observed_path": [
+              "agent_7_a0",
+              "agent_7_a1",
+              "agent_7_a2"
+            ],
+            "propagation_stopped_by": "agent_7_a2",
+            "stop_mechanism": "absorbed",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 2
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_008",
+          "framework": "autogen",
+          "description": "Observed STRAT-DC-001 in repo_008 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_8_a0",
+            "error_type": "RuntimeError",
+            "structural_predicted_path": [
+              "agent_8_a0",
+              "agent_8_a1",
+              "agent_8_a2"
+            ],
+            "actual_observed_path": [
+              "agent_8_a0",
+              "agent_8_a1",
+              "agent_8_a2"
+            ],
+            "propagation_stopped_by": "",
+            "stop_mechanism": "propagated_through",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 1,
+              "cascade_depth": 3
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_009",
+          "framework": "crewai",
+          "description": "Observed STRAT-DC-001 in repo_009 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_9_a0",
+            "error_type": "TimeoutError",
+            "structural_predicted_path": [
+              "agent_9_a0",
+              "agent_9_a1"
+            ],
+            "actual_observed_path": [
+              "agent_9_a0"
+            ],
+            "propagation_stopped_by": "agent_9_a1",
+            "stop_mechanism": "swallowed_at_source",
+            "downstream_impact": {
+              "nodes_affected": 0,
+              "downstream_errors": 0,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 0
+            }
+          }
+        }
+      ],
+      "manifestation_rate_note": "Observed in 8/10 repos with this structural finding. Rate is model-dependent; 
+structural pattern is not."
+    },
+    {
+      "finding_id": "STRAT-SI-001",
+      "finding_name": "Error laundering",
+      "total_manifestations": 19,
+      "repos_affected": 3,
+      "repos_analyzed_with_finding": 10,
+      "failure_types_observed": [
+        "degraded_output_propagation"
+      ],
+      "examples": [
+        {
+          "repo": "test-org/repo_000",
+          "framework": "crewai",
+          "description": "Observed STRAT-SI-001 in repo_000 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_0_a0",
+            "error_type": "RuntimeError",
+            "structural_predicted_path": [
+              "agent_0_a0",
+              "agent_0_a1"
+            ],
+            "actual_observed_path": [
+              "agent_0_a0",
+              "agent_0_a1"
+            ],
+            "propagation_stopped_by": "",
+            "stop_mechanism": "propagated_through",
+            "downstream_impact": {
+              "nodes_affected": 1,
+              "downstream_errors": 1,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 1
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_002",
+          "framework": "autogen",
+          "description": "Observed STRAT-SI-001 in repo_002 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_2_a0",
+            "error_type": "ValueError",
+            "structural_predicted_path": [
+              "agent_2_a0",
+              "agent_2_a1",
+              "agent_2_a2"
+            ],
+            "actual_observed_path": [
+              "agent_2_a0",
+              "agent_2_a1",
+              "agent_2_a2"
+            ],
+            "propagation_stopped_by": "agent_2_a2",
+            "stop_mechanism": "retry",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 3
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_005",
+          "framework": "autogen",
+          "description": "Observed STRAT-SI-001 in repo_005 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_5_a0",
+            "error_type": "TimeoutError",
+            "structural_predicted_path": [
+              "agent_5_a0",
+              "agent_5_a1",
+              "agent_5_a2"
+            ],
+            "actual_observed_path": [
+              "agent_5_a0"
+            ],
+            "propagation_stopped_by": "agent_5_a2",
+            "stop_mechanism": "swallowed_at_source",
+            "downstream_impact": {
+              "nodes_affected": 0,
+              "downstream_errors": 0,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 0
+            }
+          }
+        }
+      ],
+      "manifestation_rate_note": "Observed in 3/10 repos with this structural finding. Rate is model-dependent; 
+structural pattern is not."
+    },
+    {
+      "finding_id": "STRAT-AB-001",
+      "finding_name": "Unbounded aggregate volume",
+      "total_manifestations": 19,
+      "repos_affected": 6,
+      "repos_analyzed_with_finding": 10,
+      "failure_types_observed": [
+        "timeout_cascade"
+      ],
+      "examples": [
+        {
+          "repo": "test-org/repo_000",
+          "framework": "crewai",
+          "description": "Observed STRAT-AB-001 in repo_000 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_0_a0",
+            "error_type": "RuntimeError",
+            "structural_predicted_path": [
+              "agent_0_a0",
+              "agent_0_a1"
+            ],
+            "actual_observed_path": [
+              "agent_0_a0",
+              "agent_0_a1"
+            ],
+            "propagation_stopped_by": "",
+            "stop_mechanism": "propagated_through",
+            "downstream_impact": {
+              "nodes_affected": 1,
+              "downstream_errors": 1,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 1
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_002",
+          "framework": "autogen",
+          "description": "Observed STRAT-AB-001 in repo_002 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_2_a0",
+            "error_type": "ValueError",
+            "structural_predicted_path": [
+              "agent_2_a0",
+              "agent_2_a1",
+              "agent_2_a2"
+            ],
+            "actual_observed_path": [
+              "agent_2_a0",
+              "agent_2_a1",
+              "agent_2_a2"
+            ],
+            "propagation_stopped_by": "agent_2_a2",
+            "stop_mechanism": "retry",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 3
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_003",
+          "framework": "crewai",
+          "description": "Observed STRAT-AB-001 in repo_003 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_3_a0",
+            "error_type": "SchemaError",
+            "structural_predicted_path": [
+              "agent_3_a0",
+              "agent_3_a1"
+            ],
+            "actual_observed_path": [
+              "agent_3_a0",
+              "agent_3_a1"
+            ],
+            "propagation_stopped_by": "agent_3_a1",
+            "stop_mechanism": "absorbed",
+            "downstream_impact": {
+              "nodes_affected": 1,
+              "downstream_errors": 1,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 1
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_005",
+          "framework": "autogen",
+          "description": "Observed STRAT-AB-001 in repo_005 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_5_a0",
+            "error_type": "TimeoutError",
+            "structural_predicted_path": [
+              "agent_5_a0",
+              "agent_5_a1",
+              "agent_5_a2"
+            ],
+            "actual_observed_path": [
+              "agent_5_a0"
+            ],
+            "propagation_stopped_by": "agent_5_a2",
+            "stop_mechanism": "swallowed_at_source",
+            "downstream_impact": {
+              "nodes_affected": 0,
+              "downstream_errors": 0,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 0
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_007",
+          "framework": "langgraph",
+          "description": "Observed STRAT-AB-001 in repo_007 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_7_a0",
+            "error_type": "SchemaError",
+            "structural_predicted_path": [
+              "agent_7_a0",
+              "agent_7_a1",
+              "agent_7_a2"
+            ],
+            "actual_observed_path": [
+              "agent_7_a0",
+              "agent_7_a1",
+              "agent_7_a2"
+            ],
+            "propagation_stopped_by": "agent_7_a2",
+            "stop_mechanism": "absorbed",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 2
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_008",
+          "framework": "autogen",
+          "description": "Observed STRAT-AB-001 in repo_008 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_8_a0",
+            "error_type": "RuntimeError",
+            "structural_predicted_path": [
+              "agent_8_a0",
+              "agent_8_a1",
+              "agent_8_a2"
+            ],
+            "actual_observed_path": [
+              "agent_8_a0",
+              "agent_8_a1",
+              "agent_8_a2"
+            ],
+            "propagation_stopped_by": "",
+            "stop_mechanism": "propagated_through",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 1,
+              "cascade_depth": 3
+            }
+          }
+        }
+      ],
+      "manifestation_rate_note": "Observed in 6/10 repos with this structural finding. Rate is model-dependent; 
+structural pattern is not."
+    },
+    {
+      "finding_id": "STRAT-OC-002",
+      "finding_name": "Shared state contention",
+      "total_manifestations": 25,
+      "repos_affected": 5,
+      "repos_analyzed_with_finding": 10,
+      "failure_types_observed": [
+        "schema_mismatch"
+      ],
+      "examples": [
+        {
+          "repo": "test-org/repo_001",
+          "framework": "langgraph",
+          "description": "Observed STRAT-OC-002 in repo_001 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_1_a0",
+            "error_type": "TimeoutError",
+            "structural_predicted_path": [
+              "agent_1_a0",
+              "agent_1_a1",
+              "agent_1_a2"
+            ],
+            "actual_observed_path": [
+              "agent_1_a0"
+            ],
+            "propagation_stopped_by": "agent_1_a2",
+            "stop_mechanism": "swallowed_at_source",
+            "downstream_impact": {
+              "nodes_affected": 0,
+              "downstream_errors": 0,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 0
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_002",
+          "framework": "autogen",
+          "description": "Observed STRAT-OC-002 in repo_002 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_2_a0",
+            "error_type": "ValueError",
+            "structural_predicted_path": [
+              "agent_2_a0",
+              "agent_2_a1",
+              "agent_2_a2"
+            ],
+            "actual_observed_path": [
+              "agent_2_a0",
+              "agent_2_a1",
+              "agent_2_a2"
+            ],
+            "propagation_stopped_by": "agent_2_a2",
+            "stop_mechanism": "retry",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 3
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_005",
+          "framework": "autogen",
+          "description": "Observed STRAT-OC-002 in repo_005 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_5_a0",
+            "error_type": "TimeoutError",
+            "structural_predicted_path": [
+              "agent_5_a0",
+              "agent_5_a1",
+              "agent_5_a2"
+            ],
+            "actual_observed_path": [
+              "agent_5_a0"
+            ],
+            "propagation_stopped_by": "agent_5_a2",
+            "stop_mechanism": "swallowed_at_source",
+            "downstream_impact": {
+              "nodes_affected": 0,
+              "downstream_errors": 0,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 0
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_006",
+          "framework": "crewai",
+          "description": "Observed STRAT-OC-002 in repo_006 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_6_a0",
+            "error_type": "ValueError",
+            "structural_predicted_path": [
+              "agent_6_a0",
+              "agent_6_a1"
+            ],
+            "actual_observed_path": [
+              "agent_6_a0",
+              "agent_6_a1"
+            ],
+            "propagation_stopped_by": "agent_6_a1",
+            "stop_mechanism": "retry",
+            "downstream_impact": {
+              "nodes_affected": 1,
+              "downstream_errors": 1,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 1
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_009",
+          "framework": "crewai",
+          "description": "Observed STRAT-OC-002 in repo_009 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_9_a0",
+            "error_type": "TimeoutError",
+            "structural_predicted_path": [
+              "agent_9_a0",
+              "agent_9_a1"
+            ],
+            "actual_observed_path": [
+              "agent_9_a0"
+            ],
+            "propagation_stopped_by": "agent_9_a1",
+            "stop_mechanism": "swallowed_at_source",
+            "downstream_impact": {
+              "nodes_affected": 0,
+              "downstream_errors": 0,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 0
+            }
+          }
+        }
+      ],
+      "manifestation_rate_note": "Observed in 5/10 repos with this structural finding. Rate is model-dependent; 
+structural pattern is not."
+    },
+    {
+      "finding_id": "STRAT-EA-001",
+      "finding_name": "Transitive authority escalation",
+      "total_manifestations": 30,
+      "repos_affected": 8,
+      "repos_analyzed_with_finding": 10,
+      "failure_types_observed": [
+        "swallowed_error"
+      ],
+      "examples": [
+        {
+          "repo": "test-org/repo_000",
+          "framework": "crewai",
+          "description": "Observed STRAT-EA-001 in repo_000 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_0_a0",
+            "error_type": "RuntimeError",
+            "structural_predicted_path": [
+              "agent_0_a0",
+              "agent_0_a1"
+            ],
+            "actual_observed_path": [
+              "agent_0_a0",
+              "agent_0_a1"
+            ],
+            "propagation_stopped_by": "",
+            "stop_mechanism": "propagated_through",
+            "downstream_impact": {
+              "nodes_affected": 1,
+              "downstream_errors": 1,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 1
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_002",
+          "framework": "autogen",
+          "description": "Observed STRAT-EA-001 in repo_002 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_2_a0",
+            "error_type": "ValueError",
+            "structural_predicted_path": [
+              "agent_2_a0",
+              "agent_2_a1",
+              "agent_2_a2"
+            ],
+            "actual_observed_path": [
+              "agent_2_a0",
+              "agent_2_a1",
+              "agent_2_a2"
+            ],
+            "propagation_stopped_by": "agent_2_a2",
+            "stop_mechanism": "retry",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 3
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_003",
+          "framework": "crewai",
+          "description": "Observed STRAT-EA-001 in repo_003 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_3_a0",
+            "error_type": "SchemaError",
+            "structural_predicted_path": [
+              "agent_3_a0",
+              "agent_3_a1"
+            ],
+            "actual_observed_path": [
+              "agent_3_a0",
+              "agent_3_a1"
+            ],
+            "propagation_stopped_by": "agent_3_a1",
+            "stop_mechanism": "absorbed",
+            "downstream_impact": {
+              "nodes_affected": 1,
+              "downstream_errors": 1,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 1
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_004",
+          "framework": "langgraph",
+          "description": "Observed STRAT-EA-001 in repo_004 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_4_a0",
+            "error_type": "RuntimeError",
+            "structural_predicted_path": [
+              "agent_4_a0",
+              "agent_4_a1",
+              "agent_4_a2"
+            ],
+            "actual_observed_path": [
+              "agent_4_a0",
+              "agent_4_a1",
+              "agent_4_a2"
+            ],
+            "propagation_stopped_by": "",
+            "stop_mechanism": "propagated_through",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 1,
+              "cascade_depth": 2
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_005",
+          "framework": "autogen",
+          "description": "Observed STRAT-EA-001 in repo_005 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_5_a0",
+            "error_type": "TimeoutError",
+            "structural_predicted_path": [
+              "agent_5_a0",
+              "agent_5_a1",
+              "agent_5_a2"
+            ],
+            "actual_observed_path": [
+              "agent_5_a0"
+            ],
+            "propagation_stopped_by": "agent_5_a2",
+            "stop_mechanism": "swallowed_at_source",
+            "downstream_impact": {
+              "nodes_affected": 0,
+              "downstream_errors": 0,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 0
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_007",
+          "framework": "langgraph",
+          "description": "Observed STRAT-EA-001 in repo_007 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_7_a0",
+            "error_type": "SchemaError",
+            "structural_predicted_path": [
+              "agent_7_a0",
+              "agent_7_a1",
+              "agent_7_a2"
+            ],
+            "actual_observed_path": [
+              "agent_7_a0",
+              "agent_7_a1",
+              "agent_7_a2"
+            ],
+            "propagation_stopped_by": "agent_7_a2",
+            "stop_mechanism": "absorbed",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 2
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_008",
+          "framework": "autogen",
+          "description": "Observed STRAT-EA-001 in repo_008 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_8_a0",
+            "error_type": "RuntimeError",
+            "structural_predicted_path": [
+              "agent_8_a0",
+              "agent_8_a1",
+              "agent_8_a2"
+            ],
+            "actual_observed_path": [
+              "agent_8_a0",
+              "agent_8_a1",
+              "agent_8_a2"
+            ],
+            "propagation_stopped_by": "",
+            "stop_mechanism": "propagated_through",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 1,
+              "cascade_depth": 3
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_009",
+          "framework": "crewai",
+          "description": "Observed STRAT-EA-001 in repo_009 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_9_a0",
+            "error_type": "TimeoutError",
+            "structural_predicted_path": [
+              "agent_9_a0",
+              "agent_9_a1"
+            ],
+            "actual_observed_path": [
+              "agent_9_a0"
+            ],
+            "propagation_stopped_by": "agent_9_a1",
+            "stop_mechanism": "swallowed_at_source",
+            "downstream_impact": {
+              "nodes_affected": 0,
+              "downstream_errors": 0,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 0
+            }
+          }
+        }
+      ],
+      "manifestation_rate_note": "Observed in 8/10 repos with this structural finding. Rate is model-dependent; 
+structural pattern is not."
+    }
+  ],
+  "repos_analyzed": 10,
+  "findings": [
+    {
+      "finding_id": "STRAT-DC-001",
+      "finding_name": "Unsupervised delegation chain",
+      "total_manifestations": 33,
+      "repos_affected": 8,
+      "repos_analyzed_with_finding": 10,
+      "failure_types_observed": [
+        "swallowed_error"
+      ],
+      "examples": [
+        {
+          "repo": "test-org/repo_000",
+          "framework": "crewai",
+          "description": "Observed STRAT-DC-001 in repo_000 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_0_a0",
+            "error_type": "RuntimeError",
+            "structural_predicted_path": [
+              "agent_0_a0",
+              "agent_0_a1"
+            ],
+            "actual_observed_path": [
+              "agent_0_a0",
+              "agent_0_a1"
+            ],
+            "propagation_stopped_by": "",
+            "stop_mechanism": "propagated_through",
+            "downstream_impact": {
+              "nodes_affected": 1,
+              "downstream_errors": 1,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 1
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_002",
+          "framework": "autogen",
+          "description": "Observed STRAT-DC-001 in repo_002 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_2_a0",
+            "error_type": "ValueError",
+            "structural_predicted_path": [
+              "agent_2_a0",
+              "agent_2_a1",
+              "agent_2_a2"
+            ],
+            "actual_observed_path": [
+              "agent_2_a0",
+              "agent_2_a1",
+              "agent_2_a2"
+            ],
+            "propagation_stopped_by": "agent_2_a2",
+            "stop_mechanism": "retry",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 3
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_004",
+          "framework": "langgraph",
+          "description": "Observed STRAT-DC-001 in repo_004 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_4_a0",
+            "error_type": "RuntimeError",
+            "structural_predicted_path": [
+              "agent_4_a0",
+              "agent_4_a1",
+              "agent_4_a2"
+            ],
+            "actual_observed_path": [
+              "agent_4_a0",
+              "agent_4_a1",
+              "agent_4_a2"
+            ],
+            "propagation_stopped_by": "",
+            "stop_mechanism": "propagated_through",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 1,
+              "cascade_depth": 2
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_005",
+          "framework": "autogen",
+          "description": "Observed STRAT-DC-001 in repo_005 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_5_a0",
+            "error_type": "TimeoutError",
+            "structural_predicted_path": [
+              "agent_5_a0",
+              "agent_5_a1",
+              "agent_5_a2"
+            ],
+            "actual_observed_path": [
+              "agent_5_a0"
+            ],
+            "propagation_stopped_by": "agent_5_a2",
+            "stop_mechanism": "swallowed_at_source",
+            "downstream_impact": {
+              "nodes_affected": 0,
+              "downstream_errors": 0,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 0
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_006",
+          "framework": "crewai",
+          "description": "Observed STRAT-DC-001 in repo_006 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_6_a0",
+            "error_type": "ValueError",
+            "structural_predicted_path": [
+              "agent_6_a0",
+              "agent_6_a1"
+            ],
+            "actual_observed_path": [
+              "agent_6_a0",
+              "agent_6_a1"
+            ],
+            "propagation_stopped_by": "agent_6_a1",
+            "stop_mechanism": "retry",
+            "downstream_impact": {
+              "nodes_affected": 1,
+              "downstream_errors": 1,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 1
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_007",
+          "framework": "langgraph",
+          "description": "Observed STRAT-DC-001 in repo_007 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_7_a0",
+            "error_type": "SchemaError",
+            "structural_predicted_path": [
+              "agent_7_a0",
+              "agent_7_a1",
+              "agent_7_a2"
+            ],
+            "actual_observed_path": [
+              "agent_7_a0",
+              "agent_7_a1",
+              "agent_7_a2"
+            ],
+            "propagation_stopped_by": "agent_7_a2",
+            "stop_mechanism": "absorbed",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 2
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_008",
+          "framework": "autogen",
+          "description": "Observed STRAT-DC-001 in repo_008 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_8_a0",
+            "error_type": "RuntimeError",
+            "structural_predicted_path": [
+              "agent_8_a0",
+              "agent_8_a1",
+              "agent_8_a2"
+            ],
+            "actual_observed_path": [
+              "agent_8_a0",
+              "agent_8_a1",
+              "agent_8_a2"
+            ],
+            "propagation_stopped_by": "",
+            "stop_mechanism": "propagated_through",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 1,
+              "cascade_depth": 3
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_009",
+          "framework": "crewai",
+          "description": "Observed STRAT-DC-001 in repo_009 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_9_a0",
+            "error_type": "TimeoutError",
+            "structural_predicted_path": [
+              "agent_9_a0",
+              "agent_9_a1"
+            ],
+            "actual_observed_path": [
+              "agent_9_a0"
+            ],
+            "propagation_stopped_by": "agent_9_a1",
+            "stop_mechanism": "swallowed_at_source",
+            "downstream_impact": {
+              "nodes_affected": 0,
+              "downstream_errors": 0,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 0
+            }
+          }
+        }
+      ],
+      "manifestation_rate_note": "Observed in 8/10 repos with this structural finding. Rate is model-dependent; 
+structural pattern is not."
+    },
+    {
+      "finding_id": "STRAT-SI-001",
+      "finding_name": "Error laundering",
+      "total_manifestations": 19,
+      "repos_affected": 3,
+      "repos_analyzed_with_finding": 10,
+      "failure_types_observed": [
+        "degraded_output_propagation"
+      ],
+      "examples": [
+        {
+          "repo": "test-org/repo_000",
+          "framework": "crewai",
+          "description": "Observed STRAT-SI-001 in repo_000 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_0_a0",
+            "error_type": "RuntimeError",
+            "structural_predicted_path": [
+              "agent_0_a0",
+              "agent_0_a1"
+            ],
+            "actual_observed_path": [
+              "agent_0_a0",
+              "agent_0_a1"
+            ],
+            "propagation_stopped_by": "",
+            "stop_mechanism": "propagated_through",
+            "downstream_impact": {
+              "nodes_affected": 1,
+              "downstream_errors": 1,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 1
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_002",
+          "framework": "autogen",
+          "description": "Observed STRAT-SI-001 in repo_002 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_2_a0",
+            "error_type": "ValueError",
+            "structural_predicted_path": [
+              "agent_2_a0",
+              "agent_2_a1",
+              "agent_2_a2"
+            ],
+            "actual_observed_path": [
+              "agent_2_a0",
+              "agent_2_a1",
+              "agent_2_a2"
+            ],
+            "propagation_stopped_by": "agent_2_a2",
+            "stop_mechanism": "retry",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 3
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_005",
+          "framework": "autogen",
+          "description": "Observed STRAT-SI-001 in repo_005 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_5_a0",
+            "error_type": "TimeoutError",
+            "structural_predicted_path": [
+              "agent_5_a0",
+              "agent_5_a1",
+              "agent_5_a2"
+            ],
+            "actual_observed_path": [
+              "agent_5_a0"
+            ],
+            "propagation_stopped_by": "agent_5_a2",
+            "stop_mechanism": "swallowed_at_source",
+            "downstream_impact": {
+              "nodes_affected": 0,
+              "downstream_errors": 0,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 0
+            }
+          }
+        }
+      ],
+      "manifestation_rate_note": "Observed in 3/10 repos with this structural finding. Rate is model-dependent; 
+structural pattern is not."
+    },
+    {
+      "finding_id": "STRAT-AB-001",
+      "finding_name": "Unbounded aggregate volume",
+      "total_manifestations": 19,
+      "repos_affected": 6,
+      "repos_analyzed_with_finding": 10,
+      "failure_types_observed": [
+        "timeout_cascade"
+      ],
+      "examples": [
+        {
+          "repo": "test-org/repo_000",
+          "framework": "crewai",
+          "description": "Observed STRAT-AB-001 in repo_000 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_0_a0",
+            "error_type": "RuntimeError",
+            "structural_predicted_path": [
+              "agent_0_a0",
+              "agent_0_a1"
+            ],
+            "actual_observed_path": [
+              "agent_0_a0",
+              "agent_0_a1"
+            ],
+            "propagation_stopped_by": "",
+            "stop_mechanism": "propagated_through",
+            "downstream_impact": {
+              "nodes_affected": 1,
+              "downstream_errors": 1,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 1
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_002",
+          "framework": "autogen",
+          "description": "Observed STRAT-AB-001 in repo_002 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_2_a0",
+            "error_type": "ValueError",
+            "structural_predicted_path": [
+              "agent_2_a0",
+              "agent_2_a1",
+              "agent_2_a2"
+            ],
+            "actual_observed_path": [
+              "agent_2_a0",
+              "agent_2_a1",
+              "agent_2_a2"
+            ],
+            "propagation_stopped_by": "agent_2_a2",
+            "stop_mechanism": "retry",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 3
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_003",
+          "framework": "crewai",
+          "description": "Observed STRAT-AB-001 in repo_003 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_3_a0",
+            "error_type": "SchemaError",
+            "structural_predicted_path": [
+              "agent_3_a0",
+              "agent_3_a1"
+            ],
+            "actual_observed_path": [
+              "agent_3_a0",
+              "agent_3_a1"
+            ],
+            "propagation_stopped_by": "agent_3_a1",
+            "stop_mechanism": "absorbed",
+            "downstream_impact": {
+              "nodes_affected": 1,
+              "downstream_errors": 1,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 1
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_005",
+          "framework": "autogen",
+          "description": "Observed STRAT-AB-001 in repo_005 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_5_a0",
+            "error_type": "TimeoutError",
+            "structural_predicted_path": [
+              "agent_5_a0",
+              "agent_5_a1",
+              "agent_5_a2"
+            ],
+            "actual_observed_path": [
+              "agent_5_a0"
+            ],
+            "propagation_stopped_by": "agent_5_a2",
+            "stop_mechanism": "swallowed_at_source",
+            "downstream_impact": {
+              "nodes_affected": 0,
+              "downstream_errors": 0,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 0
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_007",
+          "framework": "langgraph",
+          "description": "Observed STRAT-AB-001 in repo_007 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_7_a0",
+            "error_type": "SchemaError",
+            "structural_predicted_path": [
+              "agent_7_a0",
+              "agent_7_a1",
+              "agent_7_a2"
+            ],
+            "actual_observed_path": [
+              "agent_7_a0",
+              "agent_7_a1",
+              "agent_7_a2"
+            ],
+            "propagation_stopped_by": "agent_7_a2",
+            "stop_mechanism": "absorbed",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 2
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_008",
+          "framework": "autogen",
+          "description": "Observed STRAT-AB-001 in repo_008 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_8_a0",
+            "error_type": "RuntimeError",
+            "structural_predicted_path": [
+              "agent_8_a0",
+              "agent_8_a1",
+              "agent_8_a2"
+            ],
+            "actual_observed_path": [
+              "agent_8_a0",
+              "agent_8_a1",
+              "agent_8_a2"
+            ],
+            "propagation_stopped_by": "",
+            "stop_mechanism": "propagated_through",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 1,
+              "cascade_depth": 3
+            }
+          }
+        }
+      ],
+      "manifestation_rate_note": "Observed in 6/10 repos with this structural finding. Rate is model-dependent; 
+structural pattern is not."
+    },
+    {
+      "finding_id": "STRAT-OC-002",
+      "finding_name": "Shared state contention",
+      "total_manifestations": 25,
+      "repos_affected": 5,
+      "repos_analyzed_with_finding": 10,
+      "failure_types_observed": [
+        "schema_mismatch"
+      ],
+      "examples": [
+        {
+          "repo": "test-org/repo_001",
+          "framework": "langgraph",
+          "description": "Observed STRAT-OC-002 in repo_001 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_1_a0",
+            "error_type": "TimeoutError",
+            "structural_predicted_path": [
+              "agent_1_a0",
+              "agent_1_a1",
+              "agent_1_a2"
+            ],
+            "actual_observed_path": [
+              "agent_1_a0"
+            ],
+            "propagation_stopped_by": "agent_1_a2",
+            "stop_mechanism": "swallowed_at_source",
+            "downstream_impact": {
+              "nodes_affected": 0,
+              "downstream_errors": 0,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 0
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_002",
+          "framework": "autogen",
+          "description": "Observed STRAT-OC-002 in repo_002 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_2_a0",
+            "error_type": "ValueError",
+            "structural_predicted_path": [
+              "agent_2_a0",
+              "agent_2_a1",
+              "agent_2_a2"
+            ],
+            "actual_observed_path": [
+              "agent_2_a0",
+              "agent_2_a1",
+              "agent_2_a2"
+            ],
+            "propagation_stopped_by": "agent_2_a2",
+            "stop_mechanism": "retry",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 3
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_005",
+          "framework": "autogen",
+          "description": "Observed STRAT-OC-002 in repo_005 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_5_a0",
+            "error_type": "TimeoutError",
+            "structural_predicted_path": [
+              "agent_5_a0",
+              "agent_5_a1",
+              "agent_5_a2"
+            ],
+            "actual_observed_path": [
+              "agent_5_a0"
+            ],
+            "propagation_stopped_by": "agent_5_a2",
+            "stop_mechanism": "swallowed_at_source",
+            "downstream_impact": {
+              "nodes_affected": 0,
+              "downstream_errors": 0,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 0
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_006",
+          "framework": "crewai",
+          "description": "Observed STRAT-OC-002 in repo_006 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_6_a0",
+            "error_type": "ValueError",
+            "structural_predicted_path": [
+              "agent_6_a0",
+              "agent_6_a1"
+            ],
+            "actual_observed_path": [
+              "agent_6_a0",
+              "agent_6_a1"
+            ],
+            "propagation_stopped_by": "agent_6_a1",
+            "stop_mechanism": "retry",
+            "downstream_impact": {
+              "nodes_affected": 1,
+              "downstream_errors": 1,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 1
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_009",
+          "framework": "crewai",
+          "description": "Observed STRAT-OC-002 in repo_009 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_9_a0",
+            "error_type": "TimeoutError",
+            "structural_predicted_path": [
+              "agent_9_a0",
+              "agent_9_a1"
+            ],
+            "actual_observed_path": [
+              "agent_9_a0"
+            ],
+            "propagation_stopped_by": "agent_9_a1",
+            "stop_mechanism": "swallowed_at_source",
+            "downstream_impact": {
+              "nodes_affected": 0,
+              "downstream_errors": 0,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 0
+            }
+          }
+        }
+      ],
+      "manifestation_rate_note": "Observed in 5/10 repos with this structural finding. Rate is model-dependent; 
+structural pattern is not."
+    },
+    {
+      "finding_id": "STRAT-EA-001",
+      "finding_name": "Transitive authority escalation",
+      "total_manifestations": 30,
+      "repos_affected": 8,
+      "repos_analyzed_with_finding": 10,
+      "failure_types_observed": [
+        "swallowed_error"
+      ],
+      "examples": [
+        {
+          "repo": "test-org/repo_000",
+          "framework": "crewai",
+          "description": "Observed STRAT-EA-001 in repo_000 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_0_a0",
+            "error_type": "RuntimeError",
+            "structural_predicted_path": [
+              "agent_0_a0",
+              "agent_0_a1"
+            ],
+            "actual_observed_path": [
+              "agent_0_a0",
+              "agent_0_a1"
+            ],
+            "propagation_stopped_by": "",
+            "stop_mechanism": "propagated_through",
+            "downstream_impact": {
+              "nodes_affected": 1,
+              "downstream_errors": 1,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 1
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_002",
+          "framework": "autogen",
+          "description": "Observed STRAT-EA-001 in repo_002 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_2_a0",
+            "error_type": "ValueError",
+            "structural_predicted_path": [
+              "agent_2_a0",
+              "agent_2_a1",
+              "agent_2_a2"
+            ],
+            "actual_observed_path": [
+              "agent_2_a0",
+              "agent_2_a1",
+              "agent_2_a2"
+            ],
+            "propagation_stopped_by": "agent_2_a2",
+            "stop_mechanism": "retry",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 3
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_003",
+          "framework": "crewai",
+          "description": "Observed STRAT-EA-001 in repo_003 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_3_a0",
+            "error_type": "SchemaError",
+            "structural_predicted_path": [
+              "agent_3_a0",
+              "agent_3_a1"
+            ],
+            "actual_observed_path": [
+              "agent_3_a0",
+              "agent_3_a1"
+            ],
+            "propagation_stopped_by": "agent_3_a1",
+            "stop_mechanism": "absorbed",
+            "downstream_impact": {
+              "nodes_affected": 1,
+              "downstream_errors": 1,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 1
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_004",
+          "framework": "langgraph",
+          "description": "Observed STRAT-EA-001 in repo_004 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_4_a0",
+            "error_type": "RuntimeError",
+            "structural_predicted_path": [
+              "agent_4_a0",
+              "agent_4_a1",
+              "agent_4_a2"
+            ],
+            "actual_observed_path": [
+              "agent_4_a0",
+              "agent_4_a1",
+              "agent_4_a2"
+            ],
+            "propagation_stopped_by": "",
+            "stop_mechanism": "propagated_through",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 1,
+              "cascade_depth": 2
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_005",
+          "framework": "autogen",
+          "description": "Observed STRAT-EA-001 in repo_005 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_5_a0",
+            "error_type": "TimeoutError",
+            "structural_predicted_path": [
+              "agent_5_a0",
+              "agent_5_a1",
+              "agent_5_a2"
+            ],
+            "actual_observed_path": [
+              "agent_5_a0"
+            ],
+            "propagation_stopped_by": "agent_5_a2",
+            "stop_mechanism": "swallowed_at_source",
+            "downstream_impact": {
+              "nodes_affected": 0,
+              "downstream_errors": 0,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 0
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_007",
+          "framework": "langgraph",
+          "description": "Observed STRAT-EA-001 in repo_007 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_7_a0",
+            "error_type": "SchemaError",
+            "structural_predicted_path": [
+              "agent_7_a0",
+              "agent_7_a1",
+              "agent_7_a2"
+            ],
+            "actual_observed_path": [
+              "agent_7_a0",
+              "agent_7_a1",
+              "agent_7_a2"
+            ],
+            "propagation_stopped_by": "agent_7_a2",
+            "stop_mechanism": "absorbed",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 2
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_008",
+          "framework": "autogen",
+          "description": "Observed STRAT-EA-001 in repo_008 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_8_a0",
+            "error_type": "RuntimeError",
+            "structural_predicted_path": [
+              "agent_8_a0",
+              "agent_8_a1",
+              "agent_8_a2"
+            ],
+            "actual_observed_path": [
+              "agent_8_a0",
+              "agent_8_a1",
+              "agent_8_a2"
+            ],
+            "propagation_stopped_by": "",
+            "stop_mechanism": "propagated_through",
+            "downstream_impact": {
+              "nodes_affected": 2,
+              "downstream_errors": 2,
+              "downstream_tasks_failed": 1,
+              "cascade_depth": 3
+            }
+          }
+        },
+        {
+          "repo": "test-org/repo_009",
+          "framework": "crewai",
+          "description": "Observed STRAT-EA-001 in repo_009 during run execution",
+          "error_propagation": {
+            "error_source_node": "agent_9_a0",
+            "error_type": "TimeoutError",
+            "structural_predicted_path": [
+              "agent_9_a0",
+              "agent_9_a1"
+            ],
+            "actual_observed_path": [
+              "agent_9_a0"
+            ],
+            "propagation_stopped_by": "agent_9_a1",
+            "stop_mechanism": "swallowed_at_source",
+            "downstream_impact": {
+              "nodes_affected": 0,
+              "downstream_errors": 0,
+              "downstream_tasks_failed": 0,
+              "cascade_depth": 0
+            }
+          }
+        }
+      ],
+      "manifestation_rate_note": "Observed in 8/10 repos with this structural finding. Rate is model-dependent; 
+structural pattern is not."
+    }
+  ],
+  "model_context": {
+    "model": "unknown",
+    "model_tier": "weak",
+    "purpose": "stress_test",
+    "transferability": {
+      "propagation_paths": "structural \u2014 transfers to production",
+      "failure_modes": "structural \u2014 transfers to production",
+      "trigger_frequencies": "model_dependent \u2014 does NOT transfer",
+      "absolute_baselines": "model_dependent \u2014 use as relative thresholds"
+    }
+  }
+}
 
-  Risk report generated: 7289 chars (JSON)
+--- monitoring_baselines.json ---
+{
+  "baselines": [
+    {
+      "metric": "max_delegation_depth",
+      "finding_id": "STRAT-DC-001",
+      "scanner_metric": "delegation_chain_depth",
+      "mean_baseline": 0.5574,
+      "sample_repos": 10,
+      "per_repo_baselines": [
+        {
+          "metric": "max_delegation_depth",
+          "finding_id": "STRAT-DC-001",
+          "scanner_metric": "delegation_chain_depth",
+          "observed_baseline": 0.7012,
+          "repo": "test-org/repo_000"
+        },
+        {
+          "metric": "max_delegation_depth",
+          "finding_id": "STRAT-DC-001",
+          "scanner_metric": "delegation_chain_depth",
+          "observed_baseline": 0.3712,
+          "repo": "test-org/repo_001"
+        },
+        {
+          "metric": "max_delegation_depth",
+          "finding_id": "STRAT-DC-001",
+          "scanner_metric": "delegation_chain_depth",
+          "observed_baseline": 0.7495,
+          "repo": "test-org/repo_002"
+        },
+        {
+          "metric": "max_delegation_depth",
+          "finding_id": "STRAT-DC-001",
+          "scanner_metric": "delegation_chain_depth",
+          "observed_baseline": 0.7709,
+          "repo": "test-org/repo_003"
+        },
+        {
+          "metric": "max_delegation_depth",
+          "finding_id": "STRAT-DC-001",
+          "scanner_metric": "delegation_chain_depth",
+          "observed_baseline": 0.2485,
+          "repo": "test-org/repo_004"
+        },
+        {
+          "metric": "max_delegation_depth",
+          "finding_id": "STRAT-DC-001",
+          "scanner_metric": "delegation_chain_depth",
+          "observed_baseline": 0.0803,
+          "repo": "test-org/repo_005"
+        },
+        {
+          "metric": "max_delegation_depth",
+          "finding_id": "STRAT-DC-001",
+          "scanner_metric": "delegation_chain_depth",
+          "observed_baseline": 0.8026,
+          "repo": "test-org/repo_006"
+        },
+        {
+          "metric": "max_delegation_depth",
+          "finding_id": "STRAT-DC-001",
+          "scanner_metric": "delegation_chain_depth",
+          "observed_baseline": 0.2924,
+          "repo": "test-org/repo_007"
+        },
+        {
+          "metric": "max_delegation_depth",
+          "finding_id": "STRAT-DC-001",
+          "scanner_metric": "delegation_chain_depth",
+          "observed_baseline": 0.9422,
+          "repo": "test-org/repo_008"
+        },
+        {
+          "metric": "max_delegation_depth",
+          "finding_id": "STRAT-DC-001",
+          "scanner_metric": "delegation_chain_depth",
+          "observed_baseline": 0.6156,
+          "repo": "test-org/repo_009"
+        }
+      ]
+    },
+    {
+      "metric": "error_swallow_rate",
+      "finding_id": "STRAT-SI-001",
+      "scanner_metric": "error_handling_silent_rate",
+      "mean_baseline": 0.509,
+      "sample_repos": 10,
+      "per_repo_baselines": [
+        {
+          "metric": "error_swallow_rate",
+          "finding_id": "STRAT-SI-001",
+          "scanner_metric": "error_handling_silent_rate",
+          "observed_baseline": 0.3468,
+          "repo": "test-org/repo_000"
+        },
+        {
+          "metric": "error_swallow_rate",
+          "finding_id": "STRAT-SI-001",
+          "scanner_metric": "error_handling_silent_rate",
+          "observed_baseline": 0.3765,
+          "repo": "test-org/repo_001"
+        },
+        {
+          "metric": "error_swallow_rate",
+          "finding_id": "STRAT-SI-001",
+          "scanner_metric": "error_handling_silent_rate",
+          "observed_baseline": 0.4341,
+          "repo": "test-org/repo_002"
+        },
+        {
+          "metric": "error_swallow_rate",
+          "finding_id": "STRAT-SI-001",
+          "scanner_metric": "error_handling_silent_rate",
+          "observed_baseline": 0.3468,
+          "repo": "test-org/repo_003"
+        },
+        {
+          "metric": "error_swallow_rate",
+          "finding_id": "STRAT-SI-001",
+          "scanner_metric": "error_handling_silent_rate",
+          "observed_baseline": 0.5717,
+          "repo": "test-org/repo_004"
+        },
+        {
+          "metric": "error_swallow_rate",
+          "finding_id": "STRAT-SI-001",
+          "scanner_metric": "error_handling_silent_rate",
+          "observed_baseline": 0.6348,
+          "repo": "test-org/repo_005"
+        },
+        {
+          "metric": "error_swallow_rate",
+          "finding_id": "STRAT-SI-001",
+          "scanner_metric": "error_handling_silent_rate",
+          "observed_baseline": 0.1182,
+          "repo": "test-org/repo_006"
+        },
+        {
+          "metric": "error_swallow_rate",
+          "finding_id": "STRAT-SI-001",
+          "scanner_metric": "error_handling_silent_rate",
+          "observed_baseline": 0.6996,
+          "repo": "test-org/repo_007"
+        },
+        {
+          "metric": "error_swallow_rate",
+          "finding_id": "STRAT-SI-001",
+          "scanner_metric": "error_handling_silent_rate",
+          "observed_baseline": 0.574,
+          "repo": "test-org/repo_008"
+        },
+        {
+          "metric": "error_swallow_rate",
+          "finding_id": "STRAT-SI-001",
+          "scanner_metric": "error_handling_silent_rate",
+          "observed_baseline": 0.9874,
+          "repo": "test-org/repo_009"
+        }
+      ]
+    },
+    {
+      "metric": "total_llm_calls_per_run",
+      "finding_id": "STRAT-AB-001",
+      "scanner_metric": "llm_invocation_count",
+      "mean_baseline": 0.3768,
+      "sample_repos": 10,
+      "per_repo_baselines": [
+        {
+          "metric": "total_llm_calls_per_run",
+          "finding_id": "STRAT-AB-001",
+          "scanner_metric": "llm_invocation_count",
+          "observed_baseline": 0.1639,
+          "repo": "test-org/repo_000"
+        },
+        {
+          "metric": "total_llm_calls_per_run",
+          "finding_id": "STRAT-AB-001",
+          "scanner_metric": "llm_invocation_count",
+          "observed_baseline": 0.2174,
+          "repo": "test-org/repo_001"
+        },
+        {
+          "metric": "total_llm_calls_per_run",
+          "finding_id": "STRAT-AB-001",
+          "scanner_metric": "llm_invocation_count",
+          "observed_baseline": 0.5877,
+          "repo": "test-org/repo_002"
+        },
+        {
+          "metric": "total_llm_calls_per_run",
+          "finding_id": "STRAT-AB-001",
+          "scanner_metric": "llm_invocation_count",
+          "observed_baseline": 0.3006,
+          "repo": "test-org/repo_003"
+        },
+        {
+          "metric": "total_llm_calls_per_run",
+          "finding_id": "STRAT-AB-001",
+          "scanner_metric": "llm_invocation_count",
+          "observed_baseline": 0.088,
+          "repo": "test-org/repo_004"
+        },
+        {
+          "metric": "total_llm_calls_per_run",
+          "finding_id": "STRAT-AB-001",
+          "scanner_metric": "llm_invocation_count",
+          "observed_baseline": 0.2367,
+          "repo": "test-org/repo_005"
+        },
+        {
+          "metric": "total_llm_calls_per_run",
+          "finding_id": "STRAT-AB-001",
+          "scanner_metric": "llm_invocation_count",
+          "observed_baseline": 0.1997,
+          "repo": "test-org/repo_006"
+        },
+        {
+          "metric": "total_llm_calls_per_run",
+          "finding_id": "STRAT-AB-001",
+          "scanner_metric": "llm_invocation_count",
+          "observed_baseline": 0.7332,
+          "repo": "test-org/repo_007"
+        },
+        {
+          "metric": "total_llm_calls_per_run",
+          "finding_id": "STRAT-AB-001",
+          "scanner_metric": "llm_invocation_count",
+          "observed_baseline": 0.5831,
+          "repo": "test-org/repo_008"
+        },
+        {
+          "metric": "total_llm_calls_per_run",
+          "finding_id": "STRAT-AB-001",
+          "scanner_metric": "llm_invocation_count",
+          "observed_baseline": 0.6574,
+          "repo": "test-org/repo_009"
+        }
+      ]
+    },
+    {
+      "metric": "concurrent_state_write_rate",
+      "finding_id": "STRAT-OC-002",
+      "scanner_metric": "state_write_conflict_rate",
+      "mean_baseline": 0.4801,
+      "sample_repos": 10,
+      "per_repo_baselines": [
+        {
+          "metric": "concurrent_state_write_rate",
+          "finding_id": "STRAT-OC-002",
+          "scanner_metric": "state_write_conflict_rate",
+          "observed_baseline": 0.9576,
+          "repo": "test-org/repo_000"
+        },
+        {
+          "metric": "concurrent_state_write_rate",
+          "finding_id": "STRAT-OC-002",
+          "scanner_metric": "state_write_conflict_rate",
+          "observed_baseline": 0.2743,
+          "repo": "test-org/repo_001"
+        },
+        {
+          "metric": "concurrent_state_write_rate",
+          "finding_id": "STRAT-OC-002",
+          "scanner_metric": "state_write_conflict_rate",
+          "observed_baseline": 0.3684,
+          "repo": "test-org/repo_002"
+        },
+        {
+          "metric": "concurrent_state_write_rate",
+          "finding_id": "STRAT-OC-002",
+          "scanner_metric": "state_write_conflict_rate",
+          "observed_baseline": 0.1666,
+          "repo": "test-org/repo_003"
+        },
+        {
+          "metric": "concurrent_state_write_rate",
+          "finding_id": "STRAT-OC-002",
+          "scanner_metric": "state_write_conflict_rate",
+          "observed_baseline": 0.7346,
+          "repo": "test-org/repo_004"
+        },
+        {
+          "metric": "concurrent_state_write_rate",
+          "finding_id": "STRAT-OC-002",
+          "scanner_metric": "state_write_conflict_rate",
+          "observed_baseline": 0.9064,
+          "repo": "test-org/repo_005"
+        },
+        {
+          "metric": "concurrent_state_write_rate",
+          "finding_id": "STRAT-OC-002",
+          "scanner_metric": "state_write_conflict_rate",
+          "observed_baseline": 0.5409,
+          "repo": "test-org/repo_006"
+        },
+        {
+          "metric": "concurrent_state_write_rate",
+          "finding_id": "STRAT-OC-002",
+          "scanner_metric": "state_write_conflict_rate",
+          "observed_baseline": 0.7855,
+          "repo": "test-org/repo_007"
+        },
+        {
+          "metric": "concurrent_state_write_rate",
+          "finding_id": "STRAT-OC-002",
+          "scanner_metric": "state_write_conflict_rate",
+          "observed_baseline": 0.0493,
+          "repo": "test-org/repo_008"
+        },
+        {
+          "metric": "concurrent_state_write_rate",
+          "finding_id": "STRAT-OC-002",
+          "scanner_metric": "state_write_conflict_rate",
+          "observed_baseline": 0.0177,
+          "repo": "test-org/repo_009"
+        }
+      ]
+    },
+    {
+      "metric": "tool_call_failure_rate",
+      "finding_id": "STRAT-EA-001",
+      "scanner_metric": "tool_reliability_rate",
+      "mean_baseline": 0.5694,
+      "sample_repos": 10,
+      "per_repo_baselines": [
+        {
+          "metric": "tool_call_failure_rate",
+          "finding_id": "STRAT-EA-001",
+          "scanner_metric": "tool_reliability_rate",
+          "observed_baseline": 0.3432,
+          "repo": "test-org/repo_000"
+        },
+        {
+          "metric": "tool_call_failure_rate",
+          "finding_id": "STRAT-EA-001",
+          "scanner_metric": "tool_reliability_rate",
+          "observed_baseline": 0.9373,
+          "repo": "test-org/repo_001"
+        },
+        {
+          "metric": "tool_call_failure_rate",
+          "finding_id": "STRAT-EA-001",
+          "scanner_metric": "tool_reliability_rate",
+          "observed_baseline": 0.9974,
+          "repo": "test-org/repo_002"
+        },
+        {
+          "metric": "tool_call_failure_rate",
+          "finding_id": "STRAT-EA-001",
+          "scanner_metric": "tool_reliability_rate",
+          "observed_baseline": 0.0132,
+          "repo": "test-org/repo_003"
+        },
+        {
+          "metric": "tool_call_failure_rate",
+          "finding_id": "STRAT-EA-001",
+          "scanner_metric": "tool_reliability_rate",
+          "observed_baseline": 0.8179,
+          "repo": "test-org/repo_004"
+        },
+        {
+          "metric": "tool_call_failure_rate",
+          "finding_id": "STRAT-EA-001",
+          "scanner_metric": "tool_reliability_rate",
+          "observed_baseline": 0.861,
+          "repo": "test-org/repo_005"
+        },
+        {
+          "metric": "tool_call_failure_rate",
+          "finding_id": "STRAT-EA-001",
+          "scanner_metric": "tool_reliability_rate",
+          "observed_baseline": 0.1488,
+          "repo": "test-org/repo_006"
+        },
+        {
+          "metric": "tool_call_failure_rate",
+          "finding_id": "STRAT-EA-001",
+          "scanner_metric": "tool_reliability_rate",
+          "observed_baseline": 0.6653,
+          "repo": "test-org/repo_007"
+        },
+        {
+          "metric": "tool_call_failure_rate",
+          "finding_id": "STRAT-EA-001",
+          "scanner_metric": "tool_reliability_rate",
+          "observed_baseline": 0.0912,
+          "repo": "test-org/repo_008"
+        },
+        {
+          "metric": "tool_call_failure_rate",
+          "finding_id": "STRAT-EA-001",
+          "scanner_metric": "tool_reliability_rate",
+          "observed_baseline": 0.8189,
+          "repo": "test-org/repo_009"
+        }
+      ]
+    }
+  ],
+  "repos_analyzed": 10,
+  "model_context": {
+    "model": "unknown",
+    "model_tier": "weak",
+    "purpose": "stress_test",
+    "transferability": {
+      "propagation_paths": "structural \u2014 transfers to production",
+      "failure_modes": "structural \u2014 transfers to production",
+      "trigger_frequencies": "model_dependent \u2014 does NOT transfer",
+      "absolute_baselines": "model_dependent \u2014 use as relative thresholds"
+    }
+  }
+}
+
+--- prediction_match_report.json ---
+{
+  "total_structural_edges": 125,
+  "activated_edges": 110,
+  "dead_edges": 15,
+  "overall_edge_activation_rate": 0.88,
+  "mean_node_prediction_match_rate": 0.7804,
+  "repos_analyzed": 10,
+  "model_context": {
+    "model": "unknown",
+    "model_tier": "weak",
+    "purpose": "stress_test",
+    "transferability": {
+      "propagation_paths": "structural \u2014 transfers to production",
+      "failure_modes": "structural \u2014 transfers to production",
+      "trigger_frequencies": "model_dependent \u2014 does NOT transfer",
+      "absolute_baselines": "model_dependent \u2014 use as relative thresholds"
+    }
+  }
+}
 
 ==============================================================================
-PHASE 6B: BATCH REPORTS
+PIPELINE INTEGRATION EVAL SUMMARY
 ==============================================================================
-  Batch reports generated: 10
-  Errors:                0
-  Sample report (repo_003):
-    risk_score:  22.22
-    risk_level:  LOW
-    risk_count:  1
-  Risk distribution: {'LOW': 10}
+                 Validation Check Results                  
+┌───────┬────────────────────────────────────────┬────────┐
+│ Check │ Description                            │ Result │
+├───────┼────────────────────────────────────────┼────────┤
+│ 13    │ Feedback: emergent heuristics          │ PASS   │
+│ 14    │ Feedback: edge weights                 │ PASS   │
+│ 15    │ Feedback: failure catalog              │ PASS   │
+│ 16    │ Feedback: monitoring baselines         │ PASS   │
+│ 17    │ Feedback: prediction match             │ PASS   │
+│ 19    │ Catalog example has error_propagation  │ PASS   │
+│ 20    │ Catalog metadata (model_tier + caveat) │ PASS   │
+│ 22    │ Pilot quality gate metrics             │ PASS   │
+│ 23    │ STRAT- prefix on all finding IDs       │ PASS   │
+│ 24    │ Discovery type taxonomy valid          │ PASS   │
+│ 25    │ Model context in all feedback files    │ PASS   │
+└───────┴────────────────────────────────────────┴────────┘
 
-==============================================================================
-PILOT MODE TEST
-==============================================================================
-  Pilot batch size:           10
-  Repos executed:             10
-  Runs completed:             30
-
-  Instrumentation failures:   1/30 (3.3%)
-  Model failures:             0/30 (0.0%)
-  Other failures:             1/30
-  Successful runs:            28/30 (93.3%)
-
-  QUALITY GATE:
-    Instrumentation rate:     3.3% <= 20% threshold  PASS
-    Model failure rate:       0.0% <= 15% threshold  PASS
-    Overall success rate:     93.3%
-  QUALITY GATE RESULT:        PASS � proceeding to full scan
-
-==============================================================================
-PHASE 1.5: GITHUB METADATA ENRICHMENT (MOCKED)
-==============================================================================
-  Repos enriched:         10
-  Enterprise-ready:       10/10
-  Contact-ready:          10/10
-  Avg coverage:           81%
-
-==============================================================================
-PHASE 7: ENTERPRISE OUTREACH
-==============================================================================
-  Total classified:       10
-  Enterprise (score>=45): 0
-  By tier:                {'community': 10}
-
-  Contacts extracted:     0
-  Outreach-ready repos:   0/10
-
-  Teaser reports:         10
-  Outreach queue size:    10
-  Queue saved:            C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_2ff5c7na\outreach\outreach_queue.json
-                          C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_2ff5c7na\outreach\outreach_queue.csv
-
-  Sample outreach record:
-    repo:                 repo_013/repo_013
-    contact:              None
-    tier:                 community
-    priority:             0
-    headline:             Stratum Security Scan: your repository -- No Risks Detected...
-
-==============================================================================
-PIPELINE INTEGRATION SUMMARY
-==============================================================================
-  Phase 1 (Selection):    30 scanned -> 20 selected
-  Phase 1.5 (Metadata):   10 repos enriched, 10 enterprise-ready
-  Phase 2 (Execution):    10 repos x 3 runs = 30 runs, 1478 events
-  Phase 3 (Collection):   30 run records, 10 repo aggregates
-  Phase 4 (Overlay):      10 enriched graphs, 10 emergent edges, 62 dead edges
-  Phase 5 (Knowledge):    3 patterns, 2 taxonomy entries, 1 novel, 5 fragility entries
-  Phase 6 (Query):        fingerprint + 5 matches + risk prediction + report
-  Phase 6B (Batch):       10 per-repo reports
-  Phase 7 (Outreach):     10 outreach records, 0 contact-ready
-
-  All outputs saved to: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_2ff5c7na
-
-  RESULT: ALL PHASES COMPLETED SUCCESSFULLY
+  Total:  11 passed, 0 failed, 11 checks
+  RESULT: ALL CHECKS PASSED

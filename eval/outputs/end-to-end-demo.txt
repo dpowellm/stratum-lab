@@ -1,0 +1,39 @@
+==============================================================================
+STRATUM END-TO-END INTEGRATION TEST
+==============================================================================
+
+  PHASE 1: Selection ..................... 1 repo (fixture)
+  PHASE 2: Execution (mocked) ........... 5 runs generated
+  PHASE 3: Collection ................... 5 run records parsed
+  PHASE 4: Overlay ...................... enriched graph produced
+  PHASE 5: Knowledge base ............... built (1 repo)
+  PHASE 6: Feedback export .............. 5 files written
+
+
+  E2E CHECK  1: [PASS] Collection produced 5 run records
+  E2E CHECK  2: [PASS] Run records have correct event counts
+  E2E CHECK  3: [PASS] Run record for run_002 has errors
+  E2E CHECK  4: [PASS] Overlay produced enriched graph with edge activation rates
+  E2E CHECK  5: [PASS] Edge e1 (researcher->writer) has activation_rate > 0
+  E2E CHECK  6: [PASS] Edge e3 (researcher->web_search) has activation_rate > 0
+  E2E CHECK  7: [PASS] At least 1 error propagation trace exists
+  E2E CHECK  8: [PASS] Error trace has canonical schema
+  E2E CHECK  9: [PASS] Node activation classifies agents as always_active
+  E2E CHECK 10: [PASS] Monitoring baselines computed for at least 3 metrics
+  E2E CHECK 11: [PASS] same_input_activation_consistency is non-null
+  E2E CHECK 12: [PASS] Failure mode classification finds at least 1 STRAT- finding
+  E2E CHECK 13: [PASS] Feedback: failure_mode_catalog.json has >=1 catalog entry
+  E2E CHECK 14: [PASS] Feedback: monitoring_baselines.json has >=1 baseline
+  E2E CHECK 15: [PASS] All feedback files have model_context with model_tier
+  E2E CHECK 16: [PASS] Behavioral record passes validate_behavioral_record()
+  E2E CHECK 17: [PASS] Schema version is 'v6'
+  E2E CHECK 18: [PASS] Feedback catalog uses FINDING_NAMES (human-readable)
+  E2E CHECK 19: [PASS] Feedback monitoring baselines use METRIC_TO_FINDING mapping
+  E2E CHECK 20: [PASS] Scanner metric names are production-ready
+  E2E CHECK 21: [PASS] Finding names match taxonomy categories
+  E2E CHECK 22: [PASS] Error propagation has cascade depth >= 2
+
+==============================================================================
+  Results: 22 passed, 0 failed, 22 total
+  ALL CHECKS PASSED
+==============================================================================

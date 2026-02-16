@@ -173,6 +173,7 @@ def run_container(
     output_tmpdir = tempfile.mkdtemp(prefix=f"stratum_{run_id}_")
 
     # Environment variables for the container
+    import os as _os
     env = {
         "STRATUM_RUN_ID": run_id,
         "STRATUM_REPO_ID": repo_id,
@@ -181,6 +182,7 @@ def run_container(
         "OPENAI_API_KEY": VLLM_API_KEY,
         "STRATUM_TIMEOUT_SECONDS": str(timeout),
         "STRATUM_INPUT_DATA": input_data,
+        "STRATUM_VLLM_MODEL": _os.environ.get("STRATUM_VLLM_MODEL", ""),
     }
     if environment:
         env.update(environment)

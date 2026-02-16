@@ -1,7 +1,7 @@
 """CLI runner for Phase 1: Repo Selection.
 
-Loads structural scan JSONs, scores and selects repos, and writes the
-selection output to a JSON file.
+Loads reliability scanner output JSONs (or legacy structural scans),
+scores repos for graph discovery coverage, and writes the selection output.
 """
 
 from __future__ import annotations
@@ -23,13 +23,18 @@ from rich.progress import (
 )
 from rich.table import Table
 
-from stratum_lab.selection.selector import score_and_select
+from stratum_lab.selection.discovery_optimizer import (
+    select_for_discovery,
+    validate_coverage,
+    FRAMEWORK_TARGETS,
+    COMPLEXITY_TARGETS,
+)
 
 console = Console()
 
 
 def _load_scan_jsons(input_dir: Path) -> list[dict[str, Any]]:
-    """Load all ``*.json`` files from *input_dir* as structural scan dicts."""
+    """Load all ``*.json`` files from *input_dir* as repo scan dicts."""
     json_files = sorted(input_dir.glob("*.json"))
     if not json_files:
         console.print(f"[red]No JSON files found in {input_dir}[/red]")
@@ -46,12 +51,11 @@ def _load_scan_jsons(input_dir: Path) -> list[dict[str, Any]]:
         TimeElapsedColumn(),
         console=console,
     ) as progress:
-        task = progress.add_task("Loading structural scans", total=len(json_files))
+        task = progress.add_task("Loading scan results", total=len(json_files))
         for path in json_files:
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                # Accept both single-repo dicts and lists of repos
                 if isinstance(data, list):
                     repos.extend(data)
                 elif isinstance(data, dict):
@@ -69,75 +73,64 @@ def _load_scan_jsons(input_dir: Path) -> list[dict[str, Any]]:
     return repos
 
 
-def _print_summary(summary: dict[str, Any]) -> None:
+def _print_summary(selected: list[dict], coverage: dict) -> None:
     """Pretty-print the selection summary to the console."""
-    # Overview panel
     overview = (
-        f"Scanned: {summary['total_scanned']}  |  "
-        f"Eligible: {summary['total_eligible']}  |  "
-        f"[bold green]Selected: {summary['total_selected']}[/bold green]\n"
-        f"Avg structural value: {summary['avg_structural_value']}  |  "
-        f"Avg runnability: {summary['avg_runnability_score']}  |  "
-        f"Avg agent count: {summary['avg_agent_count']}\n"
-        f"Taxonomy preconditions covered: {summary['total_taxonomy_preconditions_covered']}  |  "
-        f"Frameworks: {summary['frameworks_represented']}  |  "
-        f"Archetypes: {summary['archetypes_represented']}"
+        f"[bold green]Selected: {coverage['total']}[/bold green]  |  "
+        f"Unique topologies: {coverage['unique_topologies']}\n"
     )
+    if coverage.get("gaps"):
+        overview += f"[yellow]Gaps: {len(coverage['gaps'])}[/yellow]  |  "
+    else:
+        overview += "[green]All targets met[/green]  |  "
+    overview += f"All targets met: {coverage.get('all_targets_met', False)}"
     console.print(Panel(overview, title="Selection Summary", border_style="green"))
 
     # Framework table
-    fw_table = Table(title="Framework Distribution", show_header=True, header_style="bold cyan")
+    fw_table = Table(title="Framework Coverage", show_header=True, header_style="bold cyan")
     fw_table.add_column("Framework", style="dim")
     fw_table.add_column("Count", justify="right")
-    fw_table.add_column("Percentage", justify="right")
-    total = max(summary["total_selected"], 1)
-    for fw, count in summary.get("by_framework", {}).items():
-        pct = f"{count / total * 100:.1f}%"
-        fw_table.add_row(fw, str(count), pct)
+    fw_table.add_column("Target", justify="right")
+    fw_table.add_column("Met", justify="center")
+    for fw, data in coverage.get("framework_coverage", {}).items():
+        met = "[green]YES[/green]" if data["met"] else "[red]NO[/red]"
+        fw_table.add_row(fw, str(data["count"]), str(data["target"]), met)
     console.print(fw_table)
 
-    # Archetype table
-    arch_table = Table(title="Archetype Distribution", show_header=True, header_style="bold cyan")
-    arch_table.add_column("Archetype", style="dim")
-    arch_table.add_column("Count", justify="right")
-    arch_table.add_column("Percentage", justify="right")
-    for arch, count in summary.get("by_archetype", {}).items():
-        pct = f"{count / total * 100:.1f}%"
-        arch_table.add_row(arch, str(count), pct)
-    console.print(arch_table)
+    # Complexity table
+    cx_table = Table(title="Complexity Coverage", show_header=True, header_style="bold cyan")
+    cx_table.add_column("Bracket", style="dim")
+    cx_table.add_column("Count", justify="right")
+    cx_table.add_column("Target", justify="right")
+    cx_table.add_column("Met", justify="center")
+    for bracket, data in coverage.get("complexity_coverage", {}).items():
+        met = "[green]YES[/green]" if data["met"] else "[red]NO[/red]"
+        cx_table.add_row(bracket, str(data["count"]), str(data["target"]), met)
+    console.print(cx_table)
 
 
 def run_selection(
     input_dir: str,
     output_file: str,
-    target: int,
-    min_runnability: int,
-    max_per_archetype: int,
+    target: int = 1000,
+    min_runnability: int = 15,
+    max_per_archetype: int = 200,
+    *,
+    use_triage: bool = False,
+    use_probe: bool = False,
+    probe_timeout: int = 30,
+    probe_batch_size: int = 5000,
 ) -> None:
-    """Load structural scans, score, select, and write output JSON.
+    """Load scan results, apply discovery optimizer, and write output JSON.
 
     This is the function invoked by ``stratum-lab select``.
-
-    Parameters
-    ----------
-    input_dir:
-        Directory containing structural scan JSON files from stratum-cli.
-    output_file:
-        Path to write the selection output JSON.
-    target:
-        Target number of repos to select (1500-2000).
-    min_runnability:
-        Minimum runnability score for eligibility.
-    max_per_archetype:
-        Maximum repos per archetype.
     """
     console.print(
         Panel(
             f"Input: [bold]{input_dir}[/bold]\n"
             f"Output: [bold]{output_file}[/bold]\n"
-            f"Target: {target}  |  Min runnability: {min_runnability}  |  "
-            f"Max/archetype: {max_per_archetype}",
-            title="Phase 1: Repo Selection",
+            f"Target: {target}",
+            title="Phase 1: Repo Selection (Graph Discovery)",
             border_style="blue",
         )
     )
@@ -154,20 +147,45 @@ def run_selection(
         console.print("[red]No repos loaded. Aborting selection.[/red]")
         return
 
-    # Score and select
-    console.print("\n[bold]Scoring and selecting...[/bold]")
-    selected, summary = score_and_select(
-        raw_repos,
-        target=target,
-        min_runnability=min_runnability,
-        max_per_archetype=max_per_archetype,
-    )
+    qualified = raw_repos
+
+    # Optional triage filtering
+    if use_triage:
+        console.print("\n[bold]Running static triage...[/bold]")
+        try:
+            from stratum_lab.triage.static_analyzer import triage_batch
+            triage_results = triage_batch(qualified)
+            qualified = (
+                triage_results["likely_runnable"]
+                + triage_results["needs_probe"][:probe_batch_size]
+            )
+            console.print(f"  {triage_results['total_analyzed']} -> {len(qualified)} qualified")
+        except Exception as e:
+            console.print(f"  [yellow]Triage skipped: {e}[/yellow]")
+
+    # Optional probe filtering
+    if use_probe and qualified:
+        console.print("\n[bold]Running probe execution...[/bold]")
+        try:
+            from stratum_lab.triage.probe import probe_batch
+            probe_results = probe_batch(qualified, timeout=probe_timeout)
+            console.print(
+                f"  {probe_results['total_probed']} probed -> "
+                f"{probe_results['passed']} passed"
+            )
+        except Exception as e:
+            console.print(f"  [yellow]Probe skipped: {e}[/yellow]")
+
+    # Discovery-optimized selection
+    console.print("\n[bold]Running discovery optimizer...[/bold]")
+    selected = select_for_discovery(qualified, target_count=target)
+    coverage = validate_coverage(selected)
 
     elapsed = time.perf_counter() - start
 
     # Print summary
     console.print()
-    _print_summary(summary)
+    _print_summary(selected, coverage)
     console.print(f"\n  Completed in [bold]{elapsed:.1f}s[/bold]")
 
     # Write output
@@ -176,11 +194,11 @@ def run_selection(
 
     output_data = {
         "selection": selected,
-        "summary": summary,
+        "coverage": coverage,
     }
 
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(output_data, f, indent=2, ensure_ascii=False)
+        json.dump(output_data, f, indent=2, ensure_ascii=False, default=str)
 
     console.print(f"\n  Selection written to [bold green]{output_path}[/bold green]")
-    console.print(f"  {len(selected)} repos selected for behavioral scanning.")
+    console.print(f"  {len(selected)} repos selected for graph discovery.")

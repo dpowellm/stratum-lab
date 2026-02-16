@@ -13,6 +13,7 @@ Prints:
 
 from __future__ import annotations
 
+import io
 import json
 import random
 import sys
@@ -36,6 +37,23 @@ from stratum_lab.knowledge.fragility import build_fragility_map
 
 random.seed(42)
 
+# ---------------------------------------------------------------------------
+# Output capture -- write to both terminal and file
+# ---------------------------------------------------------------------------
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "outputs")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+OUTPUT_FILE = os.path.join(OUTPUT_DIR, "knowledge-base-demo.txt")
+_file_buf = io.StringIO()
+
+_orig_print = print
+
+def print(*args, **kwargs):
+    """Print to both stdout and file buffer."""
+    _orig_print(*args, **kwargs)
+    kwargs.pop("file", None)
+    _orig_print(*args, file=_file_buf, **kwargs)
+
+
 # =========================================================================
 # 1.  Helpers to synthesise enriched graph dicts
 # =========================================================================
@@ -45,6 +63,10 @@ PRECONDITION_POOL = TAXONOMY_PRECONDITIONS[:15] + [
     "unvalidated_semantic_chain",
     "classification_without_validation",
 ]
+
+# Preconditions that appear in EVERY repo so cross-pattern interaction analysis
+# has enough co-occurrence counts (>= 5) to fire its sample-size gate.
+COMMON_PRECONDITIONS = ["unbounded_delegation_depth", "no_timeout_on_delegation"]
 
 
 def _rand_latency() -> dict:
@@ -140,9 +162,13 @@ def _make_enriched_graph(
     repo_id = f"repo_{repo_index:03d}"
     total_runs = 3
 
-    # Pick some taxonomy preconditions for this repo
-    n_preconditions = random.randint(2, 6)
-    preconditions = random.sample(PRECONDITION_POOL, k=n_preconditions)
+    # Pick some taxonomy preconditions for this repo.
+    # Always include COMMON_PRECONDITIONS so that cross-pattern interaction
+    # analysis has enough co-occurrence signal (>= MIN_CO_OCCURRENCE).
+    n_extra = random.randint(2, 5)
+    extra_pool = [p for p in PRECONDITION_POOL if p not in COMMON_PRECONDITIONS]
+    extra = random.sample(extra_pool, k=min(n_extra, len(extra_pool)))
+    preconditions = list(COMMON_PRECONDITIONS) + extra
 
     # ---- Build nodes ----
     nodes: dict = {}
@@ -279,7 +305,7 @@ FRAMEWORKS = ["crewai", "langgraph", "autogen"]
 
 enriched_graphs: list[dict] = []
 
-for i in range(20):
+for i in range(40):
     fw = FRAMEWORKS[i % 3]
     has_shared = (i % 3 == 0)  # every 3rd repo
     has_hub = (i % 4 == 0)     # every 4th repo
@@ -323,7 +349,7 @@ enriched_graphs.append(outlier)
 # =========================================================================
 
 print("=" * 80)
-print("(a) MANIFESTATION PROBABILITIES")
+print("(a) MANIFESTATION PROBABILITIES (default - no legacy)")
 print("=" * 80)
 
 manifestation = compute_manifestation_probabilities(enriched_graphs)
@@ -331,14 +357,16 @@ for pc_id, data in manifestation.items():
     if data["sample_size"] > 0:
         print(f"\n  {pc_id}:")
         print(f"    probability          : {data['probability']}")
-        print(f"    confidence_interval  : {data['confidence_interval']}")
         print(f"    sample_size          : {data['sample_size']}")
         print(f"    manifested_count     : {data.get('manifested_count', 'N/A')}")
         print(f"    severity             : {data['severity_when_manifested']}")
+        has_ci = "confidence_interval" in data
+        print(f"    has_confidence_interval: {has_ci}")
 
 # Count how many preconditions had sample_size > 0
 present_count = sum(1 for d in manifestation.values() if d["sample_size"] > 0)
 print(f"\n  Total preconditions with data: {present_count} / {len(TAXONOMY_PRECONDITIONS)}")
+
 
 
 print("\n" + "=" * 80)
@@ -370,7 +398,7 @@ if comparisons:
             bd = fw_data["behavioral_distribution"]
             print(f"    {fw} ({fw_data['repos_count']} repos):")
             print(f"      failure_rate         : {bd['failure_rate']}")
-            print(f"      confidence_interval  : {bd['confidence_interval_95']}")
+            print(f"      confidence_interval  : {bd.get('confidence_interval_95', 'N/A (gated)')}")
             print(f"      avg_error_rate       : {bd.get('avg_error_rate', 'N/A')}")
             print(f"      avg_latency_p50_ms   : {bd.get('avg_latency_p50_ms', 'N/A')}")
 else:
@@ -387,8 +415,8 @@ if fragility_map:
         print(f"\n  Structural position: {entry['structural_position']}")
         print(f"    avg_tool_call_failure_rate : {entry['avg_tool_call_failure_rate']}")
         print(f"    max_tool_call_failure_rate : {entry['max_tool_call_failure_rate']}")
-        print(f"    sensitivity_score          : {entry['sensitivity_score']}")
-        print(f"    max_sensitivity_score      : {entry['max_sensitivity_score']}")
+        print(f"    sensitivity_score          : {entry.get('sensitivity_score', 'N/A (gated)')}")
+        print(f"    max_sensitivity_score      : {entry.get('max_sensitivity_score', 'N/A (gated)')}")
         print(f"    affected_repos_count       : {entry['affected_repos_count']}")
         print(f"    total_nodes_analyzed       : {entry['total_nodes_analyzed']}")
         print(f"    quality_dependent_rate     : {entry['quality_dependent_rate']}")
@@ -396,7 +424,7 @@ if fragility_map:
         print(f"    top_fragile_nodes (up to 3):")
         for node in entry["top_fragile_nodes"][:3]:
             print(f"      {node['repo_id']}/{node['node_id']}: "
-                  f"sensitivity={node['sensitivity_score']}, "
+                  f"sensitivity={node.get('sensitivity_score', 'N/A')}, "
                   f"tcfr={node['tool_call_failure_rate']}")
 else:
     print("  (no fragility data)")
@@ -415,7 +443,8 @@ for pat in pkb:
     print(f"    risk_level   : {pat['risk_assessment']['risk_level']} "
           f"(score={pat['risk_assessment']['risk_score']})")
     bd = pat["behavioral_distribution"]
-    print(f"    failure_rate  : {bd['failure_rate']}  CI={bd['confidence_interval_95']}")
+    ci_str = bd.get("confidence_interval_95", "N/A (gated)")
+    print(f"    failure_rate  : {bd['failure_rate']}  CI={ci_str}")
 
 
 # =========================================================================
@@ -488,16 +517,90 @@ if interactions.get("most_dangerous_combination"):
     combo = interactions["most_dangerous_combination"]
     print(f"\n  Most dangerous combination:")
     print(f"    {combo['precondition_a']} + {combo['precondition_b']}")
-    print(f"    interaction_effect: {combo['interaction_effect']}")
-    print(f"    P(fail|both):      {combo['p_fail_both']}")
+    print(f"    interaction_effect: {combo.get('interaction_effect', 'N/A (gated)')}")
+    print(f"    P(fail|both):      {combo.get('p_fail_both', 'N/A (gated)')}")
     print(f"    co_occurrence:     {combo['co_occurrence_count']}")
 
 if synergistic:
     print(f"\n  Synergistic pairs:")
     for pair in synergistic[:10]:
         print(f"    {pair['precondition_a']} + {pair['precondition_b']}: "
-              f"effect={pair['interaction_effect']}, "
-              f"P(both)={pair['p_fail_both']}, "
+              f"effect={pair.get('interaction_effect', 'N/A')}, "
+              f"P(both)={pair.get('p_fail_both', 'N/A')}, "
               f"n={pair['co_occurrence_count']}")
 
+
+# =========================================================================
+# CHECK 28: No confidence_interval unless --legacy-probabilities
+# =========================================================================
+
+print("\n" + "=" * 80)
+print("CHECK 28: NO CONFIDENCE INTERVAL IN DEFAULT OUTPUT")
+print("=" * 80)
+
+# Default: no confidence_interval in manifestation probabilities
+has_ci_in_default = any(
+    "confidence_interval" in data
+    for data in manifestation.values()
+    if data["sample_size"] > 0
+)
+print(f"  Default output has confidence_interval: {has_ci_in_default}")
+
+# Also check patterns (pkb is built above without legacy flag)
+check_28_pkb_pass = True
+for pat in pkb:
+    bd = pat.get("behavioral_distribution", {})
+    if "confidence_interval_95" in bd:
+        check_28_pkb_pass = False
+        print(f"  FAIL: pattern {pat['pattern_id']} has confidence_interval_95 in default mode")
+        break
+print(f"  Patterns lack confidence_interval_95:   {check_28_pkb_pass}")
+
+# Legacy mode: should have confidence_interval
+manifestation_legacy = compute_manifestation_probabilities(enriched_graphs, legacy_probabilities=True)
+has_ci_in_legacy = any(
+    "confidence_interval" in data
+    for data in manifestation_legacy.values()
+    if data["sample_size"] > 0
+)
+print(f"  Legacy output has confidence_interval:  {has_ci_in_legacy}")
+
+check_28_pass = (not has_ci_in_default) and has_ci_in_legacy and check_28_pkb_pass
+if check_28_pass:
+    print("\n  CHECK 28: PASS")
+else:
+    print("\n  CHECK 28: FAIL")
+
+
+# =========================================================================
+# CHECK 29: Cross-pattern interaction fires for at least one pair
+# =========================================================================
+
+print("\n" + "=" * 80)
+print("CHECK 29: CROSS-PATTERN INTERACTION FIRES (NON-GATED)")
+print("=" * 80)
+
+computed_pairs = [
+    i for i in interaction_list
+    if "interaction_effect" in i and isinstance(i["interaction_effect"], (int, float))
+]
+print(f"  Pairs with computed interaction_effect: {len(computed_pairs)}")
+if computed_pairs:
+    top = computed_pairs[0]
+    print(f"  Top pair: {top['precondition_a']} + {top['precondition_b']}")
+    print(f"    interaction_effect: {top['interaction_effect']}")
+    print(f"    co_occurrence:     {top['co_occurrence_count']}")
+    print(f"    synergistic:       {top.get('synergistic', False)}")
+
+check_29_pass = len(computed_pairs) >= 1
+if check_29_pass:
+    print("\n  CHECK 29: PASS")
+else:
+    print("\n  CHECK 29: FAIL (all pairs gated — co-occurrence counts too low)")
+
 print("\nDone.")
+
+# Write output file
+with open(OUTPUT_FILE, "w", encoding="utf-8") as _fh:
+    _fh.write(_file_buf.getvalue())
+_orig_print(f"\nOutput saved to: {OUTPUT_FILE}")

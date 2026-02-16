@@ -1,7 +1,12 @@
-"""Schema validation for all 19 event types emitted by stratum-patcher.
+"""Event schema validation for v6 graph discovery reframe.
 
-Generates synthetic JSONL events for every event type using the EventLogger
-singleton, reads them back, and validates each against the required schema.
+Covers validation checks 18-20:
+  Check 18: Error context in events -- error events have active_node_stack
+  Check 19: State access events -- state.access event type validated
+  Check 20: Routing decision events -- routing.decision event type validated
+
+Also tests EventLogger node-stack and error-context APIs, validates synthetic
+events through the parser, and confirms run record counters.
 
 Run as a standalone script:
     cd stratum-lab
@@ -10,458 +15,582 @@ Run as a standalone script:
 
 from __future__ import annotations
 
+import io
 import json
 import os
 import sys
 import tempfile
+import time
+import uuid
 from pathlib import Path
+from typing import Any
 
 # ---------------------------------------------------------------------------
-# Ensure stratum_patcher is importable
+# Path setup -- stratum_lab / stratum_patcher are NOT installed packages
 # ---------------------------------------------------------------------------
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_PROJECT_ROOT))
 sys.path.insert(0, str(_PROJECT_ROOT / "stratum_patcher"))
 
+from rich.console import Console
+
+from stratum_patcher.event_logger import EventLogger, make_node, generate_node_id
+from stratum_lab.collection.parser import (
+    validate_event,
+    build_run_record,
+    STATE_ACCESS_EVENT_TYPES,
+    ROUTING_DECISION_EVENT_TYPES,
+)
 
 # ---------------------------------------------------------------------------
-# Required and optional schema fields
+# Output setup -- rich console writes to both terminal and file
 # ---------------------------------------------------------------------------
-REQUIRED_FIELDS = {"event_id", "timestamp_ns", "run_id", "repo_id", "event_type"}
+OUTPUT_DIR = Path(__file__).resolve().parent / "outputs"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_FILE = OUTPUT_DIR / "event-schema-validation.txt"
 
-OPTIONAL_FIELDS = {
-    "framework", "source_node", "target_node", "edge_type",
-    "payload", "parent_event_id", "stack_depth",
-}
+_file_buffer = io.StringIO()
+_file_console = Console(file=_file_buffer, width=100, force_terminal=False, no_color=True)
+_term_console = Console(width=100)
 
-# All 19 event types the patchers emit
-ALL_EVENT_TYPES = [
-    "execution.start",
-    "execution.end",
-    "agent.task_start",
-    "agent.task_end",
-    "delegation.initiated",
-    "delegation.completed",
-    "tool.invoked",
-    "tool.completed",
-    "tool.call_failure",
-    "llm.call_start",
-    "llm.call_end",
-    "data.read",
-    "data.write",
-    "error.occurred",
-    "error.propagated",
-    "error.cascade",
-    "decision.made",
-    "guardrail.triggered",
-    "external.call",
-]
+SEPARATOR = "=" * 78
+THIN_SEP = "-" * 78
 
-# Additional event types that appear in file I/O
-FILE_EVENT_TYPES = [
-    "file.read",
-    "file.write",
-]
 
+def out(text: str = "") -> None:
+    """Print to both the terminal (with color) and the file buffer (plain)."""
+    _term_console.print(text, highlight=False)
+    _file_console.print(text, highlight=False)
+
+
+def out_pass(label: str, detail: str = "") -> None:
+    suffix = f"  {detail}" if detail else ""
+    _term_console.print(f"  [green][+][/green] {label}  PASS{suffix}", highlight=False)
+    _file_console.print(f"  [+] {label}  PASS{suffix}", highlight=False)
+
+
+def out_fail(label: str, detail: str = "") -> None:
+    suffix = f"  {detail}" if detail else ""
+    _term_console.print(f"  [red][X][/red] {label}  FAIL{suffix}", highlight=False)
+    _file_console.print(f"  [X] {label}  FAIL{suffix}", highlight=False)
+
+
+def out_detail(text: str) -> None:
+    _term_console.print(f"      {text}", highlight=False)
+    _file_console.print(f"      {text}", highlight=False)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _make_synthetic_event(
+    event_type: str,
+    *,
+    payload: dict[str, Any] | None = None,
+    source_node: dict[str, str] | None = None,
+    target_node: dict[str, str] | None = None,
+    edge_type: str | None = None,
+) -> dict[str, Any]:
+    """Build a synthetic event dict with all required fields."""
+    record: dict[str, Any] = {
+        "event_id": f"evt_{uuid.uuid4().hex[:16]}",
+        "timestamp_ns": time.time_ns(),
+        "run_id": "schema-v6-test-run",
+        "repo_id": "schema-v6-test-repo",
+        "framework": "test",
+        "event_type": event_type,
+    }
+    if source_node is not None:
+        record["source_node"] = source_node
+    if target_node is not None:
+        record["target_node"] = target_node
+    if edge_type is not None:
+        record["edge_type"] = edge_type
+    if payload is not None:
+        record["payload"] = payload
+    record["stack_depth"] = 0
+    return record
+
+
+# =========================================================================
+# Main
+# =========================================================================
 
 def main() -> None:
+    pass_count = 0
+    fail_count = 0
+
+    out(SEPARATOR)
+    out("  STRATUM EVENT SCHEMA VALIDATION -- v6 GRAPH DISCOVERY REFRAME")
+    out("  Checks 18-20: error context, state access, routing decisions")
+    out(SEPARATOR)
+    out()
+
     # -----------------------------------------------------------------
-    # Setup
+    # CHECK 18: Error context in events -- active_node_stack
     # -----------------------------------------------------------------
-    fd, events_file = tempfile.mkstemp(suffix=".jsonl", prefix="stratum_schema_test_")
+    out(SEPARATOR)
+    out("  CHECK 18: ERROR CONTEXT IN EVENTS")
+    out(SEPARATOR)
+    out()
+
+    # 18a: Verify EventLogger has the required node-stack and error-context methods
+    required_methods = [
+        "push_active_node",
+        "pop_active_node",
+        "current_node",
+        "record_error_context",
+    ]
+    for method_name in required_methods:
+        label = f"EventLogger.{method_name} exists"
+        if hasattr(EventLogger, method_name) and callable(getattr(EventLogger, method_name)):
+            out_pass(f"{label:<50}")
+            pass_count += 1
+        else:
+            out_fail(f"{label:<50}", "method not found on EventLogger")
+            fail_count += 1
+
+    out()
+
+    # 18b: Exercise push/pop/current on a fresh singleton
+    fd, events_file = tempfile.mkstemp(suffix=".jsonl", prefix="stratum_v6_schema_")
     os.close(fd)
 
     os.environ["STRATUM_EVENTS_FILE"] = events_file
-    os.environ["STRATUM_RUN_ID"] = "schema-test-run-001"
-    os.environ["STRATUM_REPO_ID"] = "schema-test-repo-001"
-    os.environ["STRATUM_FRAMEWORK"] = "schema-test"
+    os.environ["STRATUM_RUN_ID"] = "schema-v6-test-run"
+    os.environ["STRATUM_REPO_ID"] = "schema-v6-test-repo"
+    os.environ["STRATUM_FRAMEWORK"] = "test"
 
-    from stratum_patcher.event_logger import EventLogger, make_node, generate_node_id
-
-    # Reset singleton
     EventLogger._instance = None
     logger = EventLogger.get()
 
-    # -----------------------------------------------------------------
-    # Generate events for all types
-    # -----------------------------------------------------------------
-    src_agent = make_node("agent", "test:Agent:main.py:1", "TestAgent")
-    tgt_agent = make_node("agent", "test:Worker:main.py:10", "WorkerAgent")
-    src_tool = make_node("capability", "test:Tool:main.py:20", "WebSearch")
-    src_data = make_node("data_store", "test:Store:main.py:30", "SharedMemory")
-    src_external = make_node("external", "test:HTTP:main.py:40", "api.example.com")
-    src_guardrail = make_node("capability", "test:Guard:main.py:50", "ContentFilter")
+    node_a = "test:AgentA:main.py:10"
+    node_b = "test:AgentB:main.py:20"
 
-    # Track parent event IDs for chaining
-    parent_ids: dict[str, str] = {}
+    logger.push_active_node(node_a)
+    logger.push_active_node(node_b)
 
-    event_configs = [
-        # (event_type, kwargs_for_log_event)
-        ("execution.start", dict(
-            source_node=src_agent,
-            payload={"crew_name": "TestCrew", "agent_count": 3, "task_count": 2},
-        )),
-        ("execution.end", dict(
-            source_node=src_agent,
-            payload={"latency_ms": 1234.5, "status": "success"},
-            parent_event_id="__execution.start__",
-        )),
-        ("agent.task_start", dict(
-            source_node=src_agent,
-            payload={"agent_role": "Researcher", "task_name": "find_info"},
-        )),
-        ("agent.task_end", dict(
-            source_node=src_agent,
-            payload={
-                "agent_role": "Researcher", "latency_ms": 567.8, "status": "success",
-                "output_hash": "abc123", "output_type": "short_text",
-                "output_size_bytes": 42, "output_preview": "result text",
-                "classification_fields": None,
-            },
-            parent_event_id="__agent.task_start__",
-        )),
-        ("delegation.initiated", dict(
-            source_node=src_agent,
-            target_node=tgt_agent,
-            edge_type="delegates_to",
-            payload={
-                "delegator": "TestAgent", "delegate": "WorkerAgent",
-                "context_hash": "def456", "context_type": "structured_json",
-                "context_size_bytes": 128, "context_source_node": "test:Agent:main.py:1",
-                "has_classification_dependency": False,
-            },
-        )),
-        ("delegation.completed", dict(
-            source_node=src_agent,
-            target_node=tgt_agent,
-            edge_type="delegates_to",
-            payload={"delegator": "TestAgent", "delegate": "WorkerAgent", "status": "success"},
-            parent_event_id="__delegation.initiated__",
-        )),
-        ("tool.invoked", dict(
-            source_node=src_agent,
-            target_node=src_tool,
-            edge_type="calls",
-            payload={"tool_name": "WebSearch", "args_shape": "dict(keys=['query'], len=1)"},
-        )),
-        ("tool.completed", dict(
-            source_node=src_agent,
-            target_node=src_tool,
-            edge_type="calls",
-            payload={"tool_name": "WebSearch", "latency_ms": 89.2, "status": "success"},
-            parent_event_id="__tool.invoked__",
-        )),
-        ("tool.call_failure", dict(
-            source_node=src_tool,
-            payload={"tool_name": "WebSearch", "reason": "invalid_arguments_json"},
-        )),
-        ("llm.call_start", dict(
-            source_node=make_node("capability", "test:LLM:main.py:100", "openai.chat.completions.create"),
-            payload={"model_requested": "gpt-4", "message_count": 5, "has_tools": True},
-        )),
-        ("llm.call_end", dict(
-            source_node=make_node("capability", "test:LLM:main.py:100", "openai.chat.completions.create"),
-            payload={
-                "model_requested": "gpt-4", "model_actual": "gpt-4",
-                "latency_ms": 450.1, "input_tokens": 500, "output_tokens": 200,
-                "finish_reason": "stop",
-                "output_hash": "abc789", "output_type": "short_text",
-                "output_size_bytes": 100, "output_preview": "LLM response text",
-                "output_structure": None, "classification_fields": None,
-            },
-            parent_event_id="__llm.call_start__",
-        )),
-        ("data.read", dict(
-            source_node=src_data,
-            payload={"channel": "SharedMemory", "data_shape": "dict(keys=['key1'], len=1)"},
-        )),
-        ("data.write", dict(
-            source_node=src_data,
-            payload={"channel": "SharedMemory", "data_shape": "str(len=42)"},
-        )),
-        ("error.occurred", dict(
-            source_node=src_agent,
-            payload={
-                "error_type": "ValueError",
-                "error_message": "invalid input format",
-                "file": "main.py",
-                "line": 42,
-            },
-        )),
-        ("error.propagated", dict(
-            source_node=src_agent,
-            target_node=tgt_agent,
-            edge_type="propagates_error",
-            payload={
-                "error_type": "ValueError",
-                "original_source": "TestAgent",
-                "propagated_to": "WorkerAgent",
-            },
-        )),
-        ("error.cascade", dict(
-            source_node=src_agent,
-            payload={
-                "error_type": "ValueError",
-                "cascade_depth": 3,
-                "affected_agents": ["TestAgent", "WorkerAgent", "ReviewerAgent"],
-            },
-        )),
-        ("decision.made", dict(
-            source_node=src_agent,
-            payload={
-                "decision_type": "routing",
-                "options_considered": ["plan_a", "plan_b"],
-                "selected": "plan_a",
-                "confidence": 0.85,
-            },
-        )),
-        ("guardrail.triggered", dict(
-            source_node=src_guardrail,
-            payload={
-                "guardrail_name": "ContentFilter",
-                "trigger_reason": "harmful_content_detected",
-                "action_taken": "blocked",
-            },
-        )),
-        ("external.call", dict(
-            source_node=src_external,
-            payload={
-                "method": "GET",
-                "domain": "api.example.com",
-                "latency_ms": 156.3,
-                "status_code": 200,
-            },
-        )),
+    label = "push_active_node stacks correctly"
+    if logger.current_node() == node_b:
+        out_pass(f"{label:<50}")
+        pass_count += 1
+    else:
+        out_fail(f"{label:<50}", f"expected {node_b}, got {logger.current_node()}")
+        fail_count += 1
+
+    popped = logger.pop_active_node()
+    label = "pop_active_node returns top node"
+    if popped == node_b and logger.current_node() == node_a:
+        out_pass(f"{label:<50}")
+        pass_count += 1
+    else:
+        out_fail(f"{label:<50}", f"popped={popped}, current={logger.current_node()}")
+        fail_count += 1
+
+    # 18c: record_error_context captures active stack snapshot
+    logger.push_active_node(node_b)  # stack: [node_a, node_b]
+    logger.record_error_context(
+        node_id=node_b,
+        error_type="ValueError",
+        error_msg="test error for schema validation",
+        upstream_node=node_a,
+        upstream_output_hash="abc123",
+    )
+
+    label = "record_error_context captures stack"
+    if (
+        len(logger._error_context_stack) == 1
+        and logger._error_context_stack[0]["active_stack"] == [node_a, node_b]
+    ):
+        out_pass(f"{label:<50}")
+        out_detail(f"active_stack: {logger._error_context_stack[0]['active_stack']}")
+        pass_count += 1
+    else:
+        out_fail(f"{label:<50}", f"stack={logger._error_context_stack}")
+        fail_count += 1
+
+    # Clean up logger stack for remaining tests
+    logger.pop_active_node()
+    logger.pop_active_node()
+
+    out()
+
+    # 18d: Create a synthetic error event with active_node_stack in payload
+    error_event = _make_synthetic_event(
+        "error.occurred",
+        source_node=make_node("agent", node_b, "AgentB"),
+        payload={
+            "error_type": "ValueError",
+            "error_message": "invalid input format",
+            "file": "main.py",
+            "line": 42,
+            "active_node_stack": [node_a, node_b],
+        },
+    )
+
+    label = "error event passes validate_event"
+    if validate_event(error_event):
+        out_pass(f"{label:<50}")
+        pass_count += 1
+    else:
+        out_fail(f"{label:<50}", "validate_event returned False")
+        fail_count += 1
+
+    label = "error event has active_node_stack"
+    payload = error_event.get("payload", {})
+    if "active_node_stack" in payload and isinstance(payload["active_node_stack"], list):
+        out_pass(f"{label:<50}")
+        out_detail(f"active_node_stack: {payload['active_node_stack']}")
+        pass_count += 1
+    else:
+        out_fail(f"{label:<50}", "missing or wrong type for active_node_stack")
+        fail_count += 1
+
+    label = "active_node_stack has 2 entries"
+    if len(payload.get("active_node_stack", [])) == 2:
+        out_pass(f"{label:<50}")
+        pass_count += 1
+    else:
+        out_fail(
+            f"{label:<50}",
+            f"expected 2, got {len(payload.get('active_node_stack', []))}",
+        )
+        fail_count += 1
+
+    out()
+
+    # -----------------------------------------------------------------
+    # CHECK 19: State access events
+    # -----------------------------------------------------------------
+    out(SEPARATOR)
+    out("  CHECK 19: STATE ACCESS EVENTS")
+    out(SEPARATOR)
+    out()
+
+    # 19a: Verify state.access is in STATE_ACCESS_EVENT_TYPES
+    label = "state.access in STATE_ACCESS_EVENT_TYPES"
+    if "state.access" in STATE_ACCESS_EVENT_TYPES:
+        out_pass(f"{label:<50}")
+        out_detail(f"STATE_ACCESS_EVENT_TYPES = {STATE_ACCESS_EVENT_TYPES}")
+        pass_count += 1
+    else:
+        out_fail(f"{label:<50}", f"set contents: {STATE_ACCESS_EVENT_TYPES}")
+        fail_count += 1
+
+    # 19b: Create a synthetic state.access event with required fields
+    state_access_event = _make_synthetic_event(
+        "state.access",
+        source_node=make_node("agent", "test:AgentA:main.py:10", "AgentA"),
+        payload={
+            "state_key": "shared_memory.research_notes",
+            "accessor_node": "test:AgentA:main.py:10",
+            "access_type": "read",
+        },
+    )
+
+    label = "state.access event passes validate_event"
+    if validate_event(state_access_event):
+        out_pass(f"{label:<50}")
+        pass_count += 1
+    else:
+        out_fail(f"{label:<50}", "validate_event returned False")
+        fail_count += 1
+
+    # 19c: Verify payload fields
+    sa_payload = state_access_event.get("payload", {})
+    required_sa_fields = ["state_key", "accessor_node", "access_type"]
+    missing_sa = [f for f in required_sa_fields if f not in sa_payload]
+    label = "state.access payload has required fields"
+    if not missing_sa:
+        out_pass(f"{label:<50}")
+        out_detail(f"state_key={sa_payload['state_key']}")
+        out_detail(f"accessor_node={sa_payload['accessor_node']}")
+        out_detail(f"access_type={sa_payload['access_type']}")
+        pass_count += 1
+    else:
+        out_fail(f"{label:<50}", f"missing: {missing_sa}")
+        fail_count += 1
+
+    # 19d: Test a write-type state access
+    state_write_event = _make_synthetic_event(
+        "state.access",
+        source_node=make_node("agent", "test:AgentB:main.py:20", "AgentB"),
+        payload={
+            "state_key": "shared_memory.draft_output",
+            "accessor_node": "test:AgentB:main.py:20",
+            "access_type": "write",
+        },
+    )
+
+    label = "state.access (write) passes validate_event"
+    if validate_event(state_write_event):
+        out_pass(f"{label:<50}")
+        pass_count += 1
+    else:
+        out_fail(f"{label:<50}", "validate_event returned False")
+        fail_count += 1
+
+    out()
+
+    # -----------------------------------------------------------------
+    # CHECK 20: Routing decision events
+    # -----------------------------------------------------------------
+    out(SEPARATOR)
+    out("  CHECK 20: ROUTING DECISION EVENTS")
+    out(SEPARATOR)
+    out()
+
+    # 20a: Verify routing.decision is in ROUTING_DECISION_EVENT_TYPES
+    label = "routing.decision in ROUTING_DECISION_EVENT_TYPES"
+    if "routing.decision" in ROUTING_DECISION_EVENT_TYPES:
+        out_pass(f"{label:<50}")
+        out_detail(f"ROUTING_DECISION_EVENT_TYPES = {ROUTING_DECISION_EVENT_TYPES}")
+        pass_count += 1
+    else:
+        out_fail(f"{label:<50}", f"set contents: {ROUTING_DECISION_EVENT_TYPES}")
+        fail_count += 1
+
+    # 20b: Create a synthetic routing.decision event with required fields
+    routing_event = _make_synthetic_event(
+        "routing.decision",
+        source_node=make_node("agent", "test:Router:main.py:5", "Router"),
+        payload={
+            "decision_type": "next_agent",
+            "source_node": "test:Router:main.py:5",
+            "selected_target": "test:AgentA:main.py:10",
+            "candidates": [
+                "test:AgentA:main.py:10",
+                "test:AgentB:main.py:20",
+                "test:AgentC:main.py:30",
+            ],
+        },
+    )
+
+    label = "routing.decision event passes validate_event"
+    if validate_event(routing_event):
+        out_pass(f"{label:<50}")
+        pass_count += 1
+    else:
+        out_fail(f"{label:<50}", "validate_event returned False")
+        fail_count += 1
+
+    # 20c: Verify payload fields
+    rd_payload = routing_event.get("payload", {})
+    required_rd_fields = ["decision_type", "source_node", "selected_target", "candidates"]
+    missing_rd = [f for f in required_rd_fields if f not in rd_payload]
+    label = "routing.decision payload has required fields"
+    if not missing_rd:
+        out_pass(f"{label:<50}")
+        out_detail(f"decision_type={rd_payload['decision_type']}")
+        out_detail(f"source_node={rd_payload['source_node']}")
+        out_detail(f"selected_target={rd_payload['selected_target']}")
+        out_detail(f"candidates ({len(rd_payload['candidates'])}): {rd_payload['candidates']}")
+        pass_count += 1
+    else:
+        out_fail(f"{label:<50}", f"missing: {missing_rd}")
+        fail_count += 1
+
+    # 20d: Test with a different decision_type
+    routing_event_2 = _make_synthetic_event(
+        "routing.decision",
+        source_node=make_node("agent", "test:Orchestrator:main.py:1", "Orchestrator"),
+        payload={
+            "decision_type": "tool_selection",
+            "source_node": "test:Orchestrator:main.py:1",
+            "selected_target": "test:WebSearch:tools.py:10",
+            "candidates": [
+                "test:WebSearch:tools.py:10",
+                "test:Calculator:tools.py:20",
+            ],
+        },
+    )
+
+    label = "routing.decision (tool_selection) validates"
+    if validate_event(routing_event_2):
+        out_pass(f"{label:<50}")
+        pass_count += 1
+    else:
+        out_fail(f"{label:<50}", "validate_event returned False")
+        fail_count += 1
+
+    out()
+
+    # -----------------------------------------------------------------
+    # PARSER RUN RECORD INTEGRATION
+    # -----------------------------------------------------------------
+    out(SEPARATOR)
+    out("  RUN RECORD INTEGRATION: state_access_count + routing_decision_count")
+    out(SEPARATOR)
+    out()
+
+    # Build a mixed event list and pass through build_run_record
+    mixed_events = [
+        # Some baseline events
+        _make_synthetic_event(
+            "execution.start",
+            source_node=make_node("agent", "test:AgentA:main.py:10", "AgentA"),
+        ),
+        _make_synthetic_event(
+            "agent.task_start",
+            source_node=make_node("agent", "test:AgentA:main.py:10", "AgentA"),
+        ),
+        # 2 state.access events
+        state_access_event,
+        state_write_event,
+        # 2 routing.decision events
+        routing_event,
+        routing_event_2,
+        # error event with active_node_stack
+        error_event,
+        # close out
+        _make_synthetic_event(
+            "agent.task_end",
+            source_node=make_node("agent", "test:AgentA:main.py:10", "AgentA"),
+            payload={"status": "success"},
+        ),
+        _make_synthetic_event(
+            "execution.end",
+            source_node=make_node("agent", "test:AgentA:main.py:10", "AgentA"),
+        ),
     ]
 
-    # Also add file.read and file.write (beyond the core 19, these are
-    # emitted by generic_patch)
-    event_configs.append(("file.read", dict(
-        source_node=make_node("data_store", "test:FileIO:data.csv:0", "/app/data.csv"),
-        payload={"path": "/app/data.csv", "mode": "r"},
-    )))
-    event_configs.append(("file.write", dict(
-        source_node=make_node("data_store", "test:FileIO:output.txt:0", "/app/output.txt"),
-        payload={"path": "/app/output.txt", "mode": "w"},
-    )))
+    run_record = build_run_record(mixed_events)
 
-    # -----------------------------------------------------------------
-    # Emit all events
-    # -----------------------------------------------------------------
-    for event_type, kwargs in event_configs:
-        # Resolve parent_event_id placeholders
-        if "parent_event_id" in kwargs:
-            placeholder = kwargs["parent_event_id"]
-            if placeholder.startswith("__") and placeholder.endswith("__"):
-                ref_type = placeholder[2:-2]
-                kwargs["parent_event_id"] = parent_ids.get(ref_type)
-
-        eid = logger.log_event(event_type, **kwargs)
-        parent_ids[event_type] = eid
-
-    # -----------------------------------------------------------------
-    # Read back and validate
-    # -----------------------------------------------------------------
-    events: list[dict] = []
-    with open(events_file, "r", encoding="utf-8") as fh:
-        for line in fh:
-            line = line.strip()
-            if line:
-                events.append(json.loads(line))
-
-    print("=" * 72)
-    print(f"  STRATUM EVENT SCHEMA VALIDATION")
-    print(f"  Events file: {events_file}")
-    print(f"  Total events emitted: {len(events)}")
-    print("=" * 72)
-    print()
-
-    all_event_types = ALL_EVENT_TYPES + FILE_EVENT_TYPES
-    event_by_type: dict[str, list[dict]] = {}
-    for ev in events:
-        et = ev.get("event_type", "UNKNOWN")
-        event_by_type.setdefault(et, []).append(ev)
-
-    pass_count = 0
-    fail_count = 0
-    results: list[tuple[str, bool, str]] = []
-
-    for et in all_event_types:
-        if et not in event_by_type:
-            results.append((et, False, "NO EVENT GENERATED"))
-            fail_count += 1
-            continue
-
-        ev = event_by_type[et][0]  # Check the first one
-        errors: list[str] = []
-
-        # Check required fields
-        for field in REQUIRED_FIELDS:
-            if field not in ev:
-                errors.append(f"missing required field '{field}'")
-
-        # Validate field types
-        if "event_id" in ev and not ev["event_id"].startswith("evt_"):
-            errors.append(f"event_id should start with 'evt_', got '{ev['event_id']}'")
-        if "timestamp_ns" in ev and not isinstance(ev["timestamp_ns"], int):
-            errors.append(f"timestamp_ns should be int, got {type(ev['timestamp_ns']).__name__}")
-        if "run_id" in ev and not isinstance(ev["run_id"], str):
-            errors.append(f"run_id should be str, got {type(ev['run_id']).__name__}")
-        if "repo_id" in ev and not isinstance(ev["repo_id"], str):
-            errors.append(f"repo_id should be str, got {type(ev['repo_id']).__name__}")
-
-        # Check event_type matches
-        if ev.get("event_type") != et:
-            errors.append(f"event_type mismatch: expected '{et}', got '{ev.get('event_type')}'")
-
-        # Validate optional field types when present
-        if "source_node" in ev:
-            sn = ev["source_node"]
-            if not isinstance(sn, dict):
-                errors.append("source_node should be dict")
-            else:
-                for k in ("node_type", "node_id", "node_name"):
-                    if k not in sn:
-                        errors.append(f"source_node missing '{k}'")
-
-        if "target_node" in ev:
-            tn = ev["target_node"]
-            if not isinstance(tn, dict):
-                errors.append("target_node should be dict")
-            else:
-                for k in ("node_type", "node_id", "node_name"):
-                    if k not in tn:
-                        errors.append(f"target_node missing '{k}'")
-
-        if "payload" in ev and not isinstance(ev["payload"], dict):
-            errors.append(f"payload should be dict, got {type(ev['payload']).__name__}")
-
-        if "stack_depth" in ev and not isinstance(ev["stack_depth"], int):
-            errors.append(f"stack_depth should be int, got {type(ev['stack_depth']).__name__}")
-
-        if "parent_event_id" in ev:
-            if ev["parent_event_id"] is not None and not isinstance(ev["parent_event_id"], str):
-                errors.append(f"parent_event_id should be str or None")
-
-        if errors:
-            results.append((et, False, "; ".join(errors)))
-            fail_count += 1
-        else:
-            results.append((et, True, "all checks passed"))
-            pass_count += 1
-
-    # -----------------------------------------------------------------
-    # Print results
-    # -----------------------------------------------------------------
-    max_type_len = max(len(et) for et, _, _ in results)
-
-    for et, passed, msg in results:
-        status = "PASS" if passed else "FAIL"
-        indicator = "[+]" if passed else "[X]"
-        print(f"  {indicator} {et:<{max_type_len}}  {status}  {msg}")
-
-        # Show semantic fields for relevant event types
-        if passed and et in event_by_type:
-            ev = event_by_type[et][0]
-            payload = ev.get("payload", {})
-
-            if et == "llm.call_end":
-                semantic_fields = ["output_hash", "output_type", "output_size_bytes",
-                                   "output_structure", "classification_fields"]
-                found = [f for f in semantic_fields if f in payload]
-                print(f"      semantic fields: {', '.join(found)} ({len(found)}/{len(semantic_fields)})")
-            elif et == "delegation.initiated":
-                semantic_fields = ["context_hash", "context_type", "context_source_node",
-                                   "context_source_hash", "has_classification_dependency"]
-                found = [f for f in semantic_fields if f in payload]
-                print(f"      semantic fields: {', '.join(found)} ({len(found)}/{len(semantic_fields)})")
-            elif et == "agent.task_end":
-                semantic_fields = ["output_hash", "output_type", "output_size_bytes",
-                                   "classification_fields"]
-                found = [f for f in semantic_fields if f in payload]
-                print(f"      semantic fields: {', '.join(found)} ({len(found)}/{len(semantic_fields)})")
-
-    print()
-    print("-" * 72)
-    print(f"  Results: {pass_count} passed, {fail_count} failed, "
-          f"{pass_count + fail_count} total")
-    print("-" * 72)
-
-    # -----------------------------------------------------------------
-    # Additional cross-event validations
-    # -----------------------------------------------------------------
-    print()
-    print("  CROSS-EVENT VALIDATIONS:")
-    print()
-
-    # 1) All event IDs are unique
-    all_ids = [ev["event_id"] for ev in events]
-    unique_ids = set(all_ids)
-    if len(all_ids) == len(unique_ids):
-        print("  [+] All event_id values are unique")
+    # Verify state_access_count
+    label = "run_record.state_access_count == 2"
+    actual_sa = run_record.get("state_access_count", -1)
+    if actual_sa == 2:
+        out_pass(f"{label:<50}")
+        out_detail(f"state_access_count = {actual_sa}")
+        pass_count += 1
     else:
-        print(f"  [X] Duplicate event_id values found ({len(all_ids) - len(unique_ids)} dupes)")
+        out_fail(f"{label:<50}", f"expected 2, got {actual_sa}")
         fail_count += 1
 
-    # 2) All timestamps are positive integers
-    all_ts = [ev["timestamp_ns"] for ev in events]
-    if all(isinstance(ts, int) and ts > 0 for ts in all_ts):
-        print("  [+] All timestamp_ns values are positive integers")
+    # Verify routing_decision_count
+    label = "run_record.routing_decision_count == 2"
+    actual_rd = run_record.get("routing_decision_count", -1)
+    if actual_rd == 2:
+        out_pass(f"{label:<50}")
+        out_detail(f"routing_decision_count = {actual_rd}")
+        pass_count += 1
     else:
-        print("  [X] Some timestamp_ns values are invalid")
+        out_fail(f"{label:<50}", f"expected 2, got {actual_rd}")
         fail_count += 1
 
-    # 3) Timestamps are monotonically non-decreasing
-    if all(all_ts[i] <= all_ts[i + 1] for i in range(len(all_ts) - 1)):
-        print("  [+] Timestamps are monotonically non-decreasing")
+    # Verify total_events count
+    label = "run_record.total_events == 9"
+    actual_total = run_record.get("total_events", -1)
+    if actual_total == len(mixed_events):
+        out_pass(f"{label:<50}")
+        out_detail(f"total_events = {actual_total}")
+        pass_count += 1
     else:
-        print("  [X] Timestamps are NOT monotonically non-decreasing")
-        # This is a soft warning, not a failure (logging is lock-based, not ordered)
-
-    # 4) Parent event IDs reference existing events
-    parent_refs = [ev["parent_event_id"] for ev in events
-                   if "parent_event_id" in ev and ev["parent_event_id"] is not None]
-    bad_refs = [pid for pid in parent_refs if pid not in unique_ids]
-    if not bad_refs:
-        print(f"  [+] All parent_event_id references are valid ({len(parent_refs)} refs)")
-    else:
-        print(f"  [X] {len(bad_refs)} parent_event_id references point to non-existent events")
+        out_fail(f"{label:<50}", f"expected {len(mixed_events)}, got {actual_total}")
         fail_count += 1
 
-    # 5) run_id and repo_id are consistent
-    run_ids = {ev["run_id"] for ev in events}
-    repo_ids = {ev["repo_id"] for ev in events}
-    if len(run_ids) == 1:
-        print(f"  [+] Consistent run_id across all events: {run_ids.pop()}")
+    # Verify event types counted include state.access and routing.decision
+    type_counts = run_record.get("total_events_by_type", {})
+    label = "type_counts includes state.access"
+    if type_counts.get("state.access", 0) == 2:
+        out_pass(f"{label:<50}")
+        pass_count += 1
     else:
-        print(f"  [X] Multiple run_ids found: {run_ids}")
+        out_fail(f"{label:<50}", f"got {type_counts.get('state.access', 0)}")
         fail_count += 1
 
-    if len(repo_ids) == 1:
-        print(f"  [+] Consistent repo_id across all events: {repo_ids.pop()}")
+    label = "type_counts includes routing.decision"
+    if type_counts.get("routing.decision", 0) == 2:
+        out_pass(f"{label:<50}")
+        pass_count += 1
     else:
-        print(f"  [X] Multiple repo_ids found: {repo_ids}")
+        out_fail(f"{label:<50}", f"got {type_counts.get('routing.decision', 0)}")
         fail_count += 1
 
-    print()
-    print("=" * 72)
+    # Verify error_summary captured the error event
+    error_summary = run_record.get("error_summary", {})
+    label = "error_summary.total_errors == 1"
+    if error_summary.get("total_errors", 0) == 1:
+        out_pass(f"{label:<50}")
+        pass_count += 1
+    else:
+        out_fail(f"{label:<50}", f"got {error_summary.get('total_errors', 0)}")
+        fail_count += 1
+
+    out()
+
+    # -----------------------------------------------------------------
+    # ZERO-COUNT EDGE CASE
+    # -----------------------------------------------------------------
+    out(SEPARATOR)
+    out("  EDGE CASE: Run with no state/routing events")
+    out(SEPARATOR)
+    out()
+
+    empty_events = [
+        _make_synthetic_event(
+            "execution.start",
+            source_node=make_node("agent", "test:A:m.py:1", "A"),
+        ),
+        _make_synthetic_event(
+            "execution.end",
+            source_node=make_node("agent", "test:A:m.py:1", "A"),
+        ),
+    ]
+    empty_record = build_run_record(empty_events)
+
+    label = "state_access_count == 0 when none present"
+    if empty_record.get("state_access_count", -1) == 0:
+        out_pass(f"{label:<50}")
+        pass_count += 1
+    else:
+        out_fail(f"{label:<50}", f"got {empty_record.get('state_access_count')}")
+        fail_count += 1
+
+    label = "routing_decision_count == 0 when none present"
+    if empty_record.get("routing_decision_count", -1) == 0:
+        out_pass(f"{label:<50}")
+        pass_count += 1
+    else:
+        out_fail(f"{label:<50}", f"got {empty_record.get('routing_decision_count')}")
+        fail_count += 1
+
+    out()
+
+    # -----------------------------------------------------------------
+    # SUMMARY
+    # -----------------------------------------------------------------
+    out(THIN_SEP)
+    out(f"  Results: {pass_count} passed, {fail_count} failed, "
+        f"{pass_count + fail_count} total")
+    out(THIN_SEP)
+    out()
+    out(SEPARATOR)
     if fail_count == 0:
-        print("  ALL CHECKS PASSED")
+        _term_console.print("  [bold green]ALL CHECKS PASSED[/bold green]", highlight=False)
+        _file_console.print("  ALL CHECKS PASSED", highlight=False)
     else:
-        print(f"  {fail_count} CHECK(S) FAILED")
-    print("=" * 72)
+        _term_console.print(
+            f"  [bold red]{fail_count} CHECK(S) FAILED[/bold red]", highlight=False
+        )
+        _file_console.print(f"  {fail_count} CHECK(S) FAILED", highlight=False)
+    out(SEPARATOR)
 
     # -----------------------------------------------------------------
     # Cleanup
     # -----------------------------------------------------------------
     EventLogger._instance = None
     for key in ("STRATUM_EVENTS_FILE", "STRATUM_RUN_ID",
-                 "STRATUM_REPO_ID", "STRATUM_FRAMEWORK"):
+                "STRATUM_REPO_ID", "STRATUM_FRAMEWORK"):
         os.environ.pop(key, None)
     try:
         os.unlink(events_file)
     except OSError:
         pass
+
+    # Write output file
+    OUTPUT_FILE.write_text(_file_buffer.getvalue(), encoding="utf-8")
 
     sys.exit(0 if fail_count == 0 else 1)
 

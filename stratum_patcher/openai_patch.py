@@ -18,6 +18,7 @@ from typing import Any
 from stratum_patcher.event_logger import (
     EventLogger,
     capture_output_signature,
+    classify_error,
     get_caller_info,
     get_data_shape,
     make_node,
@@ -31,24 +32,16 @@ _PATCHED = False
 # vLLM-served model so requests don't fail on unknown model names.
 # ---------------------------------------------------------------------------
 
-VLLM_MODEL = os.environ.get("STRATUM_VLLM_MODEL", "Qwen/Qwen2.5-72B-Instruct")
+VLLM_MODEL = os.environ.get("STRATUM_VLLM_MODEL", "")
 
-MODEL_MAP: dict[str, str] = {
-    "gpt-4": VLLM_MODEL,
-    "gpt-4o": VLLM_MODEL,
-    "gpt-4o-mini": VLLM_MODEL,
-    "gpt-4-turbo": VLLM_MODEL,
-    "gpt-4-turbo-preview": VLLM_MODEL,
-    "gpt-3.5-turbo": VLLM_MODEL,
-    "gpt-3.5-turbo-16k": VLLM_MODEL,
-    "gpt-4-1106-preview": VLLM_MODEL,
-    "gpt-4-0125-preview": VLLM_MODEL,
-    # Claude model names (if anthropic_patch routes through)
-    "claude-3-opus-20240229": VLLM_MODEL,
-    "claude-3-sonnet-20240229": VLLM_MODEL,
-    "claude-3-haiku-20240307": VLLM_MODEL,
-    "claude-3-5-sonnet-20241022": VLLM_MODEL,
-}
+
+def remap_model(model: str) -> str:
+    """Remap any model name to the vLLM-served model when STRATUM_VLLM_MODEL is set."""
+    if not VLLM_MODEL:
+        return model  # No remapping if env var not set (local dev, tests)
+    if model and model.startswith(("gpt-", "claude-", "o1-", "o3-", "chatgpt-")):
+        return VLLM_MODEL
+    return model
 
 
 def _map_model(kwargs: dict[str, Any]) -> tuple[str, str]:
@@ -57,7 +50,7 @@ def _map_model(kwargs: dict[str, Any]) -> tuple[str, str]:
     Returns (original_model, mapped_model).
     """
     original = kwargs.get("model", "")
-    mapped = MODEL_MAP.get(original, VLLM_MODEL)
+    mapped = remap_model(original)
     kwargs["model"] = mapped
     return original, mapped
 
@@ -191,6 +184,7 @@ def _wrap_sync_create(original: Any) -> Any:
                 "has_tools": bool(kwargs.get("tools") or kwargs.get("functions")),
             },
         )
+        logger.push_active_node(node_id)
 
         t0 = time.perf_counter()
         error: Exception | None = None
@@ -204,6 +198,8 @@ def _wrap_sync_create(original: Any) -> Any:
         finally:
             latency_ms = (time.perf_counter() - t0) * 1000.0
             payload = _build_payload(kwargs, result, latency_ms, error)
+            payload["error_type"] = classify_error(error) if error else None
+            payload["active_node_stack"] = list(logger._active_node_stack)
             # Semantic content capture on llm.call_end
             if error is None and result is not None:
                 try:
@@ -223,6 +219,9 @@ def _wrap_sync_create(original: Any) -> Any:
                 payload=payload,
                 parent_event_id=start_id,
             )
+            logger.pop_active_node()
+            if error:
+                logger.record_error_context(node_id=node_id, error_type=classify_error(error), error_msg=str(error))
             # Log tool call failures from vLLM
             if error is None and result is not None:
                 try:
@@ -296,6 +295,7 @@ def _wrap_async_create(original: Any) -> Any:
                 "has_tools": bool(kwargs.get("tools") or kwargs.get("functions")),
             },
         )
+        logger.push_active_node(node_id)
 
         t0 = time.perf_counter()
         error: Exception | None = None
@@ -309,6 +309,8 @@ def _wrap_async_create(original: Any) -> Any:
         finally:
             latency_ms = (time.perf_counter() - t0) * 1000.0
             payload = _build_payload(kwargs, result, latency_ms, error)
+            payload["error_type"] = classify_error(error) if error else None
+            payload["active_node_stack"] = list(logger._active_node_stack)
             # Semantic content capture on async llm.call_end
             if error is None and result is not None:
                 try:
@@ -328,6 +330,9 @@ def _wrap_async_create(original: Any) -> Any:
                 payload=payload,
                 parent_event_id=start_id,
             )
+            logger.pop_active_node()
+            if error:
+                logger.record_error_context(node_id=node_id, error_type=classify_error(error), error_msg=str(error))
             if error is None and result is not None:
                 try:
                     tc = payload.get("tool_calls_made", [])

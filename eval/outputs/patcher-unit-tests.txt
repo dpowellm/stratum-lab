@@ -1,74 +1,222 @@
-============================= test session starts =============================
-platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\dpowe\AppData\Local\Programs\Python\Python312\python.exe
-cachedir: .pytest_cache
-rootdir: C:\Users\dpowe\OneDrive\Documents\Coding Projects\stratum-observability\stratum-lab
-configfile: pyproject.toml
-plugins: anyio-4.12.1
-collecting ... collected 46 items
-
-tests/test_patchers.py::TestEventLogger::test_singleton_identity PASSED  [  2%]
-tests/test_patchers.py::TestEventLogger::test_log_event_returns_event_id PASSED [  4%]
-tests/test_patchers.py::TestEventLogger::test_log_event_writes_valid_jsonl PASSED [  6%]
-tests/test_patchers.py::TestEventLogger::test_log_event_with_all_optional_fields PASSED [  8%]
-tests/test_patchers.py::TestEventLogger::test_run_id_and_repo_id_from_env PASSED [ 10%]
-tests/test_patchers.py::TestEventLogger::test_generate_node_id PASSED    [ 13%]
-tests/test_patchers.py::TestEventLogger::test_make_node PASSED           [ 15%]
-tests/test_patchers.py::TestEventLogger::test_hash_content PASSED        [ 17%]
-tests/test_patchers.py::TestEventLogger::test_get_data_shape PASSED      [ 19%]
-tests/test_patchers.py::TestEventLogger::test_capture_output_signature_none PASSED [ 21%]
-tests/test_patchers.py::TestEventLogger::test_capture_output_signature_string PASSED [ 23%]
-tests/test_patchers.py::TestEventLogger::test_capture_output_signature_long_text PASSED [ 26%]
-tests/test_patchers.py::TestEventLogger::test_capture_output_signature_classification PASSED [ 28%]
-tests/test_patchers.py::TestEventLogger::test_capture_output_signature_routing PASSED [ 30%]
-tests/test_patchers.py::TestEventLogger::test_capture_output_signature_scored PASSED [ 32%]
-tests/test_patchers.py::TestEventLogger::test_capture_output_signature_structured_json PASSED [ 34%]
-tests/test_patchers.py::TestOpenAIPatch::test_openai_patch_wraps_create PASSED [ 36%]
-tests/test_patchers.py::TestOpenAIPatch::test_openai_patch_emits_events FAILED [ 39%]
-tests/test_patchers.py::TestOpenAIPatch::test_openai_patch_semantic_fields PASSED [ 41%]
-tests/test_patchers.py::TestOpenAIPatch::test_openai_patch_parent_event_chain PASSED [ 43%]
-tests/test_patchers.py::TestGenericPatch::test_generic_patch_module_loads PASSED [ 45%]
-tests/test_patchers.py::TestGenericPatch::test_requests_wrapping PASSED  [ 47%]
-tests/test_patchers.py::TestGenericPatch::test_builtins_open_wrapping PASSED [ 50%]
-tests/test_patchers.py::TestGenericPatch::test_excepthook_wrapping PASSED [ 52%]
-tests/test_patchers.py::TestGenericPatch::test_file_open_under_app_emits_event PASSED [ 54%]
-tests/test_patchers.py::TestGenericPatch::test_domain_extraction PASSED  [ 56%]
-tests/test_patchers.py::TestCrewAIPatch::test_crewai_patch_loads PASSED  [ 58%]
-tests/test_patchers.py::TestCrewAIPatch::test_crewai_wrapper_functions_exist PASSED [ 60%]
-tests/test_patchers.py::TestCrewAIPatch::test_crewai_kickoff_wrapper_emits_events PASSED [ 63%]
-tests/test_patchers.py::TestLangGraphPatch::test_langgraph_patch_loads PASSED [ 65%]
-tests/test_patchers.py::TestLangGraphPatch::test_langgraph_wrapper_functions_exist PASSED [ 67%]
-tests/test_patchers.py::TestLangGraphPatch::test_langgraph_invoke_wrapper_emits_events PASSED [ 69%]
-tests/test_patchers.py::TestAutoGenPatch::test_autogen_patch_loads PASSED [ 71%]
-tests/test_patchers.py::TestAutoGenPatch::test_autogen_wrapper_functions_exist PASSED [ 73%]
-tests/test_patchers.py::TestAutoGenPatch::test_autogen_receive_wrapper_emits_events PASSED [ 76%]
-tests/test_patchers.py::TestAnthropicPatch::test_anthropic_patch_loads PASSED [ 78%]
-tests/test_patchers.py::TestAnthropicPatch::test_translate_messages_basic PASSED [ 80%]
-tests/test_patchers.py::TestAnthropicPatch::test_translate_messages_with_tool_use PASSED [ 82%]
-tests/test_patchers.py::TestAnthropicPatch::test_translate_tools PASSED  [ 84%]
-tests/test_patchers.py::TestAnthropicPatch::test_translate_response_to_anthropic PASSED [ 86%]
-tests/test_patchers.py::TestCrossPatcherIntegration::test_multiple_event_types_in_single_file PASSED [ 89%]
-tests/test_patchers.py::TestAsyncOpenAIPatch::test_async_openai_patch PASSED [ 91%]
-tests/test_patchers.py::TestLangChainChainPatch::test_langchain_chain_invoke PASSED [ 93%]
-tests/test_patchers.py::TestLangChainChatModelPatch::test_langchain_chat_model_generate PASSED [ 95%]
-tests/test_patchers.py::TestBareHTTPOpenAIPatch::test_bare_http_openai_detection PASSED [ 97%]
-tests/test_patchers.py::TestBareHTTPOpenAIPatch::test_bare_http_openai_emits_events PASSED [100%]
-
-================================== FAILURES ===================================
-_______________ TestOpenAIPatch.test_openai_patch_emits_events ________________
-tests\test_patchers.py:376: in test_openai_patch_emits_events
-    assert payload.get("model_requested") == "test-model"
-E   AssertionError: assert 'Qwen/Qwen2.5-72B-Instruct' == 'test-model'
-E     
-E     - test-model
-E     + Qwen/Qwen2.5-72B-Instruct
-============================== warnings summary ===============================
-tests/test_patchers.py::TestAsyncOpenAIPatch::test_async_openai_patch
-  C:\Users\dpowe\OneDrive\Documents\Coding Projects\stratum-observability\stratum-lab\tests\test_patchers.py:1003: DeprecationWarning: There is no current event loop
-    result = asyncio.get_event_loop().run_until_complete(_call_async())
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-=========================== short test summary info ===========================
-FAILED tests/test_patchers.py::TestOpenAIPatch::test_openai_patch_emits_events
-=================== 1 failed, 45 passed, 1 warning in 2.21s ===================
+ STRATUM PATCHER UNIT TESTS (v6) 
+Validation check 21: Patcher unit tests pass
+Output: C:\Users\dpowe\OneDrive\Documents\Coding 
+Projects\stratum-observability\stratum-lab\eval\outputs\patcher-unit-tests.txt
 
 
+--- 1. EventLogger Basic Functionality ---
+  PASS  EventLogger.get() returns singleton
+  PASS  run_id from env  --  got 'test-run-001'
+  PASS  repo_id from env  --  got 'test-repo-001'
+  PASS  framework from env  --  got 'test-framework'
+  PASS  log_event returns evt_ prefixed id  --  got 'evt_2b461b63fe9a43a5'
+  PASS  Event written to JSONL file  --  found 1 events
+  PASS  Event has all required fields  --  all present
+  PASS  event_id matches returned value
+  PASS  event_type is correct
+  PASS  timestamp_ns is positive int
+  PASS  run_id matches env
+  PASS  repo_id matches env
+  PASS  payload preserved
+  PASS  source_node round-trips
+  PASS  target_node round-trips
+  PASS  edge_type round-trips
+  PASS  parent_event_id round-trips
+  PASS  stack_depth round-trips
+  PASS  20 events have 20 unique IDs  --  got 20 unique
+
+--- 2. EventLogger v6 Features ---
+  Active node stack management
+  PASS  current_node empty on fresh logger  --  got ''
+  PASS  parent_node empty on fresh logger  --  got ''
+  PASS  current_node after push
+  PASS  parent_node with one node is empty
+  PASS  current_node after second push
+  PASS  parent_node with two nodes
+  PASS  current_node after third push
+  PASS  parent_node with three nodes
+  PASS  pop_active_node returns popped node  --  got 
+'crewai:Reviewer:agents.py:50'
+  PASS  current_node after pop
+  PASS  second pop returns correct node
+  PASS  third pop returns correct node
+  PASS  pop on empty stack returns empty string  --  got ''
+  Edge activation recording
+  PASS  edge_activations has 2 entries  --  got 2
+  PASS  edge[0] source correct
+  PASS  edge[0] target correct
+  PASS  edge[0] data_hash correct
+  PASS  edge[0] has timestamp
+  PASS  edge[0] has run_id
+  PASS  edge[1] data_hash defaults to empty  --  got ''
+  Error context recording
+  PASS  error_context_stack has 1 entry  --  got 1
+  PASS  error_context node_id correct
+  PASS  error_context error_type correct
+  PASS  error_context error_msg truncated to 500
+  PASS  error_context upstream_node correct
+  PASS  error_context upstream_output_hash correct
+  PASS  error_context has timestamp
+  PASS  error_context active_stack captured
+  PASS  error_msg truncated at 500 chars  --  got length 500
+  Error classification
+  PASS  classify timeout error
+  PASS  classify missing key error
+  PASS  classify json decode error
+  PASS  classify type expected error
+  PASS  classify rate limit error
+  PASS  classify api error
+  PASS  classify http error
+  PASS  classify connection error
+  PASS  classify permission error
+  PASS  classify access error
+  PASS  classify KeyError type
+  PASS  classify TypeError type
+  PASS  classify ValueError type
+  PASS  classify AttributeError type
+  PASS  classify generic runtime error
+  PASS  classify unknown exception fallback
+
+--- 3. Helper Functions ---
+  make_node
+  PASS  make_node returns dict
+  PASS  make_node has node_type
+  PASS  make_node has node_id
+  PASS  make_node has node_name
+  PASS  make_node has exactly 3 keys
+  generate_node_id
+  PASS  generate_node_id format  --  got 'crewai:Researcher:agents.py:10'
+  PASS  generate_node_id with str line  --  got 'langchain:Chain:chain.py:42'
+  get_caller_info
+  PASS  get_caller_info returns 3-tuple
+  PASS  get_caller_info filename not unknown  --  got 
+'C:\\Users\\dpowe\\OneDrive\\Documents\\Coding 
+Projects\\stratum-observability\\stratum-lab\\eval\\test_patchers.py'
+  PASS  get_caller_info lineno positive  --  got 433
+  PASS  get_caller_info funcname is this function  --  got 
+'test_helper_functions'
+  PASS  get_caller_info deep skip returns unknown
+  hash_content
+  PASS  hash_content returns hex string  --  len=64
+  PASS  hash_content is deterministic
+  PASS  hash_content differs for different input
+  PASS  hash_content handles dict
+  PASS  hash_content handles None
+  get_data_shape
+  PASS  get_data_shape None
+  PASS  get_data_shape str  --  got 'str(len=5)'
+  PASS  get_data_shape bytes  --  got 'bytes(len=3)'
+  PASS  get_data_shape int
+  PASS  get_data_shape float
+  PASS  get_data_shape bool
+  PASS  get_data_shape dict  --  got "dict(keys=['a', 'b'], len=2)"
+  PASS  get_data_shape list  --  got 'list(len=3, inner=int)'
+  PASS  get_data_shape tuple  --  got 'tuple(len=2, inner=int)'
+  PASS  get_data_shape custom class  --  got 
+'test_helper_functions.<locals>.MyWidget'
+  PASS  get_data_shape big dict has ellipsis  --  got "dict(keys=['key_0', 
+'key_1', 'key_10', 'key_11', 'key_12', 'key_13', 'key_14', 'key_2', 'key_3', 
+'key_4', ...], len=15)"
+  PASS  get_data_shape empty list  --  got 'list(len=0, inner=empty)'
+  capture_output_signature
+  PASS  capture_output_signature None type
+  PASS  capture_output_signature None hash is None
+  PASS  capture_output_signature None size_bytes 0
+  PASS  capture_output_signature short string type  --  got 'short_text'
+  PASS  capture_output_signature has hash
+  PASS  capture_output_signature has size_bytes
+  PASS  capture_output_signature has preview
+  PASS  capture_output_signature long string type  --  got 'long_text'
+  PASS  capture_output_signature preview truncated to 200
+  PASS  capture_output_signature classification type  --  got 'classification'
+  PASS  capture_output_signature classification_fields extracted
+  PASS  capture_output_signature classification field value
+  PASS  capture_output_signature routing type  --  got 'routing_decision'
+  PASS  capture_output_signature scored type  --  got 'scored_output'
+  PASS  capture_output_signature structured_json type  --  got 
+'structured_json'
+  PASS  capture_output_signature structure has key types
+  PASS  capture_output_signature deterministic hash
+  PASS  capture_output_signature different input different hash
+
+--- 4. Patcher Module Importability ---
+  PASS  import stratum_patcher.event_logger
+  PASS  import stratum_patcher.crewai_patch
+  PASS  import stratum_patcher.openai_patch
+  PASS  import stratum_patcher.anthropic_patch
+  PASS  import stratum_patcher.langchain_patch
+  PASS  import stratum_patcher.langgraph_patch
+  PASS  import stratum_patcher.autogen_patch
+  PASS  import stratum_patcher.generic_patch
+
+--- 5. _PATCHED Idempotency Flags ---
+  PASS  crewai_patch has _PATCHED flag
+  PASS  crewai_patch._PATCHED is bool  --  type=bool, value=True
+  PASS  openai_patch has _PATCHED flag
+  PASS  openai_patch._PATCHED is bool  --  type=bool, value=True
+  PASS  anthropic_patch has _PATCHED flag
+  PASS  anthropic_patch._PATCHED is bool  --  type=bool, value=True
+  PASS  langchain_patch has _PATCHED flag
+  PASS  langchain_patch._PATCHED is bool  --  type=bool, value=True
+  PASS  langgraph_patch has _PATCHED flag
+  PASS  langgraph_patch._PATCHED is bool  --  type=bool, value=True
+  PASS  autogen_patch has _PATCHED flag
+  PASS  autogen_patch._PATCHED is bool  --  type=bool, value=True
+  PASS  generic_patch has _PATCHED flag
+  PASS  generic_patch._PATCHED is bool  --  type=bool, value=True
+
+--- 6. Event Types Emitted Through Logger ---
+  PASS  All 19 event types emitted  --  got 19 events
+  PASS  event type execution.start present
+  PASS  event type execution.start has correct event_id
+  PASS  event type execution.end present
+  PASS  event type execution.end has correct event_id
+  PASS  event type agent.task_start present
+  PASS  event type agent.task_start has correct event_id
+  PASS  event type agent.task_end present
+  PASS  event type agent.task_end has correct event_id
+  PASS  event type delegation.initiated present
+  PASS  event type delegation.initiated has correct event_id
+  PASS  event type delegation.completed present
+  PASS  event type delegation.completed has correct event_id
+  PASS  event type tool.invoked present
+  PASS  event type tool.invoked has correct event_id
+  PASS  event type tool.completed present
+  PASS  event type tool.completed has correct event_id
+  PASS  event type tool.call_failure present
+  PASS  event type tool.call_failure has correct event_id
+  PASS  event type llm.call_start present
+  PASS  event type llm.call_start has correct event_id
+  PASS  event type llm.call_end present
+  PASS  event type llm.call_end has correct event_id
+  PASS  event type data.read present
+  PASS  event type data.read has correct event_id
+  PASS  event type data.write present
+  PASS  event type data.write has correct event_id
+  PASS  event type error.occurred present
+  PASS  event type error.occurred has correct event_id
+  PASS  event type error.propagated present
+  PASS  event type error.propagated has correct event_id
+  PASS  event type error.cascade present
+  PASS  event type error.cascade has correct event_id
+  PASS  event type decision.made present
+  PASS  event type decision.made has correct event_id
+  PASS  event type guardrail.triggered present
+  PASS  event type guardrail.triggered has correct event_id
+  PASS  event type external.call present
+  PASS  event type external.call has correct event_id
+  PASS  Consistent run_id across all events  --  found {'event-type-test'}
+  PASS  Consistent repo_id across all events  --  found {'event-type-repo'}
+  PASS  All event_ids unique  --  19 total, 19 unique
+  PASS  Timestamps non-decreasing
+  PASS  delegation.initiated has edge_type
+  PASS  tool.invoked has edge_type
+  PASS  agent.task_end payload has output_hash  --  keys: ['status', 
+'output_hash']
+  PASS  llm.call_end payload has output_hash
+  PASS  llm.call_end payload has output_type
+
+========================================================================
+  RESULTS: 181 passed, 0 failed, 181 total
+========================================================================
+  ALL CHECKS PASSED

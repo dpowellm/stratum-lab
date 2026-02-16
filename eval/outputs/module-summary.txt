@@ -9,20 +9,20 @@ Doc:    Stratum Lab — Behavioral scan infrastructure for AI agent repos.
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\cli.py
-Lines:  497
+Lines:  525
 Doc:    Main CLI entry point for stratum-lab pipeline.
 Deps:   click, collections, csv, json, pathlib, rich, stratum_lab
   Functions (9):
     main() (line 10): Stratum Lab — Behavioral scan infrastructure for AI agent repos.
-    select() (line 21): Phase 1: Select repos from 50k structural scan output.
+    select() (line 21): Phase 1: Select repos for graph discovery coverage.
     execute() (line 42): Phase 2: Execute selected repos in sandboxed containers.
     collect() (line 56): Phase 3: Parse raw event files into structured run records.
     overlay() (line 70): Phase 4: Merge behavioral data onto structural graphs.
     knowledge() (line 83): Build cross-repo pattern knowledge base from enriched graphs.
     query() (line 100): Query the behavioral dataset with a structural graph to predict risks.
-    pipeline() (line 175): Run the full pipeline: triage -> probe -> select -> execute -> collect -> overlay -> knowledge -> reports.
-    validate_ids() (line 426): Validate node ID compatibility between structural scan and patcher.
-  Click options (30):
+    pipeline() (line 178): Run the full stratum-lab pipeline.
+    validate_ids() (line 454): Validate node ID compatibility between structural scan and patcher.
+  Click options (31):
     -o/--output: Output selection file path.
     -n/--target: Target number of repos to select.
     --min-runnability: Minimum runnability score filter.
@@ -40,17 +40,18 @@ Deps:   click, collections, csv, json, pathlib, rich, stratum_lab
     --knowledge-base/-kb: click
     --output-format: click
     --output/-o: click
+    --target: Target number of repos to select.
     --vllm-url: vLLM endpoint URL.
     --concurrent: Concurrent containers.
     --max-concurrent: Max concurrent container executions.
     --timeout: Execution timeout seconds.
-    --pilot: Run pilot batch with quality gate before full scan.
     --pilot-size: Number of repos in pilot batch.
     --max-instrumentation-failure-rate: Abort if instrumentation failure rate exceeds this in pilot.
     --max-model-failure-rate: Abort if model failure rate exceeds this in pilot.
     --enterprise-outreach: Run enterprise classification + contact extraction + outreach queue generation.
     --probe-batch-size: int
     --probe-timeout: Probe timeout in seconds.
+    --output-dir: click
     --graph-json: click
     --events-dir: click
 
@@ -69,14 +70,14 @@ Deps:   __future__, collections, json, pathlib, rich, stratum_lab, time, typing
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\collection\parser.py
-Lines:  481
+Lines:  493
 Doc:    JSONL event parser and run record builder.
 Deps:   __future__, collections, json, logging, pathlib, typing
   Functions (4):
-    validate_event() (line 46): Validate that an event dict has all required fields.
-    parse_events_file() (line 68): Read a JSONL file line by line and return a list of EventRecord dicts.
-    build_run_record() (line 142): Build a structured RunRecord from parsed events and optional metadata.
-    aggregate_run_records() (line 341): Aggregate multiple run records for the same repo into a repo-level summary.
+    validate_event() (line 48): Validate that an event dict has all required fields.
+    parse_events_file() (line 70): Read a JSONL file line by line and return a list of EventRecord dicts.
+    build_run_record() (line 144): Build a structured RunRecord from parsed events and optional metadata.
+    aggregate_run_records() (line 353): Aggregate multiple run records for the same repo into a repo-level summary.
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\config.py
@@ -85,6 +86,19 @@ Doc:    Global configuration constants for stratum-lab.
 Deps:   pathlib
   Classes (1):
     class ExecutionStatus (line 35): (no docstring)
+
+------------------------------------------------------------------------------
+Module: stratum_lab\feedback\__init__.py
+Lines:  1
+Doc:    Feedback export — artifacts importable by the reliability scanner.
+
+------------------------------------------------------------------------------
+Module: stratum_lab\feedback\exporter.py
+Lines:  214
+Doc:    Feedback export module.
+Deps:   __future__, json, pathlib, typing
+  Functions (1):
+    export_feedback() (line 18): Export feedback artifacts from behavioral records.
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\harness\__init__.py
@@ -170,15 +184,6 @@ Deps:   __future__, json, pathlib, rich, stratum_lab, time, typing
     run_knowledge_build() (line 194): Build the cross-repo pattern knowledge base.
 
 ------------------------------------------------------------------------------
-Module: stratum_lab\knowledge\dataset_quality.py
-Lines:  145
-Doc:    Dataset quality validation.
-Deps:   __future__, math, typing
-  Functions (2):
-    wilson_ci_width() (line 13): Wilson score CI width at 95% confidence for proportion p with sample n.
-    validate_dataset_quality() (line 24): Validate dataset meets quality requirements.
-
-------------------------------------------------------------------------------
 Module: stratum_lab\knowledge\fragility.py
 Lines:  232
 Doc:    Fragility map builder.
@@ -252,6 +257,20 @@ Deps:   __future__, re
     match_runtime_to_structural() (line 61): Attempt to match a runtime node ID to a structural graph node.
 
 ------------------------------------------------------------------------------
+Module: stratum_lab\output\__init__.py
+Lines:  1
+Doc:    Output modules — behavioral record assembly.
+
+------------------------------------------------------------------------------
+Module: stratum_lab\output\behavioral_record.py
+Lines:  52
+Doc:    Per-repo behavioral record assembly.
+Deps:   __future__, typing
+  Functions (2):
+    build_behavioral_record() (line 11): Assemble the per-repo behavioral record for stratum-graph.
+    validate_behavioral_record() (line 38): Validate a behavioral record has all required fields.
+
+------------------------------------------------------------------------------
 Module: stratum_lab\outreach\__init__.py
 Lines:  1
 Doc:    Enterprise identification and outreach infrastructure.
@@ -318,31 +337,58 @@ Doc:    Phase 4: Graph Overlay — behavioral enrichment of structural graphs.
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\overlay\cli.py
-Lines:  307
+Lines:  342
 Doc:    CLI runner for Phase 4: Graph Overlay.
 Deps:   __future__, collections, json, pathlib, rich, stratum_lab, time, typing
   Functions (1):
-    run_overlay() (line 177): Merge behavioral data onto structural graphs.
+    run_overlay() (line 180): Merge behavioral data onto structural graphs.
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\overlay\edges.py
-Lines:  353
+Lines:  592
 Doc:    Emergent and dead edge detection.
 Deps:   __future__, collections, stratum_lab, typing
-  Functions (3):
+  Functions (4):
     detect_emergent_edges() (line 20): Find runtime interactions with no corresponding structural edge.
-    detect_dead_edges() (line 110): Find structural edges that were never traversed at runtime.
-    classify_edge_significance() (line 197): Classify the significance of an emergent edge.
+    detect_emergent_edges_v2() (line 106): Detect runtime interactions with no structural counterpart.
+    detect_dead_edges() (line 349): Find structural edges that were never traversed at runtime.
+    classify_edge_significance() (line 436): Classify the significance of an emergent edge.
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\overlay\enricher.py
-Lines:  1540
+Lines:  1861
 Doc:    Graph enrichment engine.
 Deps:   __future__, collections, math, numpy, stratum_lab, typing
-  Functions (3):
-    compute_node_behavioral_overlay() (line 52): Compute behavioral statistics for one structural node.
-    compute_edge_behavioral_overlay() (line 378): Compute behavioral statistics for one structural edge.
-    enrich_graph() (line 487): Enrich a structural graph with behavioral data from runtime events.
+  Functions (5):
+    compute_node_behavioral_overlay() (line 55): Compute behavioral statistics for one structural node.
+    compute_edge_behavioral_overlay() (line 381): Compute behavioral statistics for one structural edge.
+    compute_edge_validation() (line 490): Compute edge validation matrix.
+    compute_node_activation() (line 688): Classify nodes by activation pattern.
+    enrich_graph() (line 797): Enrich a structural graph with behavioral data from runtime events.
+
+------------------------------------------------------------------------------
+Module: stratum_lab\overlay\error_propagation.py
+Lines:  198
+Doc:    Error propagation path reconstruction.
+Deps:   __future__, collections, typing
+  Functions (1):
+    trace_error_propagation() (line 17): Trace error propagation paths from runtime events.
+
+------------------------------------------------------------------------------
+Module: stratum_lab\overlay\failure_modes.py
+Lines:  214
+Doc:    Failure mode classification against finding taxonomy.
+Deps:   __future__, collections, typing
+  Functions (1):
+    classify_failure_modes() (line 52): Classify failure modes from runtime behavioral evidence.
+
+------------------------------------------------------------------------------
+Module: stratum_lab\overlay\monitoring_baselines.py
+Lines:  152
+Doc:    Monitoring baseline extraction from behavioral observations.
+Deps:   __future__, collections, math, typing
+  Functions (1):
+    extract_monitoring_baselines() (line 43): Extract monitoring baselines from behavioral observations.
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\overlay\semantic_lineage.py
@@ -352,14 +398,6 @@ Deps:   collections, typing
   Functions (2):
     reconstruct_lineage() (line 14): Build the semantic lineage graph from events.
     depth() (line 140): (no docstring)
-
-------------------------------------------------------------------------------
-Module: stratum_lab\overlay\taxonomy_confirmation.py
-Lines:  290
-Doc:    Taxonomy precondition confirmation module.
-Deps:   __future__, collections, typing
-  Functions (1):
-    confirm_taxonomy_preconditions() (line 228): Confirm or deny taxonomy preconditions using runtime behavioral data.
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\query\__init__.py
@@ -421,21 +459,29 @@ Doc:    Phase 1: Repo Selection — scoring and selection of repos for behavioral 
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\selection\cli.py
-Lines:  186
+Lines:  204
 Doc:    CLI runner for Phase 1: Repo Selection.
 Deps:   __future__, json, pathlib, rich, stratum_lab, time, typing
   Functions (1):
-    run_selection() (line 110): Load structural scans, score, select, and write output JSON.
+    run_selection() (line 112): Load scan results, apply discovery optimizer, and write output JSON.
 
 ------------------------------------------------------------------------------
-Module: stratum_lab\selection\power_optimizer.py
-Lines:  314
-Doc:    Statistical power-aware selection.
-Deps:   __future__, collections, math, typing
+Module: stratum_lab\selection\discovery_optimizer.py
+Lines:  225
+Doc:    Graph discovery coverage optimizer.
+Deps:   __future__, typing
   Functions (3):
-    compute_marginal_value() (line 79): Compute the marginal value of adding this repo to the current selection.
-    select_power_optimized() (line 161): Select repos to maximize statistical power across all claims.
-    validate_composition() (line 252): Validate that the selected dataset meets composition requirements.
+    compute_discovery_value() (line 66): Compute the marginal graph discovery value of adding this repo.
+    select_for_discovery() (line 138): Select repos to maximize graph discovery coverage.
+    validate_coverage() (line 189): Validate the selected set meets coverage requirements.
+
+------------------------------------------------------------------------------
+Module: stratum_lab\selection\schema.py
+Lines:  39
+Doc:    Input schema for repo selection.
+Deps:   __future__, typing
+  Functions (1):
+    validate_selection_input() (line 36): Validate a repo dict has the fields needed for selection.
 
 ------------------------------------------------------------------------------
 Module: stratum_lab\selection\scorer.py
@@ -520,56 +566,69 @@ Deps:   __future__, anthropic, functools, json, openai, os, stratum_patcher, tim
 
 ------------------------------------------------------------------------------
 Module: stratum_patcher\autogen_patch.py
-Lines:  573
+Lines:  619
 Doc:    Monkey-patch for Microsoft AutoGen (pyautogen / autogen-agentchat).
 Deps:   __future__, functools, stratum_patcher, time, typing
   Functions (7):
-    patch() (line 446): Apply monkey-patches to AutoGen internals.  Idempotent.
-    wrapper() (line 38): (no docstring)
-    wrapper() (line 105): (no docstring)
-    wrapper() (line 176): (no docstring)
-    wrapper() (line 248): (no docstring)
-    wrapper() (line 322): (no docstring)
-    wrapper() (line 377): (no docstring)
+    patch() (line 492): Apply monkey-patches to AutoGen internals.  Idempotent.
+    wrapper() (line 39): (no docstring)
+    wrapper() (line 111): (no docstring)
+    wrapper() (line 182): (no docstring)
+    wrapper() (line 260): (no docstring)
+    wrapper() (line 334): (no docstring)
+    wrapper() (line 390): (no docstring)
 
 ------------------------------------------------------------------------------
 Module: stratum_patcher\crewai_patch.py
-Lines:  461
+Lines:  516
 Doc:    Monkey-patch for crewAI internals.
 Deps:   __future__, crewai, functools, langchain_core, stratum_patcher, time, traceback, typing
   Functions (7):
-    patch() (line 353): Apply monkey-patches to crewAI internals.  Idempotent.
-    wrapper() (line 41): (no docstring)
-    wrapper() (line 110): (no docstring)
-    wrapper() (line 196): (no docstring)
-    wrapper() (line 251): (no docstring)
-    patched_run() (line 338): (no docstring)
-    delegate_run() (line 418): (no docstring)
+    patch() (line 408): Apply monkey-patches to crewAI internals.  Idempotent.
+    wrapper() (line 42): (no docstring)
+    wrapper() (line 111): (no docstring)
+    wrapper() (line 212): (no docstring)
+    wrapper() (line 267): (no docstring)
+    patched_run() (line 360): (no docstring)
+    delegate_run() (line 473): (no docstring)
 
 ------------------------------------------------------------------------------
 Module: stratum_patcher\event_logger.py
-Lines:  262
+Lines:  332
 Doc:    JSONL event writer for stratum-patcher.
 Deps:   __future__, hashlib, inspect, json, os, threading, time, typing, uuid
   Classes (1):
     class EventLogger (line 171): Append-only JSONL event writer.  Singleton — use ``EventLogger.get()``.
-      .get() (line 197): Return the global singleton, creating it on first call.
-      .run_id() (line 208): (no docstring)
-      .repo_id() (line 212): (no docstring)
-      .framework() (line 216): (no docstring)
-      .log_event() (line 219): Write one JSON-line event.  Returns the generated ``event_id``.
-  Functions (11):
+      .get() (line 200): Return the global singleton, creating it on first call.
+      .run_id() (line 211): (no docstring)
+      .repo_id() (line 215): (no docstring)
+      .framework() (line 219): (no docstring)
+      .log_event() (line 222): Write one JSON-line event.  Returns the generated ``event_id``.
+      .push_active_node() (line 267): Called when a node (agent) begins execution.
+      .pop_active_node() (line 271): Called when a node (agent) finishes execution.
+      .current_node() (line 277): Return the currently-executing node ID.
+      .parent_node() (line 281): Return the parent (calling) node, or empty string.
+      .record_edge_activation() (line 285): Record that an edge was activated (delegation or data flow).
+      .record_error_context() (line 295): Record error with causal context for propagation tracing.
+  Functions (18):
     make_node() (line 24): Return a node descriptor dict suitable for event source/target fields.
     generate_node_id() (line 29): Return a runtime node ID: ``framework:ClassName:file:line``.
     get_caller_info() (line 39): Inspect the call stack and return ``(filename, lineno, func_name)``.
     hash_content() (line 59): Return a hex SHA-256 digest of *content* (stringified first).
     get_data_shape() (line 68): Return a short string describing the *shape/type* of *obj*.
     capture_output_signature() (line 107): Capture a lightweight semantic signature of agent/LLM output.
-    get() (line 197): Return the global singleton, creating it on first call.
-    run_id() (line 208): (no docstring)
-    repo_id() (line 212): (no docstring)
-    framework() (line 216): (no docstring)
-    log_event() (line 219): Write one JSON-line event.  Returns the generated ``event_id``.
+    classify_error() (line 309): Classify an error into behavioral categories.
+    get() (line 200): Return the global singleton, creating it on first call.
+    run_id() (line 211): (no docstring)
+    repo_id() (line 215): (no docstring)
+    framework() (line 219): (no docstring)
+    log_event() (line 222): Write one JSON-line event.  Returns the generated ``event_id``.
+    push_active_node() (line 267): Called when a node (agent) begins execution.
+    pop_active_node() (line 271): Called when a node (agent) finishes execution.
+    current_node() (line 277): Return the currently-executing node ID.
+    parent_node() (line 281): Return the parent (calling) node, or empty string.
+    record_edge_activation() (line 285): Record that an edge was activated (delegation or data flow).
+    record_error_context() (line 295): Record error with causal context for propagation tracing.
 
 ------------------------------------------------------------------------------
 Module: stratum_patcher\generic_patch.py
@@ -586,39 +645,39 @@ Deps:   __future__, builtins, functools, httpx, os, requests, stratum_patcher, s
 
 ------------------------------------------------------------------------------
 Module: stratum_patcher\langchain_patch.py
-Lines:  226
+Lines:  236
 Doc:    LangChain chain instrumentation for stratum-patcher.
 Deps:   __future__, functools, langchain, langchain_core, stratum_patcher, time, typing
   Functions (2):
-    patch_langchain() (line 27): Monkey-patch LangChain Chain.invoke and BaseChatModel._generate.
-    patch() (line 220): Apply LangChain patches. Alias for patch_langchain().
+    patch_langchain() (line 28): Monkey-patch LangChain Chain.invoke and BaseChatModel._generate.
+    patch() (line 230): Apply LangChain patches. Alias for patch_langchain().
 
 ------------------------------------------------------------------------------
 Module: stratum_patcher\langgraph_patch.py
-Lines:  527
+Lines:  569
 Doc:    Monkey-patch for LangGraph.
 Deps:   __future__, functools, langgraph, stratum_patcher, time, typing
   Functions (10):
-    patch() (line 429): Apply monkey-patches to langgraph internals.  Idempotent.
-    wrapper() (line 39): (no docstring)
-    wrapper() (line 111): (no docstring)
-    wrapper() (line 190): (no docstring)
-    wrapper() (line 248): (no docstring)
-    wrapper() (line 322): (no docstring)
-    wrapper() (line 379): (no docstring)
-    wrapper() (line 403): (no docstring)
-    instrumented_action() (line 253): (no docstring)
-    instrumented_path() (line 334): (no docstring)
+    patch() (line 471): Apply monkey-patches to langgraph internals.  Idempotent.
+    wrapper() (line 40): (no docstring)
+    wrapper() (line 112): (no docstring)
+    wrapper() (line 191): (no docstring)
+    wrapper() (line 249): (no docstring)
+    wrapper() (line 330): (no docstring)
+    wrapper() (line 388): (no docstring)
+    wrapper() (line 412): (no docstring)
+    instrumented_action() (line 254): (no docstring)
+    instrumented_path() (line 342): (no docstring)
 
 ------------------------------------------------------------------------------
 Module: stratum_patcher\openai_patch.py
-Lines:  443
+Lines:  456
 Doc:    Monkey-patch for the OpenAI Python client.
 Deps:   __future__, functools, json, openai, os, stratum_patcher, time, typing
   Functions (3):
-    patch() (line 355): Apply monkey-patches to the openai module.  Idempotent.
-    wrapper() (line 174): (no docstring)
-    wrapper() (line 279): (no docstring)
+    patch() (line 368): Apply monkey-patches to the openai module.  Idempotent.
+    wrapper() (line 175): (no docstring)
+    wrapper() (line 286): (no docstring)
 
 ------------------------------------------------------------------------------
 Module: stratum_patcher\runner.py
@@ -1029,7 +1088,7 @@ Deps:   json, pathlib, pytest, stratum_lab, tempfile
 ==============================================================================
 TOTALS
 ==============================================================================
-  Modules:    67
-  Lines:      20559
-  Functions:  298 (public only)
+  Modules:    73
+  Lines:      21795
+  Functions:  312 (public only)
   Classes:    86

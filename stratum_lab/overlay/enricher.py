@@ -13,7 +13,10 @@ from typing import Any
 import numpy as np
 
 from stratum_lab.overlay.edges import detect_dead_edges, detect_emergent_edges
-from stratum_lab.overlay.semantic_lineage import reconstruct_lineage
+try:
+    from stratum_lab.overlay.semantic_lineage import reconstruct_lineage
+except ImportError:
+    reconstruct_lineage = None  # subsumed into edge validation in v6
 from stratum_lab.node_ids import (
     match_runtime_to_structural,
     normalize_name,
@@ -481,6 +484,332 @@ def compute_edge_behavioral_overlay(
 
 
 # ---------------------------------------------------------------------------
+# Graph Discovery: Edge validation matrix (Issue 7)
+# ---------------------------------------------------------------------------
+
+def compute_edge_validation(
+    structural_graph: dict[str, Any],
+    events: list[dict[str, Any]],
+    run_count: int,
+) -> dict[str, Any]:
+    """Compute edge validation matrix.
+
+    For every structural edge, determine:
+    - Was it activated at runtime?
+    - How many times?
+    - Activation rate (activations / run_count)
+    """
+    structural_edges = structural_graph.get("edges", {})
+    run_count = max(run_count, 1)
+
+    activation_map = _build_edge_activation_map(events)
+
+    per_edge = []
+    dead_edges = []
+    type_activations: dict[str, list[int]] = {}
+
+    for edge_id, edge_data in structural_edges.items():
+        edge_type = edge_data.get("edge_type", "unknown")
+        source = edge_data.get("source", "")
+        target = edge_data.get("target", "")
+
+        activation_count = _count_edge_activations(
+            activation_map, source, target, edge_type
+        )
+        activation_rate = activation_count / run_count
+
+        record = {
+            "edge_id": edge_id,
+            "edge_type": edge_type,
+            "source": source,
+            "target": target,
+            "activation_count": activation_count,
+            "activation_rate": round(activation_rate, 4),
+        }
+        per_edge.append(record)
+
+        if activation_count == 0:
+            record["reason"] = _classify_dead_edge_reason_v2(edge_data, events)
+            dead_edges.append(record)
+
+        if edge_type not in type_activations:
+            type_activations[edge_type] = [0, 0]
+        type_activations[edge_type][1] += 1
+        if activation_count > 0:
+            type_activations[edge_type][0] += 1
+
+    activation_rates = {
+        etype: round(activated / total, 4)
+        for etype, (activated, total) in type_activations.items()
+        if total > 0
+    }
+
+    return {
+        "structural_edges_total": len(structural_edges),
+        "structural_edges_activated": len(structural_edges) - len(dead_edges),
+        "structural_edges_dead": len(dead_edges),
+        "dead_edges": dead_edges,
+        "activation_rates": activation_rates,
+        "per_edge": per_edge,
+    }
+
+
+def _build_edge_activation_map(events: list[dict[str, Any]]) -> dict:
+    """Build a map of (source, target) -> activation count from events."""
+    activations: dict[tuple[str, str], int] = {}
+    for event in events:
+        etype = event.get("event_type", "")
+        payload = event.get("payload", {})
+
+        src = ""
+        tgt = ""
+
+        if etype == "delegation.initiated":
+            src = payload.get("source_node_id", "")
+            tgt = payload.get("target_node_id", "")
+            if not src:
+                src_node = event.get("source_node", {})
+                src = src_node.get("node_id", "") or src_node.get("node_name", "")
+            if not tgt:
+                tgt_node = event.get("target_node", {})
+                tgt = tgt_node.get("node_id", "") or tgt_node.get("node_name", "")
+
+        elif etype == "routing.decision":
+            src = payload.get("source_node", "")
+            tgt = payload.get("target_node", "")
+
+        elif etype in ("tool.invoked", "data.read", "data.write", "external.call"):
+            src_node = event.get("source_node", {})
+            tgt_node = event.get("target_node", {})
+            src = src_node.get("node_id", "") or src_node.get("node_name", "")
+            tgt = tgt_node.get("node_id", "") or tgt_node.get("node_name", "")
+
+        elif etype == "message.received":
+            src_node = event.get("source_node", {})
+            tgt_node = event.get("target_node", {})
+            src = src_node.get("node_id", "") or src_node.get("node_name", "")
+            tgt = tgt_node.get("node_id", "") or tgt_node.get("node_name", "")
+
+        if src and tgt:
+            key = (src, tgt)
+            activations[key] = activations.get(key, 0) + 1
+
+    return activations
+
+
+def _count_edge_activations(
+    activation_map: dict,
+    source: str,
+    target: str,
+    edge_type: str,
+) -> int:
+    """Count activations for a structural edge, with fuzzy name matching."""
+    from stratum_lab.node_ids import normalize_name
+
+    # Direct match
+    count = activation_map.get((source, target), 0)
+    if count > 0:
+        return count
+
+    # Try normalized name matching
+    src_norm = normalize_name(source.replace("agent_", "").replace("cap_", "").replace("ds_", "").replace("ext_", "").replace("guard_", ""))
+    tgt_norm = normalize_name(target.replace("agent_", "").replace("cap_", "").replace("ds_", "").replace("ext_", "").replace("guard_", ""))
+
+    for (s, t), c in activation_map.items():
+        s_norm = normalize_name(s)
+        t_norm = normalize_name(t)
+        if (s_norm == src_norm or s == source or src_norm in s_norm or s_norm in src_norm) and \
+           (t_norm == tgt_norm or t == target or tgt_norm in t_norm or t_norm in tgt_norm):
+            count += c
+
+    return count
+
+
+def _classify_dead_edge_reason_v2(edge: dict, events: list[dict]) -> str:
+    """Classify why a structural edge was never activated.
+
+    Returns one of 6 reason type prefixes:
+    - source_never_activated
+    - target_never_activated
+    - shared_state_not_used
+    - guardrail_never_reached
+    - conditional_branch_not_taken
+    - path_not_chosen
+    """
+    source = edge.get("source", "")
+    target = edge.get("target", "")
+    edge_type = edge.get("edge_type", "")
+
+    # Check if source node ever activated
+    source_activated = any(
+        _event_mentions_node(e, source) for e in events
+        if e.get("event_type") in ("agent.task_start", "agent.task_end",
+                                    "tool.invoked", "llm.call_start")
+    )
+    if not source_activated:
+        return f"source_never_activated: '{source}' did not execute in any run"
+
+    target_activated = any(
+        _event_mentions_node(e, target) for e in events
+        if e.get("event_type") in ("agent.task_start", "agent.task_end",
+                                    "tool.invoked", "tool.completed",
+                                    "llm.call_start", "llm.call_end",
+                                    "guardrail.triggered")
+    )
+    if not target_activated:
+        return f"target_never_activated: '{target}' did not execute in any run"
+
+    # Both active but edge never traversed
+    if edge_type == "shares_with":
+        return f"shared_state_not_used: both nodes ran but shared state not accessed"
+
+    if edge_type in ("gated_by", "filtered_by"):
+        return f"guardrail_never_reached: guardrail '{target}' never evaluated"
+
+    # Check routing decisions for conditional branches
+    routing_decisions = [e for e in events
+                        if e.get("event_type") == "routing.decision"
+                        and e.get("payload", {}).get("source_node") == source]
+    if routing_decisions:
+        chosen = {e["payload"]["selected_target"] for e in routing_decisions
+                  if "selected_target" in e.get("payload", {})}
+        if chosen and target not in chosen:
+            return f"conditional_branch_not_taken: routing always chose other targets"
+
+    return f"path_not_chosen: both nodes ran but delegation never occurred"
+
+
+def _event_mentions_node(event: dict, node_id: str) -> bool:
+    """Check if an event references a node by ID or name."""
+    from stratum_lab.node_ids import normalize_name
+    node_norm = normalize_name(node_id.replace("agent_", "").replace("cap_", "").replace("ds_", "").replace("ext_", "").replace("guard_", ""))
+
+    for key in ("source_node", "target_node"):
+        ref = event.get(key, {})
+        if isinstance(ref, dict):
+            nid = ref.get("node_id", "") or ref.get("node_name", "")
+            if nid == node_id or normalize_name(nid) == node_norm:
+                return True
+
+    payload = event.get("payload", {})
+    for field in ("node_id", "error_node_id"):
+        v = payload.get(field, "")
+        if v == node_id or normalize_name(v) == node_norm:
+            return True
+
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Graph Discovery: Node activation topology (Issue 11)
+# ---------------------------------------------------------------------------
+
+def compute_node_activation(
+    structural_graph: dict[str, Any],
+    events: list[dict[str, Any]],
+    run_count: int,
+) -> dict[str, Any]:
+    """Classify nodes by activation pattern.
+
+    Categories:
+    - always_active: activated in >95% of runs
+    - conditional: activated in some but not all runs
+    - never_active: never activated
+    """
+    structural_nodes = structural_graph.get("nodes", {})
+    run_count = max(run_count, 1)
+
+    from stratum_lab.node_ids import normalize_name
+
+    # Count per-run activations for each node
+    node_run_activations: dict[str, set[str]] = defaultdict(set)
+
+    for event in events:
+        etype = event.get("event_type", "")
+        if etype not in ("agent.task_start", "tool.invoked", "llm.call_start",
+                         "execution.start", "guardrail.triggered",
+                         "data.read", "data.write"):
+            continue
+
+        run_id = event.get("run_id", "")
+        if not run_id:
+            continue
+
+        # Try to match to structural node
+        for key in ("source_node", "target_node"):
+            ref = event.get(key, {})
+            if not isinstance(ref, dict):
+                continue
+            node_name = ref.get("node_name", "") or ref.get("node_id", "")
+            if not node_name:
+                continue
+
+            node_norm = normalize_name(node_name)
+            for nid in structural_nodes:
+                nid_norm = normalize_name(nid.replace("agent_", "").replace("cap_", "").replace("ds_", "").replace("ext_", "").replace("guard_", ""))
+                if node_norm == nid_norm or node_norm in nid_norm or nid_norm in node_norm:
+                    node_run_activations[nid].add(run_id)
+                    break
+
+    always_active = []
+    conditional = []
+    never_active = []
+    total_match = 0
+
+    for nid in structural_nodes:
+        runs_activated = len(node_run_activations.get(nid, set()))
+        rate = runs_activated / run_count
+
+        if rate > 0.95:
+            always_active.append({"node_id": nid, "activation_rate": round(rate, 4)})
+            total_match += 1
+        elif rate > 0:
+            condition = _infer_activation_condition(nid, events, node_run_activations.get(nid, set()))
+            conditional.append({
+                "node_id": nid,
+                "activation_rate": round(rate, 4),
+                "inferred_condition": condition,
+            })
+            total_match += 1
+        else:
+            never_active.append({"node_id": nid})
+
+    prediction_match_rate = total_match / max(len(structural_nodes), 1)
+
+    return {
+        "always_active": always_active,
+        "conditional": conditional,
+        "never_active": never_active,
+        "structural_prediction_match_rate": round(prediction_match_rate, 4),
+    }
+
+
+def _infer_activation_condition(
+    node_id: str,
+    events: list[dict[str, Any]],
+    active_runs: set[str],
+) -> str:
+    """Infer what condition triggers a conditionally-active node."""
+    if not active_runs:
+        return "unknown"
+
+    # Check if activation correlates with error events
+    error_runs = set()
+    for e in events:
+        if e.get("event_type", "").startswith("error."):
+            rid = e.get("run_id", "")
+            if rid:
+                error_runs.add(rid)
+
+    if active_runs.issubset(error_runs):
+        return "error_triggered"
+    if error_runs and active_runs == error_runs:
+        return "error_handler"
+
+    return "input_dependent"
+
+
+# ---------------------------------------------------------------------------
 # Main enrichment function
 # ---------------------------------------------------------------------------
 
@@ -615,20 +944,31 @@ def enrich_graph(
     # ---- Cascade analysis (Issue 3) ----
     cascade_analysis = _compute_cascade_metrics(enriched_nodes, enriched_edges, structural_graph)
 
-    # ---- Semantic lineage (Issue 15) ----
-    # Resolve event node_ids to structural IDs for lineage matching
+    # ---- Semantic lineage (subsumed into edge validation in v6) ----
     resolved_events = _resolve_event_node_ids(all_events, structural_nodes)
-    semantic = reconstruct_lineage(resolved_events, structural_graph)
-    semantic_lineage = {
-        "handoffs": semantic["handoffs"],
-        "total_handoffs": semantic["total_handoffs"],
-        "unvalidated_count": semantic["unvalidated_count"],
-        "unvalidated_fraction": semantic["unvalidated_fraction"],
-        "semantic_chain_depth": semantic["semantic_chain_depth"],
-        "max_blast_radius": semantic["max_blast_radius"],
-        "classification_injection_count": semantic["classification_injection_count"],
-        "semantic_determinism": semantic["semantic_determinism"],
-    }
+    if reconstruct_lineage is not None:
+        semantic = reconstruct_lineage(resolved_events, structural_graph)
+        semantic_lineage = {
+            "handoffs": semantic["handoffs"],
+            "total_handoffs": semantic["total_handoffs"],
+            "unvalidated_count": semantic["unvalidated_count"],
+            "unvalidated_fraction": semantic["unvalidated_fraction"],
+            "semantic_chain_depth": semantic["semantic_chain_depth"],
+            "max_blast_radius": semantic["max_blast_radius"],
+            "classification_injection_count": semantic["classification_injection_count"],
+            "semantic_determinism": semantic["semantic_determinism"],
+        }
+    else:
+        semantic_lineage = {
+            "handoffs": [],
+            "total_handoffs": 0,
+            "unvalidated_count": 0,
+            "unvalidated_fraction": 0.0,
+            "semantic_chain_depth": 0,
+            "max_blast_radius": 0,
+            "classification_injection_count": 0,
+            "semantic_determinism": 1.0,
+        }
 
     # Fill per-edge semantic_flow
     for handoff in semantic["handoffs"]:

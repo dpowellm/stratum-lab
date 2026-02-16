@@ -1,0 +1,95 @@
+{
+  "repo_id": "smoke-test/langgraph-react",
+  "repo_full_name": "smoke-test/langgraph-react",
+  "repo_url": "https://github.com/smoke-test/langgraph-react",
+  "framework": "langgraph",
+  "scanner_version": "0.9.0",
+  "detected_frameworks": ["langgraph"],
+  "agent_count": 1,
+  "edge_count": 2,
+  "agent_definitions": [
+    {
+      "agent_id": "agent_react_agent",
+      "label": "ReactAgent",
+      "role": "ReAct reasoning agent",
+      "tool_names": ["search", "calculator"]
+    }
+  ],
+  "graph_edges": [
+    {
+      "source": "agent_react_agent",
+      "target": "cap_tool_search",
+      "edge_type": "uses"
+    },
+    {
+      "source": "agent_react_agent",
+      "target": "cap_tool_calculator",
+      "edge_type": "uses"
+    }
+  ],
+  "nodes": {
+    "agent_react_agent": {
+      "node_type": "agent",
+      "node_id": "agent_react_agent",
+      "label": "ReactAgent"
+    },
+    "cap_tool_search": {
+      "node_type": "capability",
+      "node_id": "cap_tool_search",
+      "label": "SearchTool"
+    },
+    "cap_tool_calculator": {
+      "node_type": "capability",
+      "node_id": "cap_tool_calculator",
+      "label": "CalculatorTool"
+    }
+  },
+  "edges": {
+    "e1": {
+      "source": "agent_react_agent",
+      "target": "cap_tool_search",
+      "edge_type": "uses",
+      "label": "agent uses search"
+    },
+    "e2": {
+      "source": "agent_react_agent",
+      "target": "cap_tool_calculator",
+      "edge_type": "uses",
+      "label": "agent uses calculator"
+    }
+  },
+  "findings": [
+    {
+      "finding_id": "STRAT-EA-001",
+      "severity": "medium",
+      "description": "Tool failure not handled"
+    }
+  ],
+  "finding_ids": ["STRAT-EA-001"],
+  "control_inventory": {
+    "present_controls": ["timeout"],
+    "absent_controls": ["error_boundary"]
+  },
+  "present_control_types": ["timeout"],
+  "taxonomy_preconditions": ["unhandled_tool_failure"],
+  "risk_surface": {
+    "max_delegation_depth": 0,
+    "shared_state_conflict_count": 0,
+    "feedback_loop_count": 1,
+    "trust_boundary_crossing_count": 0
+  },
+  "archetype_id": 1,
+  "topology_hash": "smoke_langgraph_react_001",
+  "detected_entry_point": "main.py",
+  "detected_requirements": "requirements.txt",
+  "has_readme_with_usage": true,
+  "requires_docker": false,
+  "requires_database": false,
+  "recent_commit": true,
+  "estimated_runnability": 0.90,
+  "graph_complexity": "low",
+  "xcomp_findings": [],
+  "has_entry_point": true,
+  "has_requirements": true,
+  "preconditions": []
+}

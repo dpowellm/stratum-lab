@@ -36,6 +36,9 @@ PROJECT STRUCTURE: stratum-lab
       __init__.py
       cli.py
       parser.py
+    feedback/
+      __init__.py
+      exporter.py
     harness/
       __init__.py
       cli.py
@@ -46,11 +49,13 @@ PROJECT STRUCTURE: stratum-lab
     knowledge/
       __init__.py
       cli.py
-      dataset_quality.py
       fragility.py
       interactions.py
       patterns.py
       taxonomy.py
+    output/
+      __init__.py
+      behavioral_record.py
     outreach/
       __init__.py
       contact_extractor.py
@@ -64,8 +69,10 @@ PROJECT STRUCTURE: stratum-lab
       cli.py
       edges.py
       enricher.py
+      error_propagation.py
+      failure_modes.py
+      monitoring_baselines.py
       semantic_lineage.py
-      taxonomy_confirmation.py
     query/
       __init__.py
       batch_report.py
@@ -76,7 +83,8 @@ PROJECT STRUCTURE: stratum-lab
     selection/
       __init__.py
       cli.py
-      power_optimizer.py
+      discovery_optimizer.py
+      schema.py
       scorer.py
       selector.py
     triage/

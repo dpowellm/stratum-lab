@@ -36,6 +36,7 @@ MOTIF_NAMES = [
 
 def build_pattern_knowledge_base(
     enriched_graphs: list[dict[str, Any]],
+    legacy_probabilities: bool = False,
 ) -> list[dict[str, Any]]:
     """Build the pattern knowledge base from all enriched graphs.
 
@@ -86,7 +87,7 @@ def build_pattern_knowledge_base(
         ]
 
         # Behavioral distribution
-        behavioral_dist = compute_behavioral_distribution(motif_name, graphs_with_motif)
+        behavioral_dist = compute_behavioral_distribution(motif_name, graphs_with_motif, legacy_probabilities=legacy_probabilities)
 
         # Structural signature from first instance
         structural_sig = instances[0]["motif"].get("structural_signature", {})
@@ -471,6 +472,7 @@ def _detect_trust_boundary_crossings(
 def compute_behavioral_distribution(
     motif_name: str,
     graphs_with_motif: list[dict[str, Any]],
+    legacy_probabilities: bool = False,
 ) -> dict[str, Any]:
     """Compute behavioral distribution for a given motif across repos.
 
@@ -480,18 +482,22 @@ def compute_behavioral_distribution(
         The motif name (e.g., ``"shared_state_without_arbitration"``).
     graphs_with_motif:
         List of enriched graph dicts containing this motif.
+    legacy_probabilities:
+        If False (default), omits confidence_interval_95 from output.
 
     Returns
     -------
-    Dict with failure rate, confidence interval, and sample size.
+    Dict with failure rate, sample size, and optionally confidence interval.
     """
     if not graphs_with_motif:
-        return {
+        result: dict[str, Any] = {
             "failure_rate": 0.0,
-            "confidence_interval_95": [0.0, 0.0],
             "sample_size": 0,
             "failure_modes": {},
         }
+        if legacy_probabilities:
+            result["confidence_interval_95"] = [0.0, 0.0]
+        return result
 
     n = len(graphs_with_motif)
     failure_count = 0
@@ -530,18 +536,20 @@ def compute_behavioral_distribution(
     # Failure rate across repos
     failure_rate = failure_count / n
 
-    # Wilson score confidence interval for binomial proportion
-    ci_low, ci_high = _wilson_confidence_interval(failure_count, n)
-
-    return {
+    result = {
         "failure_rate": round(failure_rate, 4),
-        "confidence_interval_95": [round(ci_low, 4), round(ci_high, 4)],
         "sample_size": n,
         "repos_with_failure": failure_count,
         "failure_modes": dict(failure_modes.most_common()),
         "avg_error_rate": round(float(np.mean(error_rates)), 4) if error_rates else 0.0,
         "avg_latency_p50_ms": round(float(np.mean(latencies)), 2) if latencies else 0.0,
     }
+
+    if legacy_probabilities:
+        ci_low, ci_high = _wilson_confidence_interval(failure_count, n)
+        result["confidence_interval_95"] = [round(ci_low, 4), round(ci_high, 4)]
+
+    return result
 
 
 def _wilson_confidence_interval(
@@ -693,6 +701,7 @@ def detect_novel_patterns(
 
 def compare_frameworks(
     enriched_graphs: list[dict[str, Any]],
+    legacy_probabilities: bool = False,
 ) -> list[dict[str, Any]]:
     """Compare behavioral outcomes for the same structural pattern across frameworks.
 
@@ -729,7 +738,7 @@ def compare_frameworks(
             if not graphs_with_motif:
                 continue
 
-            dist = compute_behavioral_distribution(motif_name, graphs_with_motif)
+            dist = compute_behavioral_distribution(motif_name, graphs_with_motif, legacy_probabilities=legacy_probabilities)
             fw_results[fw] = {
                 "framework": fw,
                 "repos_count": len(graphs_with_motif),

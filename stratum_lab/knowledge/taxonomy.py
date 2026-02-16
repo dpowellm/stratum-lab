@@ -62,8 +62,56 @@ TAXONOMY_PRECONDITIONS = [
 # Manifestation probabilities
 # ---------------------------------------------------------------------------
 
+def count_manifestations(
+    enriched_graphs: list[dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Count raw manifestations without statistical claims.
+
+    For each taxonomy precondition, returns raw counts of how many repos
+    had the precondition structurally present and how many showed failure.
+    No confidence intervals or probability claims.
+
+    Parameters
+    ----------
+    enriched_graphs:
+        List of enriched graph dicts.
+
+    Returns
+    -------
+    Dict mapping precondition_id -> {manifested, total, repos}.
+    """
+    repo_data = _build_repo_data(enriched_graphs)
+    results: dict[str, dict[str, Any]] = {}
+
+    for precondition_id in TAXONOMY_PRECONDITIONS:
+        repos_with = [
+            rd for rd in repo_data
+            if precondition_id in rd["preconditions"]
+        ]
+        n = len(repos_with)
+        if n == 0:
+            results[precondition_id] = {
+                "manifested": 0,
+                "total": 0,
+                "repos": [],
+            }
+            continue
+
+        manifested = sum(
+            1 for rd in repos_with if rd["had_runtime_failures"]
+        )
+        results[precondition_id] = {
+            "manifested": manifested,
+            "total": n,
+            "repos": [rd["repo_id"] for rd in repos_with],
+        }
+
+    return results
+
+
 def compute_manifestation_probabilities(
     enriched_graphs: list[dict[str, Any]],
+    legacy_probabilities: bool = False,
 ) -> dict[str, dict[str, Any]]:
     """Compute the probability that each taxonomy precondition manifests as failure.
 
@@ -76,6 +124,9 @@ def compute_manifestation_probabilities(
     ----------
     enriched_graphs:
         List of enriched graph dicts.
+    legacy_probabilities:
+        If False (default), omits confidence_interval, relative_risk, and
+        control_failure_rate from output. These require large N to be reliable.
 
     Returns
     -------
@@ -83,27 +134,107 @@ def compute_manifestation_probabilities(
     sample_size, severity_when_manifested}.
     """
     results: dict[str, dict[str, Any]] = {}
+    repo_data = _build_repo_data(enriched_graphs)
 
-    # Build a lookup: repo_id -> (preconditions_present, had_failures_by_type)
+    # For each taxonomy precondition, compute probability
+    for precondition_id in TAXONOMY_PRECONDITIONS:
+        repos_with_precondition = [
+            rd for rd in repo_data
+            if precondition_id in rd["preconditions"]
+        ]
+
+        n = len(repos_with_precondition)
+        if n == 0:
+            entry: dict[str, Any] = {
+                "probability": None,
+                "sample_size": 0,
+                "severity_when_manifested": None,
+                "repos_with_precondition": 0,
+            }
+            if legacy_probabilities:
+                entry["confidence_interval"] = [None, None]
+            results[precondition_id] = entry
+            continue
+
+        # Count repos where the precondition led to actual runtime failure
+        manifested = sum(
+            1 for rd in repos_with_precondition if rd["had_runtime_failures"]
+        )
+
+        probability = manifested / n
+
+        # Severity: average total errors when failure manifested
+        error_counts = [
+            rd["total_errors"]
+            for rd in repos_with_precondition
+            if rd["had_runtime_failures"] and rd["total_errors"] > 0
+        ]
+        avg_severity = float(np.mean(error_counts)) if error_counts else 0.0
+
+        # Classify severity
+        if avg_severity > 10:
+            severity_label = "high"
+        elif avg_severity > 3:
+            severity_label = "medium"
+        elif avg_severity > 0:
+            severity_label = "low"
+        else:
+            severity_label = "none"
+
+        entry = {
+            "probability": round(probability, 4),
+            "sample_size": n,
+            "manifested_count": manifested,
+            "repos_with_precondition": n,
+            "severity_when_manifested": {
+                "avg_errors": round(avg_severity, 2),
+                "severity_label": severity_label,
+            },
+        }
+
+        # Gate statistical claims behind legacy_probabilities
+        if legacy_probabilities:
+            ci_low, ci_high = _wilson_ci(manifested, n)
+            entry["confidence_interval"] = [round(ci_low, 4), round(ci_high, 4)]
+
+            repos_without_precondition = [
+                rd for rd in repo_data
+                if precondition_id not in rd["preconditions"]
+            ]
+            n_without = len(repos_without_precondition)
+            failures_without = sum(
+                1 for rd in repos_without_precondition if rd["had_runtime_failures"]
+            )
+            control_failure_rate = failures_without / max(n_without, 1)
+            relative_risk = probability / max(control_failure_rate, 0.01)
+            entry["relative_risk"] = round(relative_risk, 2)
+            entry["control_failure_rate"] = round(control_failure_rate, 4)
+            entry["control_sample_size"] = n_without
+
+        results[precondition_id] = entry
+
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Repo data builder (shared between count_manifestations and probabilities)
+# ---------------------------------------------------------------------------
+
+def _build_repo_data(enriched_graphs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Build per-repo lookup of preconditions and failure status."""
     repo_data: list[dict[str, Any]] = []
     for graph in enriched_graphs:
         repo_id = graph.get("repo_id", "unknown")
 
-        # Gather taxonomy preconditions from the structural data
-        # They can be at graph level or inferred from structural signatures
         structural_preconditions = set()
-
-        # Check graph-level preconditions
         for pc in graph.get("taxonomy_preconditions", []):
             structural_preconditions.add(pc)
 
-        # Also check node-level structural data for precondition hints
         for node_id, node_data in graph.get("nodes", {}).items():
             structural = node_data.get("structural", {})
             for pc in structural.get("taxonomy_preconditions", []):
                 structural_preconditions.add(pc)
 
-        # Determine which failure types manifested at runtime
         runtime_failures: dict[str, dict[str, Any]] = {}
         for node_id, node_data in graph.get("nodes", {}).items():
             behavioral = node_data.get("behavioral", {})
@@ -137,80 +268,7 @@ def compute_manifestation_probabilities(
             ),
         })
 
-    # For each taxonomy precondition, compute probability
-    for precondition_id in TAXONOMY_PRECONDITIONS:
-        repos_with_precondition = [
-            rd for rd in repo_data
-            if precondition_id in rd["preconditions"]
-        ]
-
-        n = len(repos_with_precondition)
-        if n == 0:
-            results[precondition_id] = {
-                "probability": None,
-                "confidence_interval": [None, None],
-                "sample_size": 0,
-                "severity_when_manifested": None,
-                "repos_with_precondition": 0,
-            }
-            continue
-
-        # Count repos where the precondition led to actual runtime failure
-        manifested = sum(
-            1 for rd in repos_with_precondition if rd["had_runtime_failures"]
-        )
-
-        probability = manifested / n
-
-        # Wilson score confidence interval
-        ci_low, ci_high = _wilson_ci(manifested, n)
-
-        # Severity: average total errors when failure manifested
-        error_counts = [
-            rd["total_errors"]
-            for rd in repos_with_precondition
-            if rd["had_runtime_failures"] and rd["total_errors"] > 0
-        ]
-        avg_severity = float(np.mean(error_counts)) if error_counts else 0.0
-
-        # Classify severity
-        if avg_severity > 10:
-            severity_label = "high"
-        elif avg_severity > 3:
-            severity_label = "medium"
-        elif avg_severity > 0:
-            severity_label = "low"
-        else:
-            severity_label = "none"
-
-        # Relative risk: P(failure|precondition) / P(failure|no precondition)
-        repos_without_precondition = [
-            rd for rd in repo_data
-            if precondition_id not in rd["preconditions"]
-        ]
-        n_without = len(repos_without_precondition)
-        failures_without = sum(
-            1 for rd in repos_without_precondition if rd["had_runtime_failures"]
-        )
-        control_failure_rate = failures_without / max(n_without, 1)
-        relative_risk = probability / max(control_failure_rate, 0.01)
-
-        results[precondition_id] = {
-            "probability": round(probability, 4),
-            "confidence_interval": [round(ci_low, 4), round(ci_high, 4)],
-            "sample_size": n,
-            "manifested_count": manifested,
-            "repos_with_precondition": n,
-            "severity_when_manifested": {
-                "avg_errors": round(avg_severity, 2),
-                "severity_label": severity_label,
-            },
-            "relative_risk": round(relative_risk, 2),
-            "control_failure_rate": round(control_failure_rate, 4),
-            "control_sample_size": n_without,
-        }
-
-    return results
+    return repo_data
 
 
 # ---------------------------------------------------------------------------

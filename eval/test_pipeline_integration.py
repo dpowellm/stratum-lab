@@ -1,868 +1,858 @@
-"""Pipeline integration demo — chains all phases on synthetic data.
+"""Pipeline integration eval -- feedback export + pilot quality gate.
 
-selection → harness (mocked) → data collection → graph overlay → knowledge base
+Validation checks covered:
+  13: Feedback: emergent heuristics (emergent_heuristics.json written)
+  14: Feedback: edge weights (edge_confidence_weights.json written)
+  15: Feedback: failure catalog (failure_mode_catalog.json written)
+  16: Feedback: monitoring baselines (monitoring_baselines.json written)
+  17: Feedback: prediction match (prediction_match_report.json written)
+  22: Pilot quality gate metrics shown
+
+Creates 10 synthetic behavioral records via build_behavioral_record(),
+calls export_feedback(), verifies all 5 output files, then exercises
+_check_pilot_quality with synthetic run records.
+
+Run:
+    cd stratum-lab
+    python eval/test_pipeline_integration.py
 """
-import sys, os, json, time, uuid, tempfile, shutil
-from pathlib import Path
-from collections import Counter
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from __future__ import annotations
+
+import io
+import json
+import os
+import random
+import shutil
+import sys
+import tempfile
+
+# ---------------------------------------------------------------------------
+# Path setup -- stratum_lab is NOT an installed package
+# ---------------------------------------------------------------------------
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+
+# ---------------------------------------------------------------------------
+# Output setup -- write to both terminal and file
+# ---------------------------------------------------------------------------
+EVAL_DIR = os.path.dirname(os.path.abspath(__file__))
+OUTPUT_DIR = os.path.join(EVAL_DIR, "outputs")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+OUTPUT_FILE = os.path.join(OUTPUT_DIR, "pipeline-integration-demo.txt")
+
+_file_buf = io.StringIO()
+console = Console(record=True)
+file_console = Console(file=_file_buf, width=120, no_color=True)
 
 SEPARATOR = "=" * 78
 
 
-def make_event(event_type, run_id, repo_id, framework="crewai",
-               source_node=None, target_node=None, edge_type=None,
-               payload=None, parent_event_id=None, stack_depth=0):
+def dual_print(msg: str = "") -> None:
+    """Print to both the rich console and the file buffer."""
+    console.print(msg, highlight=False)
+    file_console.print(msg, highlight=False)
+
+
+def pretty(obj: object) -> str:
+    return json.dumps(obj, indent=2, default=str)
+
+
+def _sanitize(text: str) -> str:
+    """Replace unicode symbols that break the Windows legacy console."""
+    return (
+        text
+        .replace("\u2713", "OK")
+        .replace("\u2717", "X")
+        .replace("\u26a0", "!")
+        .replace("\u2714", "OK")
+        .replace("\u2716", "X")
+    )
+
+
+# =========================================================================
+# Imports under test
+# =========================================================================
+from stratum_lab.output.behavioral_record import build_behavioral_record
+from stratum_lab.feedback.exporter import export_feedback
+from stratum_lab.cli import _check_pilot_quality
+from stratum_lab.config import METRIC_TO_FINDING, SCANNER_METRIC_NAMES, FINDING_NAMES
+
+# =========================================================================
+# 1. Generate 10 synthetic behavioral records
+# =========================================================================
+
+random.seed(42)
+
+FRAMEWORKS = ["crewai", "langgraph", "autogen"]
+FINDING_IDS = [
+    "STRAT-DC-001",  # max_delegation_depth
+    "STRAT-SI-001",  # error_swallow_rate
+    "STRAT-AB-001",  # total_llm_calls_per_run
+    "STRAT-OC-002",  # concurrent_state_write_rate
+    "STRAT-EA-001",  # tool_call_failure_rate
+]
+EDGE_TYPES = ["delegates_to", "uses", "writes_to", "reads_from", "calls", "filtered_by"]
+DISCOVERY_TYPES = [
+    "error_triggered_fallback",
+    "dynamic_delegation",
+    "implicit_data_sharing",
+]
+VALID_DISCOVERY_TYPES = {
+    "error_triggered_fallback",
+    "dynamic_delegation",
+    "implicit_data_sharing",
+    "framework_internal_routing",
+}
+METRICS = [
+    "max_delegation_depth",
+    "error_swallow_rate",
+    "total_llm_calls_per_run",
+    "concurrent_state_write_rate",
+    "tool_call_failure_rate",
+]
+
+
+def _make_edge_validation(repo_idx: int) -> dict:
+    """Build a realistic edge_validation section."""
+    total = 8 + repo_idx
+    activated = total - random.randint(0, 3)
+    dead = total - activated
+    activation_rates = {}
+    for etype in EDGE_TYPES:
+        activation_rates[etype] = round(random.uniform(0.4, 1.0), 4)
     return {
-        "event_id": f"evt_{uuid.uuid4().hex[:16]}",
-        "timestamp_ns": time.time_ns(),
-        "run_id": run_id,
-        "repo_id": repo_id,
-        "framework": framework,
-        "event_type": event_type,
-        **({"source_node": source_node} if source_node else {}),
-        **({"target_node": target_node} if target_node else {}),
-        **({"edge_type": edge_type} if edge_type else {}),
-        **({"payload": payload} if payload else {}),
-        **({"parent_event_id": parent_event_id} if parent_event_id else {}),
-        "stack_depth": stack_depth,
+        "structural_edges_total": total,
+        "structural_edges_activated": activated,
+        "structural_edges_dead": dead,
+        "activation_rates": activation_rates,
     }
 
 
-def node(node_type, node_id, node_name):
-    return {"node_type": node_type, "node_id": node_id, "node_name": node_name}
-
-
-def main():
-    tmpdir = tempfile.mkdtemp(prefix="stratum_pipeline_")
-    print(f"Working directory: {tmpdir}\n")
-
-    # =====================================================================
-    # PHASE 1: REPO SELECTION
-    # =====================================================================
-    print(SEPARATOR)
-    print("PHASE 1: REPO SELECTION")
-    print(SEPARATOR)
-
-    from stratum_lab.selection.selector import score_and_select
-
-    # Create 30 synthetic repos
-    frameworks = ["crewai", "langgraph", "autogen", "langchain", "custom"]
-    archetypes = list(range(1, 13))
-    raw_repos = []
-    for i in range(30):
-        fw = frameworks[i % len(frameworks)]
-        arch = archetypes[i % len(archetypes)]
-        agent_count = 2 + (i % 5)
-        agents = [
-            {"name": f"Agent_{j}", "tool_names": [f"tool_{j}" for j in range(j % 3 + 1)]}
-            for j in range(agent_count)
-        ]
-        raw_repos.append({
-            "repo_id": f"repo_{i:03d}",
-            "repo_url": f"https://github.com/test/repo_{i:03d}",
-            "archetype_id": arch,
-            "detected_frameworks": [fw],
-            "agent_definitions": agents,
-            "graph_edges": [{"source": f"a{j}", "target": f"a{j+1}"} for j in range(agent_count - 1)],
-            "taxonomy_preconditions": ["shared_state_no_arbitration", "no_timeout_on_delegation"][:((i % 3) + 1)],
-            "risk_surface": {
-                "max_delegation_depth": min(agent_count - 1, 5),
-                "shared_state_conflict_count": i % 4,
-                "feedback_loop_count": 1 if i % 7 == 0 else 0,
-                "trust_boundary_crossing_count": i % 5,
-            },
-            "detected_entry_point": "main.py",
-            "detected_requirements": "requirements.txt",
-            "has_readme_with_usage": True,
-            "requires_docker": False,
-            "requires_database": False,
-            "recent_commit": True,
+def _make_emergent_edges(repo_idx: int) -> list[dict]:
+    """Build a list of emergent edges with varied discovery types."""
+    count = random.randint(1, 4)
+    edges = []
+    for j in range(count):
+        dtype = DISCOVERY_TYPES[j % len(DISCOVERY_TYPES)]
+        edges.append({
+            "source_node": f"agent_{repo_idx}_a{j}",
+            "target_node": f"agent_{repo_idx}_a{j + 1}",
+            "discovery_type": dtype,
+            "detection_heuristic": f"Detected via {dtype} analysis on repo {repo_idx}",
+            "activation_rate": round(random.uniform(0.1, 0.9), 4),
+            "interaction_count": random.randint(1, 20),
         })
+    return edges
 
-    selected, summary = score_and_select(raw_repos, target=20, min_runnability=10, min_per_archetype=1)
 
-    print(f"  Input repos:       {len(raw_repos)}")
-    print(f"  Selected repos:    {len(selected)}")
-    print(f"  Frameworks:        {summary['by_framework']}")
-    print(f"  Archetypes:        {summary['by_archetype']}")
-    print(f"  Avg structural:    {summary['avg_structural_value']}")
-    print(f"  Avg runnability:   {summary['avg_runnability_score']}")
+def _make_node_activation(repo_idx: int) -> dict:
+    """Build a realistic node_activation section."""
+    match_rate = round(random.uniform(0.5, 1.0), 4)
+    return {
+        "total_nodes": 6 + repo_idx,
+        "activated_nodes": 4 + repo_idx,
+        "activation_rate": round((4 + repo_idx) / (6 + repo_idx), 4),
+        "structural_prediction_match_rate": match_rate,
+        "per_node": {
+            f"agent_{repo_idx}_a0": {"activation_count": random.randint(3, 15)},
+            f"agent_{repo_idx}_a1": {"activation_count": random.randint(1, 10)},
+        },
+    }
 
-    # Save selection output
-    selection_path = os.path.join(tmpdir, "selection.json")
-    with open(selection_path, "w") as f:
-        json.dump({"selections": selected, "summary": summary}, f, indent=2)
-    print(f"\n  -> Saved selection to {selection_path}")
 
-    # =====================================================================
-    # PHASE 2: EXECUTION HARNESS (MOCKED)
-    # =====================================================================
-    print(f"\n{SEPARATOR}")
-    print("PHASE 2: EXECUTION HARNESS (MOCKED)")
-    print(SEPARATOR)
+def _make_error_propagation(repo_idx: int) -> list[dict]:
+    """Build diverse error propagation traces."""
+    agents = [f"agent_{repo_idx}_a{j}" for j in range(3)]
 
-    raw_events_dir = os.path.join(tmpdir, "raw_events")
-    os.makedirs(raw_events_dir, exist_ok=True)
+    # Vary stop_mechanism and path length by repo_idx
+    mechanisms = ["propagated_through", "swallowed_at_source", "retry", "absorbed"]
+    error_types = ["RuntimeError", "TimeoutError", "ValueError", "SchemaError"]
 
-    # For each selected repo, generate synthetic JSONL events (3 runs each)
-    execution_results = []
-    total_events_written = 0
-    runs_per_repo = 3
+    entries = []
 
-    for sel in selected[:10]:  # Limit to first 10 for demo speed
-        repo_id = sel["repo_id"]
-        fw = sel["framework"]
-        agent_count = sel["agent_count"]
-        agent_names = [f"Agent_{j}" for j in range(agent_count)]
+    # First trace: longer path, varies by repo
+    mech = mechanisms[repo_idx % len(mechanisms)]
+    depth = (repo_idx % 3) + 1  # 1, 2, or 3
+    path = agents[:depth + 1] if depth < len(agents) else agents
 
-        # Determinism: runs 1 and 3 share an input_hash, run 2 differs
-        input_hashes = {1: f"{repo_id}_input_A", 2: f"{repo_id}_input_B", 3: f"{repo_id}_input_A"}
+    entries.append({
+        "trace_id": f"trace_{repo_idx:03d}_001",
+        "error_source_node": agents[0],
+        "error_type": error_types[repo_idx % len(error_types)],
+        "structural_predicted_path": path,
+        "actual_observed_path": path if mech != "swallowed_at_source" else [agents[0]],
+        "propagation_stopped_by": path[-1] if mech != "propagated_through" else "",
+        "stop_mechanism": mech,
+        "downstream_impact": {
+            "nodes_affected": 0 if mech == "swallowed_at_source" else max(0, len(path) - 1),
+            "downstream_errors": 0 if mech == "swallowed_at_source" else max(0, len(path) - 1),
+            "downstream_tasks_failed": 1 if mech == "propagated_through" and depth > 1 else 0,
+            "cascade_depth": 0 if mech == "swallowed_at_source" else depth,
+        },
+        "structural_prediction_match": (mech != "swallowed_at_source"),
+        "finding_id": FINDING_IDS[0],
+        "run_id": f"repo_{repo_idx:03d}_run_0",
+    })
 
-        for run_num in range(1, runs_per_repo + 1):
-            run_id = f"{repo_id}_run_{run_num}"
-            events_file = os.path.join(raw_events_dir, f"{run_id}.jsonl")
-            events = []
+    # Second trace: single-node swallowed error
+    entries.append({
+        "trace_id": f"trace_{repo_idx:03d}_002",
+        "error_source_node": agents[1],
+        "error_type": "TimeoutError",
+        "structural_predicted_path": [agents[1]],
+        "actual_observed_path": [agents[1]],
+        "propagation_stopped_by": agents[1],
+        "stop_mechanism": "swallowed_at_source",
+        "downstream_impact": {
+            "nodes_affected": 0,
+            "downstream_errors": 0,
+            "downstream_tasks_failed": 0,
+            "cascade_depth": 0,
+        },
+        "structural_prediction_match": True,
+        "finding_id": FINDING_IDS[1],
+        "run_id": f"repo_{repo_idx:03d}_run_1",
+    })
 
-            # execution.start
-            events.append(make_event("execution.start", run_id, repo_id, fw,
-                                     source_node=node("agent", f"agent_{agent_names[0].lower()}", agent_names[0])))
+    return entries
 
-            for ag_idx, ag_name in enumerate(agent_names):
-                ag_node = node("agent", f"agent_{ag_name.lower()}", ag_name)
 
-                # agent.task_start
-                start_id = f"evt_{uuid.uuid4().hex[:16]}"
-                ev = make_event("agent.task_start", run_id, repo_id, fw, source_node=ag_node)
-                ev["event_id"] = start_id
-                events.append(ev)
+def _make_failure_modes(repo_idx: int) -> list[dict]:
+    """Build failure mode observations for the repo."""
+    modes = []
+    failure_types = ["swallowed_error", "degraded_output_propagation", "timeout_cascade", "schema_mismatch"]
+    for i, fid in enumerate(FINDING_IDS):
+        manifested = random.random() < 0.6
+        modes.append({
+            "finding_id": fid,
+            "finding_name": FINDING_NAMES.get(fid, fid),
+            "manifestation_observed": manifested,
+            "occurrences": random.randint(1, 8) if manifested else 0,
+            "failure_type": failure_types[i % len(failure_types)] if manifested else "",
+            "failure_description": (
+                f"Observed {fid} in repo_{repo_idx:03d} during run execution"
+                if manifested else ""
+            ),
+        })
+    return modes
 
-                # llm.call_start/end
-                llm_start = make_event("llm.call_start", run_id, repo_id, fw,
-                                       source_node=node("capability", f"cap_llm_{ag_name.lower()}", f"{ag_name}_llm"),
-                                       payload={"model_requested": "test-model", "message_count": 3})
-                events.append(llm_start)
-                time.sleep(0.001)
-                events.append(make_event("llm.call_end", run_id, repo_id, fw,
-                                         source_node=node("capability", f"cap_llm_{ag_name.lower()}", f"{ag_name}_llm"),
-                                         payload={"input_tokens": 100, "output_tokens": 50, "latency_ms": 150.0},
-                                         parent_event_id=llm_start["event_id"]))
 
-                # tool.invoked/completed
-                events.append(make_event("tool.invoked", run_id, repo_id, fw,
-                                         source_node=node("capability", f"cap_tool_{ag_name.lower()}", f"{ag_name}_tool"),
-                                         payload={"tool_name": f"tool_{ag_name.lower()}"}))
-                events.append(make_event("tool.completed", run_id, repo_id, fw,
-                                         source_node=node("capability", f"cap_tool_{ag_name.lower()}", f"{ag_name}_tool"),
-                                         payload={"tool_name": f"tool_{ag_name.lower()}", "status": "success"}))
+def _make_monitoring_baselines(repo_idx: int) -> list[dict]:
+    """Build monitoring baseline entries with canonical metric-to-finding mapping."""
+    baselines = []
+    for metric in METRICS:
+        baselines.append({
+            "metric": metric,
+            "finding_id": METRIC_TO_FINDING.get(metric, "STRAT-UNKNOWN"),
+            "scanner_metric": SCANNER_METRIC_NAMES.get(metric, metric),
+            "observed_baseline": round(random.uniform(0.01, 1.0), 4),
+            "repo": f"test-org/repo_{repo_idx:03d}",
+        })
+    return baselines
 
-                # decision.made (with input_hash for determinism metrics)
-                events.append(make_event("decision.made", run_id, repo_id, fw,
-                                         source_node=ag_node,
-                                         payload={
-                                             "input_hash": input_hashes[run_num],
-                                             "selected_option_hash": f"opt_{ag_idx}",
-                                             "outcome": f"option_{ag_idx}",
-                                             "confidence": round(0.7 + ag_idx * 0.05, 2),
-                                         }))
 
-                # agent.task_end
-                events.append(make_event("agent.task_end", run_id, repo_id, fw,
-                                         source_node=ag_node,
-                                         parent_event_id=start_id))
-
-            # delegation events
-            for j in range(len(agent_names) - 1):
-                src = node("agent", f"agent_{agent_names[j].lower()}", agent_names[j])
-                tgt = node("agent", f"agent_{agent_names[j+1].lower()}", agent_names[j + 1])
-                events.append(make_event("delegation.initiated", run_id, repo_id, fw,
-                                         source_node=src, target_node=tgt, edge_type="delegates_to"))
-
-            # data.write: first two agents write to shared data store
-            ds_node = node("data_store", "ds_shared_memory", "SharedMemory")
-            for j in range(min(2, len(agent_names))):
-                ag_node = node("agent", f"agent_{agent_names[j].lower()}", agent_names[j])
-                events.append(make_event("data.write", run_id, repo_id, fw,
-                                         source_node=ag_node, target_node=ds_node,
-                                         payload={"data_size_bytes": 1024}))
-
-            # data.read: last agent reads from shared data store
-            last_ag = node("agent", f"agent_{agent_names[-1].lower()}", agent_names[-1])
-            events.append(make_event("data.read", run_id, repo_id, fw,
-                                     source_node=last_ag, target_node=ds_node))
-
-            # external.call: first agent calls external service
-            ext_node = node("external", "ext_api_service", "APIService")
-            first_ag = node("agent", f"agent_{agent_names[0].lower()}", agent_names[0])
-            events.append(make_event("external.call", run_id, repo_id, fw,
-                                     source_node=first_ag, target_node=ext_node,
-                                     payload={"endpoint": "/api/data", "latency_ms": 200.0}))
-
-            # guardrail.triggered: output filter guardrail
-            guard_node = node("guardrail", "guard_output_filter", "OutputFilter")
-            events.append(make_event("guardrail.triggered", run_id, repo_id, fw,
-                                     source_node=guard_node,
-                                     payload={"action_prevented": run_num == 2,
-                                              "latency_ms": 5.0}))
-
-            # Run 2: error.occurred + error.propagated with multi-node path
-            if run_num == 2:
-                events.append(make_event("error.occurred", run_id, repo_id, fw,
-                                         source_node=node("agent", f"agent_{agent_names[-1].lower()}", agent_names[-1]),
-                                         payload={"error_type": "RuntimeError", "error_message": "Test error"}))
-                # error.propagated with propagation_path across agents
-                if len(agent_names) >= 2:
-                    prop_path = [f"agent_{agent_names[-1].lower()}"]
-                    for j in range(len(agent_names) - 2, -1, -1):
-                        prop_path.append(f"agent_{agent_names[j].lower()}")
-                    events.append(make_event("error.propagated", run_id, repo_id, fw,
-                                             source_node=node("agent", f"agent_{agent_names[-1].lower()}", agent_names[-1]),
-                                             payload={
-                                                 "error_type": "RuntimeError",
-                                                 "propagation_path": prop_path,
-                                                 "downstream_impact": True,
-                                                 "reached_irreversible": False,
-                                             }))
-
-            # Emergent edge: last agent directly calls external service
-            # (no structural edge between them — only agent_0 has a structural
-            # calls edge to ext_api_service)
-            if len(agent_names) >= 2:
-                emergent_src = node("agent", f"agent_{agent_names[-1].lower()}", agent_names[-1])
-                events.append(make_event("external.call", run_id, repo_id, fw,
-                                         source_node=emergent_src, target_node=ext_node,
-                                         payload={"endpoint": "/api/emergency", "latency_ms": 300.0}))
-
-            # execution.end
-            events.append(make_event("execution.end", run_id, repo_id, fw,
-                                     source_node=node("agent", f"agent_{agent_names[0].lower()}", agent_names[0])))
-
-            with open(events_file, "w") as f:
-                for ev in events:
-                    f.write(json.dumps(ev, default=str) + "\n")
-
-            total_events_written += len(events)
-            execution_results.append({
-                "run_id": run_id,
-                "repo_id": repo_id,
+def build_synthetic_records(count: int = 10) -> list[dict]:
+    """Build *count* synthetic behavioral records."""
+    records = []
+    for i in range(count):
+        fw = FRAMEWORKS[i % len(FRAMEWORKS)]
+        record = build_behavioral_record(
+            repo_full_name=f"test-org/repo_{i:03d}",
+            execution_metadata={
                 "framework": fw,
-                "events_file": events_file,
-                "events_count": len(events),
-                "status": "SUCCESS",
-                "input_hash": input_hashes[run_num],
-            })
+                "runs_completed": 3,
+                "total_events": random.randint(80, 300),
+                "run_ids": [f"repo_{i:03d}_run_{r}" for r in range(3)],
+            },
+            edge_validation=_make_edge_validation(i),
+            emergent_edges=_make_emergent_edges(i),
+            node_activation=_make_node_activation(i),
+            error_propagation=_make_error_propagation(i),
+            failure_modes=_make_failure_modes(i),
+            monitoring_baselines=_make_monitoring_baselines(i),
+        )
+        records.append(record)
+    return records
 
-    print(f"  Repos executed:    {len(selected[:10])}")
-    print(f"  Runs per repo:     {runs_per_repo}")
-    print(f"  Total runs:        {len(execution_results)}")
-    print(f"  Total events:      {total_events_written}")
-    print(f"\n  -> Saved {len(execution_results)} JSONL files to {raw_events_dir}")
 
-    # =====================================================================
-    # PHASE 3: DATA COLLECTION
-    # =====================================================================
-    print(f"\n{SEPARATOR}")
-    print("PHASE 3: DATA COLLECTION")
-    print(SEPARATOR)
+# =========================================================================
+# 2. Main evaluation
+# =========================================================================
 
-    from stratum_lab.collection.parser import parse_events_file, build_run_record, aggregate_run_records
+def main() -> None:
+    passed = 0
+    failed = 0
+    tmpdir = tempfile.mkdtemp(prefix="stratum_pipeline_eval_")
 
-    # Parse all event files and build run records
-    all_run_records = []
-    repo_run_records = {}  # repo_id -> [records]
+    dual_print(f"Working directory: {tmpdir}\n")
 
-    for result in execution_results:
-        events = parse_events_file(result["events_file"])
-        record = build_run_record(events, run_metadata={
-            "repo_id": result["repo_id"],
-            "run_id": result["run_id"],
-            "framework": result["framework"],
-            "input_hash": result.get("input_hash", result["run_id"]),
-        })
-        all_run_records.append(record)
+    # -----------------------------------------------------------------
+    # Build synthetic behavioral records
+    # -----------------------------------------------------------------
+    dual_print(SEPARATOR)
+    dual_print("STEP 1: BUILD SYNTHETIC BEHAVIORAL RECORDS")
+    dual_print(SEPARATOR)
 
-        repo_id = result["repo_id"]
-        if repo_id not in repo_run_records:
-            repo_run_records[repo_id] = []
-        repo_run_records[repo_id].append(record)
+    records = build_synthetic_records(10)
+    dual_print(f"  Records created:     {len(records)}")
+    dual_print(f"  Schema version:      {records[0]['schema_version']}")
 
-    # Aggregate per repo
-    repo_aggregates = {}
-    for repo_id, records in repo_run_records.items():
-        repo_aggregates[repo_id] = aggregate_run_records(records)
+    tbl = Table(title="Behavioral Records Summary")
+    tbl.add_column("Repo", style="cyan")
+    tbl.add_column("Framework")
+    tbl.add_column("Struct Edges")
+    tbl.add_column("Emergent")
+    tbl.add_column("Failure Modes")
+    tbl.add_column("Baselines")
 
-    print(f"  Run records built: {len(all_run_records)}")
-    print(f"  Repos aggregated:  {len(repo_aggregates)}")
+    for rec in records:
+        tbl.add_row(
+            rec["repo_full_name"],
+            rec["execution_metadata"]["framework"],
+            str(rec["edge_validation"]["structural_edges_total"]),
+            str(len(rec["emergent_edges"])),
+            str(len(rec["failure_modes"])),
+            str(len(rec["monitoring_baselines"])),
+        )
 
-    # Show sample run record
-    sample = all_run_records[0]
-    print(f"\n  Sample run record ({sample['run_id']}):")
-    print(f"    Total events:    {sample['total_events']}")
-    print(f"    Event types:     {sample['total_events_by_type']}")
-    print(f"    LLM calls:       {sample['llm_calls']['count']}")
-    print(f"    Errors:          {sample['error_summary']['total_errors']}")
-    print(f"    Delegations:     {len(sample['delegation_chains'])}")
+    console.print(tbl)
+    file_console.print(tbl)
 
-    # Show sample aggregate
-    sample_agg = list(repo_aggregates.values())[0]
-    print(f"\n  Sample repo aggregate ({sample_agg['repo_id']}):")
-    print(f"    Num runs:        {sample_agg['num_runs']}")
-    print(f"    Total events:    {sample_agg['total_events']}")
-    print(f"    Avg events/run:  {sample_agg['avg_events_per_run']}")
+    # Show a sample record
+    dual_print(f"\n  Sample record (repo_000):")
+    sample = records[0]
+    dual_print(f"    edge_validation.structural_edges_total:    {sample['edge_validation']['structural_edges_total']}")
+    dual_print(f"    edge_validation.structural_edges_activated:{sample['edge_validation']['structural_edges_activated']}")
+    dual_print(f"    edge_validation.activation_rates keys:     {list(sample['edge_validation']['activation_rates'].keys())}")
+    dual_print(f"    emergent_edges count:                      {len(sample['emergent_edges'])}")
+    dual_print(f"    node_activation.structural_prediction_match_rate: {sample['node_activation']['structural_prediction_match_rate']}")
+    dual_print(f"    error_propagation entries:                 {len(sample['error_propagation'])}")
+    dual_print(f"    failure_modes entries:                     {len(sample['failure_modes'])}")
+    dual_print(f"    monitoring_baselines entries:              {len(sample['monitoring_baselines'])}")
 
-    print(f"\n  -> Collection phase complete")
+    # -----------------------------------------------------------------
+    # Export feedback
+    # -----------------------------------------------------------------
+    dual_print(f"\n{SEPARATOR}")
+    dual_print("STEP 2: EXPORT FEEDBACK")
+    dual_print(SEPARATOR)
 
-    # =====================================================================
-    # PHASE 4: GRAPH OVERLAY
-    # =====================================================================
-    print(f"\n{SEPARATOR}")
-    print("PHASE 4: GRAPH OVERLAY")
-    print(SEPARATOR)
+    feedback_dir = os.path.join(tmpdir, "feedback")
+    files_written = export_feedback(records, feedback_dir)
 
-    from stratum_lab.overlay.enricher import enrich_graph
+    dual_print(f"  Output directory:    {feedback_dir}")
+    dual_print(f"  Files written:       {len(files_written)}")
+    for fname, fpath in files_written.items():
+        size = os.path.getsize(fpath)
+        dual_print(f"    {fname:40s} {size:>6,} bytes")
 
-    enriched_graphs = []
-    total_emergent = 0
-    total_dead = 0
+    # -----------------------------------------------------------------
+    # Check 13: emergent_heuristics.json
+    # -----------------------------------------------------------------
+    dual_print(f"\n{SEPARATOR}")
+    dual_print("CHECK 13: emergent_heuristics.json")
+    dual_print(SEPARATOR)
 
-    for repo_id, records in repo_run_records.items():
-        sel = next((s for s in selected if s["repo_id"] == repo_id), None)
-        if not sel:
-            continue
+    eh_path = os.path.join(feedback_dir, "emergent_heuristics.json")
+    assert os.path.isfile(eh_path), "emergent_heuristics.json not written"
 
-        fw = sel["framework"]
-        agent_count = sel["agent_count"]
-        agent_names = [f"Agent_{j}" for j in range(agent_count)]
+    with open(eh_path, "r", encoding="utf-8") as f:
+        eh_data = json.load(f)
 
-        # Build structural graph for this repo — all node types
-        struct_nodes = {}
-        struct_edges = {}
-        edge_ctr = 0
+    has_total = "total_emergent_edges" in eh_data
+    has_by_type = "by_discovery_type" in eh_data
+    has_heuristics = "heuristics" in eh_data and len(eh_data["heuristics"]) > 0
+    by_type = eh_data.get("by_discovery_type", {})
+    grouped_ok = all(dt in by_type for dt in DISCOVERY_TYPES)
 
-        # Agent nodes
-        for j, ag_name in enumerate(agent_names):
-            struct_nodes[f"agent_{ag_name.lower()}"] = {
-                "node_type": "agent", "name": ag_name,
-                "source_file": "agents.py", "line_number": j * 20,
-            }
+    check_13_pass = has_total and has_by_type and has_heuristics and grouped_ok
 
-        # Capability nodes (tool + LLM per agent)
-        for ag_name in agent_names:
-            struct_nodes[f"cap_tool_{ag_name.lower()}"] = {
-                "node_type": "capability", "name": f"{ag_name}_tool",
-                "class_name": f"Tool{ag_name}",
-            }
-            struct_nodes[f"cap_llm_{ag_name.lower()}"] = {
-                "node_type": "capability", "name": f"{ag_name}_llm",
-                "class_name": f"LLM{ag_name}",
-            }
+    dual_print(f"  File exists:                  YES")
+    dual_print(f"  Has total_emergent_edges:      {has_total}")
+    dual_print(f"  Has by_discovery_type:          {has_by_type}")
+    dual_print(f"  Has non-empty heuristics list:  {has_heuristics} (count={len(eh_data.get('heuristics', []))})")
+    dual_print(f"  Grouped by discovery_type:      {grouped_ok}")
+    dual_print(f"    by_discovery_type:             {by_type}")
 
-        # Data store node
-        struct_nodes["ds_shared_memory"] = {
-            "node_type": "data_store", "name": "SharedMemory",
-        }
+    dual_print(f"\n  Sample heuristics (first 3):")
+    for h in eh_data.get("heuristics", [])[:3]:
+        dual_print(f"    {h['repo']}: {h['source_node']} -> {h['target_node']} "
+                   f"[{h['discovery_type']}] rate={h['activation_rate']}")
 
-        # External service node
-        struct_nodes["ext_api_service"] = {
-            "node_type": "external", "name": "APIService",
-        }
-
-        # Guardrail node
-        struct_nodes["guard_output_filter"] = {
-            "node_type": "guardrail", "name": "OutputFilter",
-        }
-
-        # Delegation edges: agent chain
-        for j in range(len(agent_names) - 1):
-            edge_ctr += 1
-            struct_edges[f"e_{edge_ctr}"] = {
-                "edge_type": "delegates_to",
-                "source": f"agent_{agent_names[j].lower()}",
-                "target": f"agent_{agent_names[j+1].lower()}",
-            }
-
-        # tool_of edges: each tool capability -> its agent
-        for ag_name in agent_names:
-            edge_ctr += 1
-            struct_edges[f"e_{edge_ctr}"] = {
-                "edge_type": "tool_of",
-                "source": f"cap_tool_{ag_name.lower()}",
-                "target": f"agent_{ag_name.lower()}",
-            }
-
-        # writes_to edges: first two agents -> data store
-        for j in range(min(2, len(agent_names))):
-            edge_ctr += 1
-            struct_edges[f"e_{edge_ctr}"] = {
-                "edge_type": "writes_to",
-                "source": f"agent_{agent_names[j].lower()}",
-                "target": "ds_shared_memory",
-            }
-
-        # reads_from: last agent -> data store
-        edge_ctr += 1
-        struct_edges[f"e_{edge_ctr}"] = {
-            "edge_type": "reads_from",
-            "source": f"agent_{agent_names[-1].lower()}",
-            "target": "ds_shared_memory",
-        }
-
-        # calls: first agent -> external service
-        edge_ctr += 1
-        struct_edges[f"e_{edge_ctr}"] = {
-            "edge_type": "calls",
-            "source": f"agent_{agent_names[0].lower()}",
-            "target": "ext_api_service",
-        }
-
-        # filtered_by: second agent -> guardrail (or first if only 1)
-        guard_agent = agent_names[1] if len(agent_names) > 1 else agent_names[0]
-        edge_ctr += 1
-        struct_edges[f"e_{edge_ctr}"] = {
-            "edge_type": "filtered_by",
-            "source": f"agent_{guard_agent.lower()}",
-            "target": "guard_output_filter",
-        }
-
-        # Dead edge: will never be traversed at runtime
-        if len(agent_names) >= 3:
-            edge_ctr += 1
-            struct_edges["e_dead"] = {
-                "edge_type": "reads_from",
-                "source": f"agent_{agent_names[-1].lower()}",
-                "target": f"agent_{agent_names[0].lower()}",
-            }
-
-        # Taxonomy preconditions
-        taxonomy_preconds = sel.get("taxonomy_preconditions", [])
-        if not taxonomy_preconds:
-            taxonomy_preconds = ["shared_state_no_arbitration", "no_timeout_on_delegation", "unhandled_tool_failure"]
-
-        structural_graph = {
-            "repo_id": repo_id,
-            "framework": fw,
-            "taxonomy_preconditions": taxonomy_preconds,
-            "nodes": struct_nodes,
-            "edges": struct_edges,
-        }
-
-        # Add raw events to run records for enricher
-        enriched_records = []
-        for rec in records:
-            events = parse_events_file(
-                next(r["events_file"] for r in execution_results if r["run_id"] == rec["run_id"])
-            )
-            enriched_records.append({**rec, "events": events})
-
-        enriched = enrich_graph(structural_graph, enriched_records)
-
-        # enrich_graph already computes emergent/dead edges
-        enriched["taxonomy_preconditions"] = taxonomy_preconds
-        enriched_graphs.append(enriched)
-
-        total_emergent += len(enriched.get("emergent_edges", []))
-        total_dead += len(enriched.get("dead_edges", []))
-
-    print(f"  Graphs enriched:   {len(enriched_graphs)}")
-    print(f"  Total emergent:    {total_emergent}")
-    print(f"  Total dead:        {total_dead}")
-
-    # Show sample enriched graph
-    if enriched_graphs:
-        sample_eg = enriched_graphs[0]
-        print(f"\n  Sample enriched graph ({sample_eg['repo_id']}):")
-        print(f"    Nodes:           {len(sample_eg['nodes'])}")
-        print(f"    Edges:           {len(sample_eg['edges'])}")
-        print(f"    Emergent edges:  {len(sample_eg.get('emergent_edges', []))}")
-        print(f"    Dead edges:      {len(sample_eg.get('dead_edges', []))}")
-
-        # Show one node per type
-        seen_types = set()
-        for nid, ndata in sample_eg["nodes"].items():
-            struct = ndata.get("structural", ndata)
-            ntype = struct.get("node_type", "unknown")
-            if ntype in seen_types:
-                continue
-            seen_types.add(ntype)
-            beh = ndata.get("behavioral", {})
-            print(f"    Node {nid} (type={ntype}):")
-            print(f"      activation_count:    {beh.get('activation_count', 0)}")
-            print(f"      activation_rate:     {beh.get('activation_rate', 0)}")
-            tp = beh.get("throughput", {})
-            print(f"      failure_rate:        {tp.get('failure_rate', 0)}")
-            det = beh.get("determinism")
-            if det:
-                print(f"      same_input_activation_consistency: {det.get('same_input_activation_consistency')}")
-                print(f"      same_input_path_consistency:       {det.get('same_input_path_consistency')}")
-            gr_eff = beh.get("guardrail_effectiveness")
-            if gr_eff:
-                print(f"      guardrail_trigger_count:  {gr_eff.get('trigger_count', 0)}")
-                print(f"      guardrail_prevented:      {gr_eff.get('prevented_action_count', 0)}")
-
-        # Show emergent edges detail
-        for em in sample_eg.get("emergent_edges", [])[:2]:
-            print(f"    Emergent: {em.get('source_node_id')} -> {em.get('target_node_id')} "
-                  f"(count={em.get('interaction_count', 0)})")
-
-    # Save enriched graphs
-    enriched_dir = os.path.join(tmpdir, "enriched_graphs")
-    os.makedirs(enriched_dir, exist_ok=True)
-    for eg in enriched_graphs:
-        path = os.path.join(enriched_dir, f"{eg['repo_id']}_enriched.json")
-        with open(path, "w") as f:
-            json.dump(eg, f, indent=2, default=str)
-    print(f"\n  -> Saved {len(enriched_graphs)} enriched graphs to {enriched_dir}")
-
-    # =====================================================================
-    # PHASE 5: KNOWLEDGE BASE
-    # =====================================================================
-    print(f"\n{SEPARATOR}")
-    print("PHASE 5: KNOWLEDGE BASE")
-    print(SEPARATOR)
-
-    from stratum_lab.knowledge.patterns import build_pattern_knowledge_base, detect_novel_patterns, compare_frameworks
-    from stratum_lab.knowledge.taxonomy import compute_manifestation_probabilities
-    from stratum_lab.knowledge.fragility import build_fragility_map
-
-    # Patterns
-    patterns = build_pattern_knowledge_base(enriched_graphs)
-    print(f"  Patterns found:    {len(patterns)}")
-    for p in patterns[:5]:
-        print(f"    {p['pattern_name']}: prevalence={p['prevalence']['prevalence_rate']:.2f}, "
-              f"failure_rate={p['behavioral_distribution']['failure_rate']:.2f}, "
-              f"risk={p['risk_assessment']['risk_level']}")
-
-    # Taxonomy
-    taxonomy = compute_manifestation_probabilities(enriched_graphs)
-    present = {k: v for k, v in taxonomy.items() if v.get("sample_size", 0) > 0}
-    print(f"\n  Taxonomy preconditions with data: {len(present)}")
-    for pc_id, data in list(present.items())[:5]:
-        print(f"    {pc_id}: P(manifest)={data['probability']}, "
-              f"CI={data['confidence_interval']}, n={data['sample_size']}")
-
-    # Novel patterns
-    novel = detect_novel_patterns(enriched_graphs)
-    print(f"\n  Novel patterns:    {len(novel)}")
-    for np_ in novel[:3]:
-        print(f"    {np_['repo_id']}: anomaly_score={np_['anomaly_score']:.2f}, "
-              f"dim={np_['most_anomalous_dimension']}")
-
-    # Framework comparison
-    fw_comp = compare_frameworks(enriched_graphs)
-    print(f"\n  Framework comparisons: {len(fw_comp)}")
-    for comp in fw_comp[:3]:
-        print(f"    {comp['motif_name']}: frameworks={comp['frameworks_compared']}")
-
-    # Fragility map
-    fragility = build_fragility_map(enriched_graphs)
-    print(f"\n  Fragility entries: {len(fragility)}")
-    for entry in fragility[:3]:
-        print(f"    {entry['structural_position']}: sensitivity={entry['sensitivity_score']:.4f}, "
-              f"repos={entry['affected_repos_count']}")
-
-    # Save knowledge base
-    kb_dir = os.path.join(tmpdir, "knowledge_base")
-    os.makedirs(kb_dir, exist_ok=True)
-
-    with open(os.path.join(kb_dir, "patterns.json"), "w") as f:
-        json.dump(patterns, f, indent=2, default=str)
-    with open(os.path.join(kb_dir, "taxonomy.json"), "w") as f:
-        json.dump(taxonomy, f, indent=2, default=str)
-    # Also save as taxonomy_probabilities.json (expected by predictor.py)
-    with open(os.path.join(kb_dir, "taxonomy_probabilities.json"), "w") as f:
-        json.dump(taxonomy, f, indent=2, default=str)
-    with open(os.path.join(kb_dir, "novel_patterns.json"), "w") as f:
-        json.dump(novel, f, indent=2, default=str)
-    with open(os.path.join(kb_dir, "framework_comparisons.json"), "w") as f:
-        json.dump(fw_comp, f, indent=2, default=str)
-    with open(os.path.join(kb_dir, "fragility_map.json"), "w") as f:
-        json.dump(fragility, f, indent=2, default=str)
-
-    print(f"\n  -> Saved knowledge base to {kb_dir}")
-
-    # =====================================================================
-    # PHASE 6: QUERY LAYER
-    # =====================================================================
-    print(f"\n{SEPARATOR}")
-    print("PHASE 6: QUERY LAYER")
-    print(SEPARATOR)
-
-    from stratum_lab.query.fingerprint import compute_graph_fingerprint, compute_normalization_constants
-    from stratum_lab.query.matcher import match_against_dataset
-    from stratum_lab.query.predictor import predict_risks
-    from stratum_lab.query.report import generate_risk_report
-
-    # Use the first enriched graph as a "customer" structural graph
-    if enriched_graphs:
-        customer_graph = enriched_graphs[0]
-
-        # Compute fingerprint
-        fp = compute_graph_fingerprint(customer_graph)
-        print(f"  Customer graph fingerprint:")
-        print(f"    feature_vector length: {len(fp['feature_vector'])}")
-        print(f"    motifs:               {fp['motifs']}")
-        print(f"    topology_hash:        {fp['topology_hash'][:16]}...")
-        print(f"    structural_metrics:   {json.dumps(fp['structural_metrics'], indent=4)}")
-
-        # Build dataset fingerprints + normalization constants
-        dataset_fps = {}
-        all_fps = []
-        for eg in enriched_graphs[1:]:
-            eg_fp = compute_graph_fingerprint(eg)
-            dataset_fps[eg["repo_id"]] = eg_fp
-            all_fps.append(eg_fp)
-
-        norm_constants = compute_normalization_constants(all_fps + [fp])
-
-        # Save fingerprints + normalization to kb
-        with open(os.path.join(kb_dir, "fingerprints.json"), "w") as f:
-            json.dump(dataset_fps, f, indent=2, default=str)
-        with open(os.path.join(kb_dir, "normalization.json"), "w") as f:
-            json.dump(norm_constants, f, indent=2, default=str)
-
-        # Match against dataset
-        matches = match_against_dataset(fp, kb_dir, top_k=5)
-        print(f"\n  Top matches ({len(matches)}):")
-        for m in matches[:5]:
-            print(f"    {m.pattern_name}: score={m.similarity_score:.3f}, "
-                  f"type={m.match_type}, repos={m.matched_repos}")
-
-        # Predict risks
-        preconditions = customer_graph.get("taxonomy_preconditions", [])
-        prediction = predict_risks(customer_graph, matches, preconditions, kb_dir)
-        print(f"\n  Risk prediction:")
-        print(f"    overall_risk_score: {prediction.overall_risk_score:.1f}")
-        print(f"    predicted_risks:   {len(prediction.predicted_risks)}")
-        print(f"    positive_signals:  {len(prediction.positive_signals)}")
-        for risk in prediction.predicted_risks[:3]:
-            print(f"      {risk.precondition_id}: P={risk.manifestation_probability:.2f}, "
-                  f"severity={risk.severity_when_manifested}")
-
-        # Generate report
-        report = generate_risk_report(prediction, customer_graph, output_format="json")
-        print(f"\n  Risk report generated: {len(json.dumps(report))} chars (JSON)")
-
-    # =====================================================================
-    # PHASE 6B: BATCH REPORTS
-    # =====================================================================
-    print(f"\n{SEPARATOR}")
-    print("PHASE 6B: BATCH REPORTS")
-    print(SEPARATOR)
-
-    from stratum_lab.query.batch_report import generate_batch_reports
-
-    if enriched_graphs:
-        batch_reports_dir = os.path.join(tmpdir, "batch_reports")
-        batch_summary = generate_batch_reports(enriched_dir, kb_dir, batch_reports_dir)
-        batch_count = batch_summary.get("reports_generated", 0)
-        print(f"  Batch reports generated: {batch_count}")
-        print(f"  Errors:                {batch_summary.get('errors', 0)}")
-        reports_list = batch_summary.get("reports", [])
-        if reports_list:
-            sample_br = reports_list[0]
-            print(f"  Sample report ({sample_br.get('repo_id', '?')}):")
-            print(f"    risk_score:  {sample_br.get('risk_score', 'N/A')}")
-            print(f"    risk_level:  {sample_br.get('risk_level', 'N/A')}")
-            print(f"    risk_count:  {sample_br.get('risk_count', 0)}")
-        dist = batch_summary.get("risk_distribution", {})
-        if dist:
-            print(f"  Risk distribution: {dist.get('by_risk_level', {})}")
+    if check_13_pass:
+        passed += 1
+        dual_print(f"\n  CHECK 13: PASS")
     else:
-        batch_count = 0
-        print("  (no enriched graphs for batch reports)")
+        failed += 1
+        dual_print(f"\n  CHECK 13: FAIL")
 
-    # =====================================================================
-    # PILOT MODE TEST
-    # =====================================================================
-    print(f"\n{SEPARATOR}")
-    print("PILOT MODE TEST")
-    print(SEPARATOR)
+    # -----------------------------------------------------------------
+    # Check 24: by_discovery_type keys are subset of valid taxonomy
+    # -----------------------------------------------------------------
+    dual_print(f"\n{SEPARATOR}")
+    dual_print("CHECK 24: DISCOVERY TYPE TAXONOMY VALID")
+    dual_print(SEPARATOR)
 
-    import random as _rng
-    _rng.seed(99)
+    by_type_keys = set(by_type.keys())
+    taxonomy_valid = by_type_keys.issubset(VALID_DISCOVERY_TYPES)
 
-    # Test pilot mode with a small subset
-    from stratum_lab.selection.selector import score_and_select as pilot_select
+    dual_print(f"  by_discovery_type keys:  {by_type_keys}")
+    dual_print(f"  Valid taxonomy set:       {VALID_DISCOVERY_TYPES}")
+    dual_print(f"  Is subset:                {taxonomy_valid}")
 
-    pilot_repos = raw_repos[:10]
-    pilot_selected, pilot_summary = pilot_select(
-        pilot_repos, target=10, min_runnability=10, min_per_archetype=1
+    check_24_pass = taxonomy_valid and len(by_type_keys) > 0
+    if check_24_pass:
+        passed += 1
+        dual_print(f"\n  CHECK 24: PASS")
+    else:
+        failed += 1
+        dual_print(f"\n  CHECK 24: FAIL")
+
+    # -----------------------------------------------------------------
+    # Check 25: All 5 feedback files have model_context.model_tier
+    # -----------------------------------------------------------------
+    dual_print(f"\n{SEPARATOR}")
+    dual_print("CHECK 25: MODEL CONTEXT IN ALL FEEDBACK FILES")
+    dual_print(SEPARATOR)
+
+    check_25_pass = True
+    for fname in [
+        "emergent_heuristics.json",
+        "edge_confidence_weights.json",
+        "failure_mode_catalog.json",
+        "monitoring_baselines.json",
+        "prediction_match_report.json",
+    ]:
+        fpath = os.path.join(feedback_dir, fname)
+        with open(fpath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        mc = data.get("model_context", {})
+        has_mt = isinstance(mc, dict) and "model_tier" in mc
+        dual_print(f"  {fname:40s} model_context.model_tier: {has_mt}")
+        if not has_mt:
+            check_25_pass = False
+
+    if check_25_pass:
+        passed += 1
+        dual_print(f"\n  CHECK 25: PASS")
+    else:
+        failed += 1
+        dual_print(f"\n  CHECK 25: FAIL")
+
+    # -----------------------------------------------------------------
+    # Check 14: edge_confidence_weights.json
+    # -----------------------------------------------------------------
+    dual_print(f"\n{SEPARATOR}")
+    dual_print("CHECK 14: edge_confidence_weights.json")
+    dual_print(SEPARATOR)
+
+    ecw_path = os.path.join(feedback_dir, "edge_confidence_weights.json")
+    assert os.path.isfile(ecw_path), "edge_confidence_weights.json not written"
+
+    with open(ecw_path, "r", encoding="utf-8") as f:
+        ecw_data = json.load(f)
+
+    has_edge_types = "edge_types" in ecw_data
+    has_repos_analyzed = "repos_analyzed" in ecw_data
+    edge_types_data = ecw_data.get("edge_types", {})
+    has_per_type_rates = all(
+        "mean_activation_rate" in v and "sample_size" in v
+        for v in edge_types_data.values()
+    ) if edge_types_data else False
+
+    check_14_pass = has_edge_types and has_repos_analyzed and has_per_type_rates and len(edge_types_data) > 0
+
+    dual_print(f"  File exists:                  YES")
+    dual_print(f"  Has edge_types:                {has_edge_types}")
+    dual_print(f"  Has repos_analyzed:             {has_repos_analyzed} (value={ecw_data.get('repos_analyzed')})")
+    dual_print(f"  Per-type activation rates:      {has_per_type_rates}")
+    dual_print(f"  Edge types found:               {len(edge_types_data)}")
+
+    dual_print(f"\n  Per-type weights:")
+    for etype, weights in edge_types_data.items():
+        dual_print(f"    {etype:20s}  mean={weights['mean_activation_rate']:.4f}  "
+                   f"min={weights['min']:.4f}  max={weights['max']:.4f}  n={weights['sample_size']}")
+
+    if check_14_pass:
+        passed += 1
+        dual_print(f"\n  CHECK 14: PASS")
+    else:
+        failed += 1
+        dual_print(f"\n  CHECK 14: FAIL")
+
+    # -----------------------------------------------------------------
+    # Check 15: failure_mode_catalog.json
+    # -----------------------------------------------------------------
+    dual_print(f"\n{SEPARATOR}")
+    dual_print("CHECK 15: failure_mode_catalog.json")
+    dual_print(SEPARATOR)
+
+    fmc_path = os.path.join(feedback_dir, "failure_mode_catalog.json")
+    assert os.path.isfile(fmc_path), "failure_mode_catalog.json not written"
+
+    with open(fmc_path, "r", encoding="utf-8") as f:
+        fmc_data = json.load(f)
+
+    catalog = fmc_data.get("catalog", fmc_data.get("findings", []))
+    has_findings = len(catalog) > 0
+    has_examples = any(len(f.get("examples", [])) > 0 for f in catalog)
+
+    check_15_pass = has_findings and has_examples
+
+    dual_print(f"  File exists:                  YES")
+    dual_print(f"  Has non-empty catalog:         {has_findings} (count={len(catalog)})")
+    dual_print(f"  Has examples:                  {has_examples}")
+    dual_print(f"  repos_analyzed:                {fmc_data.get('repos_analyzed')}")
+
+    dual_print(f"\n  Failure mode catalog:")
+    for finding in catalog:
+        examples_count = len(finding.get("examples", []))
+        dual_print(f"    {finding['finding_id']:40s}  repos_affected={finding.get('repos_affected', 0)}  "
+                   f"total_manifestations={finding.get('total_manifestations', 0)}  examples={examples_count}")
+
+    if check_15_pass:
+        passed += 1
+        dual_print(f"\n  CHECK 15: PASS")
+    else:
+        failed += 1
+        dual_print(f"\n  CHECK 15: FAIL")
+
+    # -----------------------------------------------------------------
+    # Check 19: Catalog example has error_propagation.structural_predicted_path
+    # -----------------------------------------------------------------
+    dual_print(f"\n{SEPARATOR}")
+    dual_print("CHECK 19: CATALOG EXAMPLE ERROR PROPAGATION")
+    dual_print(SEPARATOR)
+
+    has_ep_trace = False
+    for finding in catalog:
+        for example in finding.get("examples", []):
+            ep = example.get("error_propagation", {})
+            if ep and isinstance(ep, dict) and ep.get("structural_predicted_path"):
+                has_ep_trace = True
+                dual_print(f"  Found in {finding['finding_id']}: "
+                           f"path={ep['structural_predicted_path']}")
+                break
+        if has_ep_trace:
+            break
+
+    check_19_pass = has_ep_trace
+    if check_19_pass:
+        passed += 1
+        dual_print(f"\n  CHECK 19: PASS")
+    else:
+        failed += 1
+        dual_print(f"\n  CHECK 19: FAIL -- no catalog example has error_propagation.structural_predicted_path")
+
+    # -----------------------------------------------------------------
+    # Check 20: Catalog has metadata.model_tier + metadata.caveat
+    # -----------------------------------------------------------------
+    dual_print(f"\n{SEPARATOR}")
+    dual_print("CHECK 20: CATALOG METADATA")
+    dual_print(SEPARATOR)
+
+    catalog_meta = fmc_data.get("metadata", {})
+    has_model_tier = "model_tier" in catalog_meta
+    has_caveat = "caveat" in catalog_meta
+
+    dual_print(f"  metadata.model_tier: {has_model_tier} (value={catalog_meta.get('model_tier')})")
+    dual_print(f"  metadata.caveat:     {has_caveat}")
+    if has_caveat:
+        dual_print(f"    caveat: {catalog_meta.get('caveat', '')[:100]}...")
+
+    check_20_pass = has_model_tier and has_caveat
+
+    # Also verify finding_names are human-readable (not raw IDs)
+    bad_names = []
+    for entry in catalog:
+        fname = entry.get("finding_name", "")
+        if fname.startswith("STRAT-") or len(fname) <= 5:
+            bad_names.append(f"{entry.get('finding_id')}: '{fname}'")
+    if bad_names:
+        check_20_pass = False
+        dual_print(f"  finding_name human-readable:  False")
+        for bn in bad_names[:3]:
+            dual_print(f"    BAD: {bn}")
+    else:
+        dual_print(f"  finding_name human-readable:  True")
+
+    if check_20_pass:
+        passed += 1
+        dual_print(f"\n  CHECK 20: PASS")
+    else:
+        failed += 1
+        dual_print(f"\n  CHECK 20: FAIL")
+
+    # -----------------------------------------------------------------
+    # Check 16: monitoring_baselines.json
+    # -----------------------------------------------------------------
+    dual_print(f"\n{SEPARATOR}")
+    dual_print("CHECK 16: monitoring_baselines.json")
+    dual_print(SEPARATOR)
+
+    mb_path = os.path.join(feedback_dir, "monitoring_baselines.json")
+    assert os.path.isfile(mb_path), "monitoring_baselines.json not written"
+
+    with open(mb_path, "r", encoding="utf-8") as f:
+        mb_data = json.load(f)
+
+    has_baselines = "baselines" in mb_data and len(mb_data["baselines"]) > 0
+    baselines = mb_data.get("baselines", [])
+    has_per_finding_agg = all(
+        "mean_baseline" in b and "sample_repos" in b and "finding_id" in b
+        for b in baselines
+    ) if baselines else False
+
+    check_16_pass = has_baselines and has_per_finding_agg
+
+    dual_print(f"  File exists:                  YES")
+    dual_print(f"  Has non-empty baselines list:  {has_baselines} (count={len(baselines)})")
+    dual_print(f"  Has per-finding aggregates:    {has_per_finding_agg}")
+    dual_print(f"  repos_analyzed:                {mb_data.get('repos_analyzed')}")
+
+    dual_print(f"\n  Monitoring baselines:")
+    for bl in baselines:
+        dual_print(f"    {bl['metric']:45s}  mean={bl['mean_baseline']:>10.4f}  "
+                   f"sample_repos={bl['sample_repos']}  finding={bl['finding_id']}")
+
+    if check_16_pass:
+        passed += 1
+        dual_print(f"\n  CHECK 16: PASS")
+    else:
+        failed += 1
+        dual_print(f"\n  CHECK 16: FAIL")
+
+    # -----------------------------------------------------------------
+    # Check 23: ALL finding_ids in catalog + baselines start with "STRAT-"
+    # -----------------------------------------------------------------
+    dual_print(f"\n{SEPARATOR}")
+    dual_print("CHECK 23: STRAT- PREFIX ON ALL FINDING IDS")
+    dual_print(SEPARATOR)
+
+    all_fids_valid = True
+    bad_fids = []
+
+    for finding in catalog:
+        fid = finding.get("finding_id", "")
+        if not fid.startswith("STRAT-"):
+            all_fids_valid = False
+            bad_fids.append(f"catalog: {fid}")
+
+    for bl in baselines:
+        fid = bl.get("finding_id", "")
+        if fid and not fid.startswith("STRAT-"):
+            all_fids_valid = False
+            bad_fids.append(f"baseline: {fid}")
+
+    dual_print(f"  All finding_ids start with STRAT-: {all_fids_valid}")
+    if bad_fids:
+        for bf in bad_fids[:5]:
+            dual_print(f"    BAD: {bf}")
+
+    check_23_pass = all_fids_valid
+    if check_23_pass:
+        passed += 1
+        dual_print(f"\n  CHECK 23: PASS")
+    else:
+        failed += 1
+        dual_print(f"\n  CHECK 23: FAIL")
+
+    # -----------------------------------------------------------------
+    # Check 17: prediction_match_report.json
+    # -----------------------------------------------------------------
+    dual_print(f"\n{SEPARATOR}")
+    dual_print("CHECK 17: prediction_match_report.json")
+    dual_print(SEPARATOR)
+
+    pmr_path = os.path.join(feedback_dir, "prediction_match_report.json")
+    assert os.path.isfile(pmr_path), "prediction_match_report.json not written"
+
+    with open(pmr_path, "r", encoding="utf-8") as f:
+        pmr_data = json.load(f)
+
+    has_overall = "overall_edge_activation_rate" in pmr_data
+    has_per_cat = "mean_node_prediction_match_rate" in pmr_data
+    has_totals = (
+        "total_structural_edges" in pmr_data
+        and "activated_edges" in pmr_data
+        and "dead_edges" in pmr_data
     )
-    pilot_size = len(pilot_selected)
-    pilot_executed = pilot_size
 
-    # Simulate pilot execution: 10 repos x 3 runs = 30 runs with mixed outcomes
-    pilot_runs = pilot_size * 3
-    statuses = []
-    for _ in range(pilot_runs):
-        r = _rng.random()
-        if r < 0.07:
-            statuses.append("INSTRUMENTATION_FAILURE")
-        elif r < 0.14:
-            statuses.append("MODEL_FAILURE")
-        elif r < 0.17:
-            statuses.append("DEPENDENCY_FAILURE")
-        else:
-            statuses.append("SUCCESS")
+    check_17_pass = has_overall and has_per_cat and has_totals
 
-    inst_failures = statuses.count("INSTRUMENTATION_FAILURE")
-    model_failures = statuses.count("MODEL_FAILURE")
-    other_failures = statuses.count("DEPENDENCY_FAILURE")
-    success_count = statuses.count("SUCCESS")
-    inst_rate = inst_failures / max(pilot_runs, 1)
-    model_rate = model_failures / max(pilot_runs, 1)
-    success_rate = success_count / max(pilot_runs, 1)
+    dual_print(f"  File exists:                         YES")
+    dual_print(f"  Has overall_edge_activation_rate:      {has_overall} (value={pmr_data.get('overall_edge_activation_rate')})")
+    dual_print(f"  Has mean_node_prediction_match_rate:   {has_per_cat} (value={pmr_data.get('mean_node_prediction_match_rate')})")
+    dual_print(f"  Has total/activated/dead edges:         {has_totals}")
+    dual_print(f"    total_structural_edges:               {pmr_data.get('total_structural_edges')}")
+    dual_print(f"    activated_edges:                      {pmr_data.get('activated_edges')}")
+    dual_print(f"    dead_edges:                           {pmr_data.get('dead_edges')}")
+    dual_print(f"    repos_analyzed:                       {pmr_data.get('repos_analyzed')}")
 
-    max_inst = 0.20
-    max_model = 0.15
-    gate_passed = inst_rate <= max_inst and model_rate <= max_model
+    if check_17_pass:
+        passed += 1
+        dual_print(f"\n  CHECK 17: PASS")
+    else:
+        failed += 1
+        dual_print(f"\n  CHECK 17: FAIL")
 
-    print(f"  Pilot batch size:           {pilot_size}")
-    print(f"  Repos executed:             {pilot_executed}")
-    print(f"  Runs completed:             {pilot_runs}")
-    print()
-    print(f"  Instrumentation failures:   {inst_failures}/{pilot_runs} ({inst_rate:.1%})")
-    print(f"  Model failures:             {model_failures}/{pilot_runs} ({model_rate:.1%})")
-    print(f"  Other failures:             {other_failures}/{pilot_runs}")
-    print(f"  Successful runs:            {success_count}/{pilot_runs} ({success_rate:.1%})")
-    print()
-    print(f"  QUALITY GATE:")
-    print(f"    Instrumentation rate:     {inst_rate:.1%} {'<=' if inst_rate <= max_inst else '>'} {max_inst:.0%} threshold  {'PASS' if inst_rate <= max_inst else 'FAIL'}")
-    print(f"    Model failure rate:       {model_rate:.1%} {'<=' if model_rate <= max_model else '>'} {max_model:.0%} threshold  {'PASS' if model_rate <= max_model else 'FAIL'}")
-    print(f"    Overall success rate:     {success_rate:.1%}")
-    print(f"  QUALITY GATE RESULT:        {'PASS — proceeding to full scan' if gate_passed else 'FAIL — aborting'}")
+    # -----------------------------------------------------------------
+    # Check 22: Pilot quality gate
+    # -----------------------------------------------------------------
+    dual_print(f"\n{SEPARATOR}")
+    dual_print("CHECK 22: PILOT QUALITY GATE")
+    dual_print(SEPARATOR)
 
-    # =====================================================================
-    # PHASE 1.5: GITHUB METADATA ENRICHMENT (MOCKED)
-    # =====================================================================
-    print(f"\n{SEPARATOR}")
-    print("PHASE 1.5: GITHUB METADATA ENRICHMENT (MOCKED)")
-    print(SEPARATOR)
+    # Build synthetic run records with a mix of statuses
+    random.seed(99)
+    pilot_statuses = [
+        "SUCCESS", "SUCCESS", "SUCCESS", "SUCCESS", "SUCCESS",
+        "SUCCESS", "SUCCESS", "SUCCESS", "SUCCESS", "SUCCESS",
+        "SUCCESS", "SUCCESS", "SUCCESS", "SUCCESS", "SUCCESS",
+        "SUCCESS", "SUCCESS", "SUCCESS", "SUCCESS", "SUCCESS",
+        "PARTIAL_SUCCESS", "PARTIAL_SUCCESS",
+        "INSTRUMENTATION_FAILURE", "INSTRUMENTATION_FAILURE",
+        "MODEL_FAILURE",
+        "TIMEOUT",
+        "CRASH",
+        "DEPENDENCY_FAILURE",
+        "SUCCESS", "SUCCESS",
+    ]
+    pilot_run_records = [
+        {"run_id": f"pilot_run_{i:03d}", "status": s}
+        for i, s in enumerate(pilot_statuses)
+    ]
 
-    from stratum_lab.outreach.metadata_schema import validate_metadata
+    dual_print(f"  Synthetic pilot runs:          {len(pilot_run_records)}")
 
-    mock_metadata = []
-    for sel_repo in selected[:10]:
-        meta = {
-            "owner_type": _rng.choice(["Organization", "User"]),
-            "owner_login": f"org_{sel_repo['repo_id']}",
-            "stars": _rng.randint(5, 5000),
-            "license_spdx": _rng.choice(["MIT", "Apache-2.0", "GPL-3.0", None]),
-            "topics": _rng.sample(["ai", "agents", "llm", "automation", "ml"], k=3),
-            "readme_text": f"# {sel_repo['repo_id']}\nAn AI agent system using {sel_repo.get('framework', 'unknown')}.",
-            "file_list": ["main.py", "agents.py", "requirements.txt", "Dockerfile", ".github/workflows/ci.yml"],
-            "contributors": [
-                {"login": "alice", "email": "alice@example.com", "commits": 150},
-                {"login": "bob", "email": "bob@corp.io", "commits": 45},
-            ],
-            "last_commit_date": "2026-01-15T10:30:00Z",
-            "pyproject_toml": "...",
-            "org_info": {"website": "https://example.com", "members": 12},
-            "_meta": {"owner": f"org_{sel_repo['repo_id']}", "repo": sel_repo["repo_id"]},
-        }
-        mock_metadata.append(meta)
+    # Count statuses for display
+    from collections import Counter
+    status_counts = Counter(r["status"] for r in pilot_run_records)
+    for status, count in sorted(status_counts.items()):
+        dual_print(f"    {status:30s}  {count}")
 
-    validation_results = [validate_metadata(m) for m in mock_metadata]
-    enterprise_ready = sum(1 for v in validation_results if v["enterprise_ready"])
-    contact_ready = sum(1 for v in validation_results if v["contact_ready"])
+    # Test case A: should PASS (low failure rates)
+    dual_print(f"\n  --- Test A: thresholds instr=20%, model=15% (expect PASS) ---")
+    thresholds_pass = {"instr": 0.20, "model": 0.15}
 
-    print(f"  Repos enriched:         {len(mock_metadata)}")
-    print(f"  Enterprise-ready:       {enterprise_ready}/{len(mock_metadata)}")
-    print(f"  Contact-ready:          {contact_ready}/{len(mock_metadata)}")
-    print(f"  Avg coverage:           {sum(v['coverage_pct'] for v in validation_results) / len(validation_results):.0f}%")
+    # Capture _check_pilot_quality output
+    old_stdout = sys.stdout
+    capture_a = io.StringIO()
+    sys.stdout = capture_a
+    result_a = _check_pilot_quality(pilot_run_records, thresholds_pass)
+    sys.stdout = old_stdout
+    gate_output_a = capture_a.getvalue()
 
-    # =====================================================================
-    # PHASE 7: ENTERPRISE OUTREACH
-    # =====================================================================
-    print(f"\n{SEPARATOR}")
-    print("PHASE 7: ENTERPRISE OUTREACH")
-    print(SEPARATOR)
+    dual_print(_sanitize(gate_output_a.rstrip()))
+    dual_print(f"  _check_pilot_quality returned: {result_a}")
 
-    # 7a: Enterprise classification
-    from stratum_lab.outreach.enterprise_classifier import classify_batch as _classify_batch
-    classifications = _classify_batch(mock_metadata)
-    ent_count = sum(1 for c in classifications if c.get("is_enterprise", False))
-    tier_counts = {}
-    for c in classifications:
-        t = c.get("tier", "unknown")
-        tier_counts[t] = tier_counts.get(t, 0) + 1
-    print(f"  Total classified:       {len(classifications)}")
-    print(f"  Enterprise (score>=45): {ent_count}")
-    print(f"  By tier:                {tier_counts}")
-    print()
+    # Test case B: should FAIL (very tight thresholds)
+    dual_print(f"\n  --- Test B: thresholds instr=1%, model=1% (expect FAIL) ---")
+    thresholds_fail = {"instr": 0.01, "model": 0.01}
 
-    # 7b: Contact extraction
-    from stratum_lab.outreach.contact_extractor import extract_contacts
-    contacts_results = [extract_contacts(m) for m in mock_metadata]
-    outreach_ready = sum(1 for c in contacts_results if c["outreach_ready"])
-    print(f"  Contacts extracted:     {sum(len(c['contacts']) for c in contacts_results)}")
-    print(f"  Outreach-ready repos:   {outreach_ready}/{len(mock_metadata)}")
-    print()
+    capture_b = io.StringIO()
+    sys.stdout = capture_b
+    result_b = _check_pilot_quality(pilot_run_records, thresholds_fail)
+    sys.stdout = old_stdout
+    gate_output_b = capture_b.getvalue()
 
-    # 7c: Teaser reports + outreach queue
-    from stratum_lab.outreach.teaser_report import generate_teaser
-    from stratum_lab.outreach.queue import build_outreach_queue, save_queue
+    dual_print(_sanitize(gate_output_b.rstrip()))
+    dual_print(f"  _check_pilot_quality returned: {result_b}")
 
-    batch_reports = batch_summary.get("reports", [])
-    teasers = []
-    for report in batch_reports[:10]:
-        teaser = generate_teaser(report)
-        if teaser:
-            teasers.append(teaser)
+    # Test case C: empty run records (should pass by default)
+    dual_print(f"\n  --- Test C: empty run records (expect PASS) ---")
+    capture_c = io.StringIO()
+    sys.stdout = capture_c
+    result_c = _check_pilot_quality([], {"instr": 0.20, "model": 0.15})
+    sys.stdout = old_stdout
+    gate_output_c = capture_c.getvalue()
 
-    # Build outreach queue records
-    queue_input_records = []
-    for i in range(min(len(mock_metadata), len(classifications), len(contacts_results))):
-        teaser = teasers[i] if i < len(teasers) else {"headline": "", "preview": "", "top_risks": [], "total_risks": 0}
-        queue_input_records.append({
-            "classification": classifications[i],
-            "contact_info": contacts_results[i],
-            "teaser": teaser,
-            "repo_metadata": mock_metadata[i],
-        })
+    dual_print(_sanitize(gate_output_c.rstrip()))
+    dual_print(f"  _check_pilot_quality returned: {result_c}")
 
-    queue_records = build_outreach_queue(queue_input_records)
-    print(f"  Teaser reports:         {len(teasers)}")
-    print(f"  Outreach queue size:    {len(queue_records)}")
+    check_22_pass = result_a is True and result_b is False and result_c is True
 
-    # Save queue
-    queue_dir = os.path.join(tmpdir, "outreach")
-    os.makedirs(queue_dir, exist_ok=True)
-    save_queue(queue_records, queue_dir)
-    print(f"  Queue saved:            {os.path.join(queue_dir, 'outreach_queue.json')}")
-    print(f"                          {os.path.join(queue_dir, 'outreach_queue.csv')}")
+    if check_22_pass:
+        passed += 1
+        dual_print(f"\n  CHECK 22: PASS")
+    else:
+        failed += 1
+        dual_print(f"\n  CHECK 22: FAIL")
+        dual_print(f"    result_a (expected True):  {result_a}")
+        dual_print(f"    result_b (expected False): {result_b}")
+        dual_print(f"    result_c (expected True):  {result_c}")
 
-    if queue_records:
-        sample_qr = queue_records[0]
-        print(f"\n  Sample outreach record:")
-        print(f"    repo:                 {sample_qr.get('repo', sample_qr.get('owner', 'N/A'))}/{sample_qr.get('repo', 'N/A')}")
-        print(f"    contact:              {sample_qr.get('contact_email', 'N/A')}")
-        print(f"    tier:                 {sample_qr.get('tier', 'N/A')}")
-        print(f"    priority:             {sample_qr.get('priority_score', 'N/A')}")
-        print(f"    headline:             {sample_qr.get('teaser_headline', 'N/A')[:60]}...")
+    # -----------------------------------------------------------------
+    # Full file content dump
+    # -----------------------------------------------------------------
+    dual_print(f"\n{SEPARATOR}")
+    dual_print("FEEDBACK FILE CONTENTS (FULL)")
+    dual_print(SEPARATOR)
 
-    # =====================================================================
-    # SUMMARY
-    # =====================================================================
-    print(f"\n{SEPARATOR}")
-    print("PIPELINE INTEGRATION SUMMARY")
-    print(SEPARATOR)
-    print(f"  Phase 1 (Selection):    {len(raw_repos)} scanned -> {len(selected)} selected")
-    print(f"  Phase 1.5 (Metadata):   {len(mock_metadata)} repos enriched, {enterprise_ready} enterprise-ready")
-    print(f"  Phase 2 (Execution):    {len(selected[:10])} repos x {runs_per_repo} runs = {len(execution_results)} runs, {total_events_written} events")
-    print(f"  Phase 3 (Collection):   {len(all_run_records)} run records, {len(repo_aggregates)} repo aggregates")
-    print(f"  Phase 4 (Overlay):      {len(enriched_graphs)} enriched graphs, {total_emergent} emergent edges, {total_dead} dead edges")
-    print(f"  Phase 5 (Knowledge):    {len(patterns)} patterns, {len(present)} taxonomy entries, {len(novel)} novel, {len(fragility)} fragility entries")
-    print(f"  Phase 6 (Query):        fingerprint + {len(matches) if enriched_graphs else 0} matches + risk prediction + report")
-    batch_count = batch_count if enriched_graphs else 0
-    print(f"  Phase 6B (Batch):       {batch_count} per-repo reports")
-    print(f"  Phase 7 (Outreach):     {len(queue_records)} outreach records, {outreach_ready} contact-ready")
-    print(f"\n  All outputs saved to: {tmpdir}")
-    print(f"\n  RESULT: ALL PHASES COMPLETED SUCCESSFULLY")
+    for fname in [
+        "emergent_heuristics.json",
+        "edge_confidence_weights.json",
+        "failure_mode_catalog.json",
+        "monitoring_baselines.json",
+        "prediction_match_report.json",
+    ]:
+        fpath = os.path.join(feedback_dir, fname)
+        with open(fpath, "r", encoding="utf-8") as f:
+            content = json.load(f)
+        dual_print(f"\n--- {fname} ---")
+        dual_print(pretty(content))
 
-    # Cleanup
+    # -----------------------------------------------------------------
+    # Summary
+    # -----------------------------------------------------------------
+    dual_print(f"\n{SEPARATOR}")
+    dual_print("PIPELINE INTEGRATION EVAL SUMMARY")
+    dual_print(SEPARATOR)
+
+    tbl_summary = Table(title="Validation Check Results")
+    tbl_summary.add_column("Check", style="bold")
+    tbl_summary.add_column("Description")
+    tbl_summary.add_column("Result")
+
+    check_results = [
+        ("13", "Feedback: emergent heuristics", check_13_pass),
+        ("14", "Feedback: edge weights", check_14_pass),
+        ("15", "Feedback: failure catalog", check_15_pass),
+        ("16", "Feedback: monitoring baselines", check_16_pass),
+        ("17", "Feedback: prediction match", check_17_pass),
+        ("19", "Catalog example has error_propagation", check_19_pass),
+        ("20", "Catalog metadata (model_tier + caveat)", check_20_pass),
+        ("22", "Pilot quality gate metrics", check_22_pass),
+        ("23", "STRAT- prefix on all finding IDs", check_23_pass),
+        ("24", "Discovery type taxonomy valid", check_24_pass),
+        ("25", "Model context in all feedback files", check_25_pass),
+    ]
+
+    for check_id, desc, ok in check_results:
+        result_str = "PASS" if ok else "FAIL"
+        tbl_summary.add_row(check_id, desc, result_str)
+
+    console.print(tbl_summary)
+    file_console.print(tbl_summary)
+
+    dual_print(f"\n  Total:  {passed} passed, {failed} failed, {passed + failed} checks")
+    dual_print(f"  RESULT: {'ALL CHECKS PASSED' if failed == 0 else 'SOME CHECKS FAILED'}")
+
+    # -----------------------------------------------------------------
+    # Clean up
+    # -----------------------------------------------------------------
     shutil.rmtree(tmpdir, ignore_errors=True)
+
+    # -----------------------------------------------------------------
+    # Write output file
+    # -----------------------------------------------------------------
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        f.write(_file_buf.getvalue())
+    dual_print(f"\n  Output written to: {OUTPUT_FILE}")
 
 
 if __name__ == "__main__":

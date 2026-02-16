@@ -25,8 +25,11 @@ from rich.progress import (
 from rich.table import Table
 
 from stratum_lab.collection.parser import build_run_record, parse_events_file
-from stratum_lab.overlay.edges import detect_dead_edges, detect_emergent_edges
-from stratum_lab.overlay.enricher import enrich_graph
+from stratum_lab.overlay.edges import detect_dead_edges, detect_emergent_edges, detect_emergent_edges_v2
+from stratum_lab.overlay.enricher import enrich_graph, compute_edge_validation, compute_node_activation
+from stratum_lab.overlay.error_propagation import trace_error_propagation
+from stratum_lab.overlay.failure_modes import classify_failure_modes
+from stratum_lab.overlay.monitoring_baselines import extract_monitoring_baselines
 
 console = Console()
 
@@ -108,6 +111,18 @@ def _build_run_records_from_events(
     for run_id, run_events in runs.items():
         record = build_run_record(run_events)
         record["events"] = run_events  # Attach raw events for enricher
+
+        # Propagate input_hash from events into metadata so the enricher
+        # can group runs by input for determinism analysis.
+        if "metadata" not in record:
+            record["metadata"] = {}
+        if not record["metadata"].get("input_hash"):
+            for ev in run_events:
+                ih = (ev.get("payload") or {}).get("input_hash")
+                if ih:
+                    record["metadata"]["input_hash"] = ih
+                    break
+
         records.append(record)
 
     return records
@@ -258,15 +273,14 @@ def run_overlay(structural_dir: str, events_dir: str, output_dir: str) -> None:
             # Build run records with raw events attached
             run_records = _build_run_records_from_events(repo_events)
 
-            # Enrich the structural graph
+            # Enrich the structural graph (legacy overlay)
             enriched = enrich_graph(structural_graph, run_records)
 
-            # Detect emergent and dead edges
+            # Detect emergent and dead edges (legacy)
             structural_edges = structural_graph.get("edges", {})
             structural_nodes = structural_graph.get("nodes", {})
             total_runs = len(run_records) if run_records else 1
 
-            # Runtime interactions: events with both source and target
             runtime_interactions = [
                 ev for ev in repo_events
                 if ev.get("source_node") and ev.get("target_node")
@@ -281,6 +295,39 @@ def run_overlay(structural_dir: str, events_dir: str, output_dir: str) -> None:
 
             enriched["emergent_edges"] = emergent
             enriched["dead_edges"] = dead
+
+            # ---- v6 analyses ----
+            # 4a. Edge validation matrix
+            enriched["edge_validation"] = compute_edge_validation(
+                structural_graph, repo_events, total_runs
+            )
+
+            # 4b. Emergent edge detection v2 with classification
+            enriched["emergent_edges_v2"] = detect_emergent_edges_v2(
+                structural_graph, repo_events, total_runs
+            )
+
+            # 4c. Node activation topology
+            enriched["node_activation"] = compute_node_activation(
+                structural_graph, repo_events, total_runs
+            )
+
+            # 4d. Error propagation tracing
+            enriched["error_propagation"] = trace_error_propagation(
+                structural_graph, repo_events
+            )
+
+            # 4e. Failure mode classification
+            findings = structural_graph.get("findings", [])
+            enriched["failure_modes"] = classify_failure_modes(
+                findings, repo_events, structural_graph,
+                enriched["error_propagation"]
+            )
+
+            # 4f. Monitoring baseline extraction
+            enriched["monitoring_baselines"] = extract_monitoring_baselines(
+                findings, repo_events
+            )
 
             results[repo_id] = enriched
             progress.advance(task)

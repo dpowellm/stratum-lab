@@ -1,819 +1,332 @@
-================================================================================
-(a) PER-NODE BEHAVIORAL ANNOTATIONS
-================================================================================
+==============================================================================
+EVAL 1: EDGE VALIDATION ACCURACY (Checks 1-2)
+==============================================================================
 
---- agent_researcher (Researcher) ---
-  activation_count : 12
-  activation_rate  : 1.0
-  throughput       : {
-  "tasks_received": 12,
-  "completed": 9,
-  "failed": 1,
-  "failure_rate": 0.0833
-}
-  latency          : {
-  "p50": 350.0,
-  "p95": 800.0,
-  "p99": 800.0,
-  "variance": 64999.99,
-  "sample_count": 9
-}
-  error_behavior   : {
-  "errors_occurred": 1,
-  "propagated_downstream": 0,
-  "swallowed": 1,
-  "propagation_rate": 0.0,
-  "default_values_used": 0,
-  "observed_error_handling": [
-    "retry"
-  ],
-  "structural_prediction_match": true
-}
-  decision_behavior: {'decisions_made': 3, 'decision_entropy': 0.9183, 'consistency_across_same_input': 0.0, 'consistency_across_diff_input': 0.6666666666666666, 'confidence_mean': 0.88, 'confidence_variance': 0.0006}
-  model_sensitivity: {
-  "tool_call_failures": 0,
-  "tool_call_failure_rate": 0.0,
-  "retry_activations": 0,
-  "quality_dependent": false
-}
-  resource_usage   : {
-  "avg_tokens": 850.0,
-  "avg_tool_calls": 1.0,
-  "avg_llm_calls": 1.0,
-  "avg_iterations": 1.0
-}
-  determinism      : {
-  "same_input_activation_consistency": 1.0,
-  "same_input_path_consistency": 1.0,
-  "cross_input_variance": 0.0
-}
+  Structural edges total  : 15
+  Activated               : 11
+  Dead                    : 4
+  Dead edge IDs detected  : ['e12', 'e13', 'e14', 'e15']
+  Expected dead edge IDs  : ['e12', 'e13', 'e14', 'e15']
 
---- agent_writer (Writer) ---
-  activation_count : 9
-  activation_rate  : 1.0
-  throughput       : {
-  "tasks_received": 9,
-  "completed": 6,
-  "failed": 2,
-  "failure_rate": 0.2222
-}
-  latency          : {
-  "p50": 375.0,
-  "p95": 600.0,
-  "p99": 600.0,
-  "variance": 50624.97,
-  "sample_count": 6
-}
-  error_behavior   : {
-  "errors_occurred": 2,
-  "propagated_downstream": 1,
-  "swallowed": 1,
-  "propagation_rate": 0.5,
-  "default_values_used": 0,
-  "observed_error_handling": [
-    "propagate"
-  ],
-  "structural_prediction_match": null
-}
-  decision_behavior: None
-  model_sensitivity: {
-  "tool_call_failures": 0,
-  "tool_call_failure_rate": 0.0,
-  "retry_activations": 0,
-  "quality_dependent": false
-}
-  resource_usage   : {
-  "avg_tokens": 0.0,
-  "avg_tool_calls": 1.0,
-  "avg_llm_calls": 0.0,
-  "avg_iterations": 1.0
-}
-  determinism      : {
-  "same_input_activation_consistency": 1.0,
-  "same_input_path_consistency": 1.0,
-  "cross_input_variance": 0.0
-}
+  [PASS] Total structural edges == 15
+         got 15
+  [PASS] 4 dead edges detected
+         got 4, IDs: ['e12', 'e13', 'e14', 'e15']
+  [PASS] Dead edge IDs match expected set ['e12', 'e13', 'e14', 'e15']
 
---- agent_reviewer (Reviewer) ---
-  activation_count : 10
-  activation_rate  : 1.0
-  throughput       : {
-  "tasks_received": 10,
-  "completed": 7,
-  "failed": 0,
-  "failure_rate": 0.0
+  Activation rates by type: {
+  "delegates_to": 0.8,
+  "uses": 0.75,
+  "writes_to": 1.0,
+  "reads_from": 1.0,
+  "calls": 1.0,
+  "gated_by": 0.0,
+  "shares_with": 0.0
 }
-  latency          : {
-  "p50": 280.0,
-  "p95": 400.0,
-  "p99": 400.0,
-  "variance": 9012.26,
-  "sample_count": 7
-}
-  error_behavior   : {
-  "errors_occurred": 0,
-  "propagated_downstream": 0,
-  "swallowed": 0,
-  "propagation_rate": 0.0,
-  "default_values_used": 0,
-  "observed_error_handling": [],
-  "structural_prediction_match": null
-}
-  decision_behavior: None
-  model_sensitivity: {
-  "tool_call_failures": 0,
-  "tool_call_failure_rate": 0.0,
-  "retry_activations": 0,
-  "quality_dependent": false
-}
-  resource_usage   : {
-  "avg_tokens": 900.0,
-  "avg_tool_calls": 0.33,
-  "avg_llm_calls": 1.0,
-  "avg_iterations": 1.0
-}
-  determinism      : {
-  "same_input_activation_consistency": 1.0,
-  "same_input_path_consistency": 0.0,
-  "cross_input_variance": 0.0769
-}
+  [PASS] Activation rates computed for at least 3 edge types
+         types: ['delegates_to', 'uses', 'writes_to', 'reads_from', 'calls', 'gated_by', 'shares_with']
+  [PASS] Dead edge e12 has meaningful reason
+         reason: "target_never_activated: 'guard_code_review' did not execute in any run"
+  [PASS] Dead edge e13 has meaningful reason
+         reason: 'shared_state_not_used: both nodes ran but shared state not accessed'
+  [PASS] Dead edge e14 has meaningful reason
+         reason: "target_never_activated: 'agent_fallback' did not execute in any run"
+  [PASS] Dead edge e15 has meaningful reason
+         reason: "target_never_activated: 'cap_unused_tool' did not execute in any run"
 
---- cap_web_search_tool (WebSearch) ---
-  activation_count : 7
-  activation_rate  : 1.0
-  throughput       : {
-  "tasks_received": 7,
-  "completed": 4,
-  "failed": 0,
-  "failure_rate": 0.0
-}
-  latency          : {
-  "p50": 200.0,
-  "p95": 200.0,
-  "p99": 200.0,
-  "variance": 1200.01,
-  "sample_count": 4
-}
-  error_behavior   : {
-  "errors_occurred": 0,
-  "propagated_downstream": 0,
-  "swallowed": 0,
-  "propagation_rate": 0.0,
-  "default_values_used": 0,
-  "observed_error_handling": [],
-  "structural_prediction_match": null
-}
-  decision_behavior: None
-  model_sensitivity: {
-  "tool_call_failures": 0,
-  "tool_call_failure_rate": 0.0,
-  "retry_activations": 0,
-  "quality_dependent": false
-}
-  resource_usage   : {
-  "avg_tokens": 0.0,
-  "avg_tool_calls": 1.33,
-  "avg_llm_calls": 0.0,
-  "avg_iterations": 0.0
-}
-  determinism      : {
-  "same_input_activation_consistency": 1.0,
-  "same_input_path_consistency": 0.0,
-  "cross_input_variance": 0.1111
-}
+==============================================================================
+CHECK 18: DEAD EDGE REASON TYPE DIVERSITY
+==============================================================================
+  e12: prefix='target_never_activated'  reason='target_never_activated: 'guard_code_review' did not execute in any run'
+  e13: prefix='shared_state_not_used'  reason='shared_state_not_used: both nodes ran but shared state not accessed'
+  e14: prefix='target_never_activated'  reason='target_never_activated: 'agent_fallback' did not execute in any run'
+  e15: prefix='target_never_activated'  reason='target_never_activated: 'cap_unused_tool' did not execute in any run'
+  [PASS] At least 2 distinct dead edge reason type prefixes (got 2)
+         prefixes: ['shared_state_not_used', 'target_never_activated']
 
---- cap_file_writer_tool (FileWriter) ---
-  activation_count : 3
-  activation_rate  : 1.0
-  throughput       : {
-  "tasks_received": 3,
-  "completed": 3,
-  "failed": 0,
-  "failure_rate": 0.0
-}
-  latency          : {
-  "p50": 150.0,
-  "p95": 150.0,
-  "p99": 150.0,
-  "variance": 0.0,
-  "sample_count": 3
-}
-  error_behavior   : {
-  "errors_occurred": 0,
-  "propagated_downstream": 0,
-  "swallowed": 0,
-  "propagation_rate": 0.0,
-  "default_values_used": 0,
-  "observed_error_handling": [],
-  "structural_prediction_match": null
-}
-  decision_behavior: None
-  model_sensitivity: {
-  "tool_call_failures": 0,
-  "tool_call_failure_rate": 0.0,
-  "retry_activations": 0,
-  "quality_dependent": false
-}
-  resource_usage   : {
-  "avg_tokens": 0.0,
-  "avg_tool_calls": 1.0,
-  "avg_llm_calls": 0.0,
-  "avg_iterations": 0.0
-}
-  determinism      : {
-  "same_input_activation_consistency": 1.0,
-  "same_input_path_consistency": 1.0,
-  "cross_input_variance": 0.0
-}
+==============================================================================
+EVAL 2: EMERGENT EDGE DETECTION (Check 3)
+==============================================================================
 
---- cap_summarize_tool (Summarize) ---
-  activation_count : 0
-  activation_rate  : 0.0
-  throughput       : {
-  "tasks_received": 0,
-  "completed": 0,
-  "failed": 0,
-  "failure_rate": 0.0
-}
-  latency          : {
-  "p50": 0.0,
-  "p95": 0.0,
-  "p99": 0.0,
-  "variance": 0.0,
-  "sample_count": 0
-}
-  error_behavior   : {
-  "errors_occurred": 0,
-  "propagated_downstream": 0,
-  "swallowed": 0,
-  "propagation_rate": 0.0,
-  "default_values_used": 0,
-  "observed_error_handling": [],
-  "structural_prediction_match": null
-}
-  decision_behavior: None
-  model_sensitivity: {
-  "tool_call_failures": 0,
-  "tool_call_failure_rate": 0.0,
-  "retry_activations": 0,
-  "quality_dependent": false
-}
-  resource_usage   : {
-  "avg_tokens": 0.0,
-  "avg_tool_calls": 0.0,
-  "avg_llm_calls": 0.0,
-  "avg_iterations": 0.0
-}
-  determinism      : {
-  "same_input_activation_consistency": 1.0,
-  "same_input_path_consistency": 1.0,
-  "cross_input_variance": 0.0
-}
+  Emergent edges found: 3
+    emergent_000: Coder -> Fallback
+      discovery_type     : error_triggered_fallback
+      detection_heuristic: Monitor for delegation to 'Fallback' when 'Coder' errors. Structural graph shoul
+      activation_count   : 1
+      trigger_condition  : error in upstream node triggered fallback delegation
+    emergent_001: Planner -> Reviewer
+      discovery_type     : implicit_data_sharing
+      detection_heuristic: Monitor for agents accessing the same state key 'plan_state' — structural graph 
+      activation_count   : 5
+      trigger_condition  : both agents access state key 'plan_state'
+    emergent_002: Planner -> Reviewer
+      discovery_type     : dynamic_delegation
+      detection_heuristic: Routing decision (llm_decision) based on llm_output: 'Planner' -> 'Reviewer'. Co
+      activation_count   : 1
+      trigger_condition  : routing decision (llm_decision) based on llm_output
+  [PASS] At least 3 emergent edges detected (got 3)
+  [PASS] Error-triggered fallback detected
+         discovery types: {'implicit_data_sharing', 'dynamic_delegation', 'error_triggered_fallback'}
+  [PASS] Dynamic delegation detected
+         discovery types: {'implicit_data_sharing', 'dynamic_delegation', 'error_triggered_fallback'}
+  [PASS] Implicit data sharing detected
+         discovery types: {'implicit_data_sharing', 'dynamic_delegation', 'error_triggered_fallback'}
+  [PASS] Emergent emergent_000 has actionable detection_heuristic
+         heuristic length: 144
+  [PASS] Emergent emergent_001 has actionable detection_heuristic
+         heuristic length: 139
+  [PASS] Emergent emergent_002 has actionable detection_heuristic
+         heuristic length: 110
+  [PASS] No false positives from patcher internal routing
 
---- cap_llm_call (LLMCall) ---
-  activation_count : 3
-  activation_rate  : 1.0
-  throughput       : {
-  "tasks_received": 3,
-  "completed": 3,
-  "failed": 0,
-  "failure_rate": 0.0
-}
-  latency          : {
-  "p50": 350.0,
-  "p95": 350.0,
-  "p99": 350.0,
-  "variance": 0.0,
-  "sample_count": 3
-}
-  error_behavior   : {
-  "errors_occurred": 0,
-  "propagated_downstream": 0,
-  "swallowed": 0,
-  "propagation_rate": 0.0,
-  "default_values_used": 0,
-  "observed_error_handling": [],
-  "structural_prediction_match": null
-}
-  decision_behavior: None
-  model_sensitivity: {
-  "tool_call_failures": 0,
-  "tool_call_failure_rate": 0.0,
-  "retry_activations": 0,
-  "quality_dependent": false
-}
-  resource_usage   : {
-  "avg_tokens": 850.0,
-  "avg_tool_calls": 0.0,
-  "avg_llm_calls": 1.0,
-  "avg_iterations": 0.0
-}
-  determinism      : {
-  "same_input_activation_consistency": 1.0,
-  "same_input_path_consistency": 1.0,
-  "cross_input_variance": 0.0
-}
+==============================================================================
+EVAL 3: ERROR PROPAGATION TRACING (Check 4)
+==============================================================================
 
---- cap_review_call (ReviewCall) ---
-  activation_count : 3
-  activation_rate  : 1.0
-  throughput       : {
-  "tasks_received": 3,
-  "completed": 3,
-  "failed": 0,
-  "failure_rate": 0.0
-}
-  latency          : {
-  "p50": 280.0,
-  "p95": 280.0,
-  "p99": 280.0,
-  "variance": 0.0,
-  "sample_count": 3
-}
-  error_behavior   : {
-  "errors_occurred": 0,
-  "propagated_downstream": 0,
-  "swallowed": 0,
-  "propagation_rate": 0.0,
-  "default_values_used": 0,
-  "observed_error_handling": [],
-  "structural_prediction_match": null
-}
-  decision_behavior: None
-  model_sensitivity: {
-  "tool_call_failures": 0,
-  "tool_call_failure_rate": 0.0,
-  "retry_activations": 0,
-  "quality_dependent": false
-}
-  resource_usage   : {
-  "avg_tokens": 900.0,
-  "avg_tool_calls": 0.0,
-  "avg_llm_calls": 1.0,
-  "avg_iterations": 0.0
-}
-  determinism      : {
-  "same_input_activation_consistency": 1.0,
-  "same_input_path_consistency": 1.0,
-  "cross_input_variance": 0.0
-}
+  Error traces found: 4
 
---- ds_shared_memory (SharedMemory) ---
-  activation_count : 9
-  activation_rate  : 1.0
-  throughput       : {
-  "tasks_received": 9,
-  "completed": 0,
-  "failed": 0,
-  "failure_rate": 0.0
+  Trace 0:
+    error_source_node        : Coder
+    error_type               : runtime_error
+    structural_predicted_path: ['agent_coder', 'agent_reviewer', 'agent_deployer', 'cap_code_search_tool', 'cap_linter_tool', 'ds_shared_context', 'agent_planner', 'cap_unused_tool', 'cap_deploy_tool', 'guard_code_review', 'agent_fallback', 'ext_ci_api']
+    actual_observed_path     : ['Coder', 'agent_reviewer']
+    propagation_stopped_by   : agent_reviewer
+    stop_mechanism           : end_of_chain
+    downstream_impact        : {
+  "nodes_affected": 1,
+  "downstream_errors": 0,
+  "downstream_tasks_failed": 0,
+  "cascade_depth": 1
 }
-  latency          : {
-  "p50": 0.0,
-  "p95": 0.0,
-  "p99": 0.0,
-  "variance": 0.0,
-  "sample_count": 0
-}
-  error_behavior   : {
-  "errors_occurred": 0,
-  "propagated_downstream": 0,
-  "swallowed": 0,
-  "propagation_rate": 0.0,
-  "default_values_used": 0,
-  "observed_error_handling": [],
-  "structural_prediction_match": null
-}
-  decision_behavior: None
-  model_sensitivity: {
-  "tool_call_failures": 0,
-  "tool_call_failure_rate": 0.0,
-  "retry_activations": 0,
-  "quality_dependent": false
-}
-  resource_usage   : {
-  "avg_tokens": 0.0,
-  "avg_tool_calls": 0.0,
-  "avg_llm_calls": 0.0,
-  "avg_iterations": 0.0
-}
-  determinism      : {
-  "same_input_activation_consistency": 1.0,
-  "same_input_path_consistency": 1.0,
-  "cross_input_variance": 0.0
-}
+    swallowed                : True
 
---- ext_web_api (WebAPI) ---
-  activation_count : 3
-  activation_rate  : 1.0
-  throughput       : {
-  "tasks_received": 3,
-  "completed": 0,
-  "failed": 0,
-  "failure_rate": 0.0
+  Trace 1:
+    error_source_node        : Planner
+    error_type               : upstream_failure
+    structural_predicted_path: ['agent_planner', 'agent_coder', 'ds_shared_context', 'agent_fallback', 'agent_reviewer', 'agent_deployer', 'cap_code_search_tool', 'cap_linter_tool', 'cap_unused_tool', 'cap_deploy_tool', 'guard_code_review', 'ext_ci_api']
+    actual_observed_path     : ['Planner', 'Coder', 'agent_reviewer']
+    propagation_stopped_by   : agent_reviewer
+    stop_mechanism           : end_of_chain
+    downstream_impact        : {
+  "nodes_affected": 2,
+  "downstream_errors": 2,
+  "downstream_tasks_failed": 0,
+  "cascade_depth": 2
 }
-  latency          : {
-  "p50": 0.0,
-  "p95": 0.0,
-  "p99": 0.0,
-  "variance": 0.0,
-  "sample_count": 0
-}
-  error_behavior   : {
-  "errors_occurred": 0,
-  "propagated_downstream": 0,
-  "swallowed": 0,
-  "propagation_rate": 0.0,
-  "default_values_used": 0,
-  "observed_error_handling": [],
-  "structural_prediction_match": null
-}
-  decision_behavior: None
-  model_sensitivity: {
-  "tool_call_failures": 0,
-  "tool_call_failure_rate": 0.0,
-  "retry_activations": 0,
-  "quality_dependent": false
-}
-  resource_usage   : {
-  "avg_tokens": 0.0,
-  "avg_tool_calls": 0.0,
-  "avg_llm_calls": 0.0,
-  "avg_iterations": 0.0
-}
-  determinism      : {
-  "same_input_activation_consistency": 1.0,
-  "same_input_path_consistency": 1.0,
-  "cross_input_variance": 0.0
-}
+    swallowed                : False
 
---- guard_output (OutputGuard) ---
-  activation_count : 3
-  activation_rate  : 1.0
-  throughput       : {
-  "tasks_received": 3,
-  "completed": 0,
-  "failed": 0,
-  "failure_rate": 0.0
+  Trace 2:
+    error_source_node        : Planner
+    error_type               : propagated_failure
+    structural_predicted_path: ['agent_planner', 'agent_coder', 'ds_shared_context', 'agent_fallback', 'agent_reviewer', 'agent_deployer', 'cap_code_search_tool', 'cap_linter_tool', 'cap_unused_tool', 'cap_deploy_tool', 'guard_code_review', 'ext_ci_api']
+    actual_observed_path     : ['Planner', 'Coder', 'agent_reviewer']
+    propagation_stopped_by   : agent_reviewer
+    stop_mechanism           : end_of_chain
+    downstream_impact        : {
+  "nodes_affected": 2,
+  "downstream_errors": 1,
+  "downstream_tasks_failed": 0,
+  "cascade_depth": 2
 }
-  latency          : {
-  "p50": 0.0,
-  "p95": 0.0,
-  "p99": 0.0,
-  "variance": 0.0,
-  "sample_count": 0
+    swallowed                : False
+
+  Trace 3:
+    error_source_node        : Coder
+    error_type               : propagated_failure
+    structural_predicted_path: ['agent_coder', 'agent_reviewer', 'agent_deployer', 'cap_code_search_tool', 'cap_linter_tool', 'ds_shared_context', 'agent_planner', 'cap_unused_tool', 'cap_deploy_tool', 'guard_code_review', 'agent_fallback', 'ext_ci_api']
+    actual_observed_path     : ['Coder', 'agent_reviewer']
+    propagation_stopped_by   : agent_reviewer
+    stop_mechanism           : end_of_chain
+    downstream_impact        : {
+  "nodes_affected": 1,
+  "downstream_errors": 0,
+  "downstream_tasks_failed": 0,
+  "cascade_depth": 1
 }
-  error_behavior   : {
-  "errors_occurred": 0,
-  "propagated_downstream": 0,
-  "swallowed": 0,
-  "propagation_rate": 0.0,
-  "default_values_used": 0,
-  "observed_error_handling": [],
-  "structural_prediction_match": null
-}
-  decision_behavior: None
-  model_sensitivity: {
-  "tool_call_failures": 0,
-  "tool_call_failure_rate": 0.0,
-  "retry_activations": 0,
-  "quality_dependent": false
-}
-  resource_usage   : {
-  "avg_tokens": 0.0,
-  "avg_tool_calls": 0.0,
-  "avg_llm_calls": 0.0,
-  "avg_iterations": 0.0
-}
-  guardrail_eff    : {
-  "trigger_count": 3,
-  "prevented_action_count": 1,
-  "bypass_count": 1,
-  "retry_count": 1,
-  "avg_latency_impact_ms": 3.5,
-  "false_positive_indicators": 0
-}
-  determinism      : {
-  "same_input_activation_consistency": 1.0,
-  "same_input_path_consistency": 1.0,
-  "cross_input_variance": 0.0
-}
+    swallowed                : False
+  [PASS] At least 2 error traces found (got 4)
+  [PASS] Trace from Coder: structural_predicted_path populated
+         path: ['agent_coder', 'agent_reviewer', 'agent_deployer', 'cap_code_search_tool', 'cap_linter_tool', 'ds_shared_context', 'agent_planner', 'cap_unused_tool', 'cap_deploy_tool', 'guard_code_review', 'agent_fallback', 'ext_ci_api']
+  [PASS] Trace from Coder: actual_observed_path populated
+         path: ['Coder', 'agent_reviewer']
+  [PASS] Trace from Planner: structural_predicted_path populated
+         path: ['agent_planner', 'agent_coder', 'ds_shared_context', 'agent_fallback', 'agent_reviewer', 'agent_deployer', 'cap_code_search_tool', 'cap_linter_tool', 'cap_unused_tool', 'cap_deploy_tool', 'guard_code_review', 'ext_ci_api']
+  [PASS] Trace from Planner: actual_observed_path populated
+         path: ['Planner', 'Coder', 'agent_reviewer']
+  [PASS] Trace from Planner: structural_predicted_path populated
+         path: ['agent_planner', 'agent_coder', 'ds_shared_context', 'agent_fallback', 'agent_reviewer', 'agent_deployer', 'cap_code_search_tool', 'cap_linter_tool', 'cap_unused_tool', 'cap_deploy_tool', 'guard_code_review', 'ext_ci_api']
+  [PASS] Trace from Planner: actual_observed_path populated
+         path: ['Planner', 'Coder', 'agent_reviewer']
+  [PASS] Trace from Coder: structural_predicted_path populated
+         path: ['agent_coder', 'agent_reviewer', 'agent_deployer', 'cap_code_search_tool', 'cap_linter_tool', 'ds_shared_context', 'agent_planner', 'cap_unused_tool', 'cap_deploy_tool', 'guard_code_review', 'agent_fallback', 'ext_ci_api']
+  [PASS] Trace from Coder: actual_observed_path populated
+         path: ['Coder', 'agent_reviewer']
+  [PASS] At least one trace identifies a propagation_stopped_by node
+         stopped_by nodes: ['agent_reviewer', 'agent_reviewer', 'agent_reviewer', 'agent_reviewer']
+  [PASS] Trace from Coder: downstream_impact has nodes_affected
+         impact keys: ['nodes_affected', 'downstream_errors', 'downstream_tasks_failed', 'cascade_depth']
+  [PASS] Trace from Planner: downstream_impact has nodes_affected
+         impact keys: ['nodes_affected', 'downstream_errors', 'downstream_tasks_failed', 'cascade_depth']
+  [PASS] Trace from Planner: downstream_impact has nodes_affected
+         impact keys: ['nodes_affected', 'downstream_errors', 'downstream_tasks_failed', 'cascade_depth']
+  [PASS] Trace from Coder: downstream_impact has nodes_affected
+         impact keys: ['nodes_affected', 'downstream_errors', 'downstream_tasks_failed', 'cascade_depth']
+  [PASS] At least one error trace has cascade_depth >= 2 (error laundering)
+         max cascade_depth=2
 
-================================================================================
-(f) EXECUTION PATHS & PATH ANALYSIS
-================================================================================
-  Runs with paths: 3
-  Run run_000: 17 edge traversals
-    e3: agent_researcher -> cap_web_search_tool (uses)
-    e3: agent_researcher -> cap_web_search_tool (uses)
-    e10: cap_web_search_tool -> ext_web_api (calls)
-    e5: agent_researcher -> cap_llm_call (uses)
-    e5: agent_researcher -> cap_llm_call (uses)
-    ... and 12 more
-  Run run_001: 17 edge traversals
-    e3: agent_researcher -> cap_web_search_tool (uses)
-    e3: agent_researcher -> cap_web_search_tool (uses)
-    e10: cap_web_search_tool -> ext_web_api (calls)
-    e5: agent_researcher -> cap_llm_call (uses)
-    e5: agent_researcher -> cap_llm_call (uses)
-    ... and 12 more
-  Run run_002: 17 edge traversals
-    e3: agent_researcher -> cap_web_search_tool (uses)
-    e3: agent_researcher -> cap_web_search_tool (uses)
-    e10: cap_web_search_tool -> ext_web_api (calls)
-    e5: agent_researcher -> cap_llm_call (uses)
-    e5: agent_researcher -> cap_llm_call (uses)
-    ... and 12 more
+==============================================================================
+EVAL 4: NODE ACTIVATION TOPOLOGY (Check 5)
+==============================================================================
 
-  Path analysis:
-    distinct_paths:          1
-    dominant_path_frequency: 1.0
-    path_divergence_points:  []
-    conditional_edges:       0
+  Always active (7): ['agent_planner', 'agent_coder', 'agent_reviewer', 'cap_code_search_tool', 'cap_linter_tool', 'ds_shared_context', 'guard_code_review']
+  Conditional   (2): ['agent_deployer', 'cap_deploy_tool']
+  Never active  (3): ['agent_fallback', 'cap_unused_tool', 'ext_ci_api']
+  [PASS] agent_planner classified as always_active
+  [PASS] agent_coder classified as always_active
+  [PASS] agent_reviewer classified as always_active
+  [PASS] agent_deployer classified as conditional (2/5 runs)
+         conditional IDs: ['agent_deployer', 'cap_deploy_tool']
+  [PASS] At least 1 node is never_active (got 3)
+         never_active: ['agent_fallback', 'cap_unused_tool', 'ext_ci_api']
 
-================================================================================
-(b) PER-EDGE BEHAVIORAL ANNOTATIONS
-================================================================================
+==============================================================================
+EVAL 5: STRUCTURAL PREDICTION MATCH RATE (Check 6)
+==============================================================================
 
---- e1: agent_researcher -> agent_writer (delegates_to) ---
-  traversal_count : 6
-  activation_rate : 1.0
-  never_activated : False
-  data_flow       : {
-  "avg_data_size_bytes": 0.0,
-  "schema_mismatch_count": 0,
-  "null_data_count": 6
-}
-  error_crossings : {
-  "errors_traversed": 0,
-  "error_types": [],
-  "downstream_impact": 0
-}
-  latency_contribution_ms: 0.0
+  structural_prediction_match_rate: 0.75
+  [PASS] structural_prediction_match_rate is present
+  [PASS] structural_prediction_match_rate is numeric
+         type: float
+  [PASS] structural_prediction_match_rate is in [0, 1]
+         value: 0.75
 
---- e2: agent_writer -> agent_reviewer (delegates_to) ---
-  traversal_count : 6
-  activation_rate : 1.0
-  never_activated : False
-  data_flow       : {
-  "avg_data_size_bytes": 0.0,
-  "schema_mismatch_count": 0,
-  "null_data_count": 6
-}
-  error_crossings : {
-  "errors_traversed": 0,
-  "error_types": [],
-  "downstream_impact": 0
-}
-  latency_contribution_ms: 0.0
+==============================================================================
+EVAL 6: FAILURE MODE CLASSIFICATION (Check 7)
+==============================================================================
 
---- e3: agent_researcher -> cap_web_search_tool (uses) ---
-  traversal_count : 6
-  activation_rate : 1.0
-  never_activated : False
-  data_flow       : {
-  "avg_data_size_bytes": 0.0,
-  "schema_mismatch_count": 0,
-  "null_data_count": 6
-}
-  error_crossings : {
-  "errors_traversed": 0,
-  "error_types": [],
-  "downstream_impact": 0
-}
-  latency_contribution_ms: 0.0
+  Classifications returned: 2
 
---- e4: agent_writer -> cap_file_writer_tool (uses) ---
-  traversal_count : 6
-  activation_rate : 1.0
-  never_activated : False
-  data_flow       : {
-  "avg_data_size_bytes": 0.0,
-  "schema_mismatch_count": 0,
-  "null_data_count": 6
-}
-  error_crossings : {
-  "errors_traversed": 0,
-  "error_types": [],
-  "downstream_impact": 0
-}
-  latency_contribution_ms: 0.0
+  STRAT-DC-001: Unsupervised delegation chain
+    manifestation_observed   : True
+    failure_type             : Cascading errors through unsupervised delegation chain
+    occurrences              : 2
+    downstream_impact        : True
+    failure_description      : Observed 2 instances across signals: no_human_gate_activation, delegation_depth_>=3
 
---- e5: agent_researcher -> cap_llm_call (uses) ---
-  traversal_count : 6
-  activation_rate : 1.0
-  never_activated : False
-  data_flow       : {
-  "avg_data_size_bytes": 0.0,
-  "schema_mismatch_count": 0,
-  "null_data_count": 6
-}
-  error_crossings : {
-  "errors_traversed": 0,
-  "error_types": [],
-  "downstream_impact": 0
-}
-  latency_contribution_ms: 0.0
+  STRAT-SI-001: Error laundering
+    manifestation_observed   : True
+    failure_type             : Error silently swallowed, downstream agents process corrupted data
+    occurrences              : 2
+    downstream_impact        : False
+    failure_description      : Observed 2 instances across signals: silent_error_handling, error_swallowed
+  [PASS] STRAT-SI-001 (error laundering) classified
+  [PASS] STRAT-SI-001 manifestation observed
+         manifestation_observed: True
+  [PASS] STRAT-SI-001 failure_type matches taxonomy category
+         failure_type: Error silently swallowed, downstream agents process corrupted data
+  [PASS] STRAT-DC-001 (unsupervised chain) classified
+  [PASS] STRAT-DC-001 manifestation observed
+         manifestation_observed: True
+  [PASS] STRAT-DC-001 failure_type matches taxonomy category
+         failure_type: Cascading errors through unsupervised delegation chain
 
---- e6: agent_reviewer -> cap_review_call (uses) ---
-  traversal_count : 6
-  activation_rate : 1.0
-  never_activated : False
-  data_flow       : {
-  "avg_data_size_bytes": 0.0,
-  "schema_mismatch_count": 0,
-  "null_data_count": 6
-}
-  error_crossings : {
-  "errors_traversed": 0,
-  "error_types": [],
-  "downstream_impact": 0
-}
-  latency_contribution_ms: 0.0
+==============================================================================
+EVAL 7: MONITORING BASELINE STABILITY (Check 8)
+==============================================================================
 
---- e7: agent_researcher -> ds_shared_memory (writes_to) ---
-  traversal_count : 3
-  activation_rate : 1.0
-  never_activated : False
-  data_flow       : {
-  "avg_data_size_bytes": 1024.0,
-  "schema_mismatch_count": 0,
-  "null_data_count": 3
-}
-  error_crossings : {
-  "errors_traversed": 0,
-  "error_types": [],
-  "downstream_impact": 0
-}
-  latency_contribution_ms: 0.0
+  Baselines run 1: 7 metrics
+  Baselines run 2: 7 metrics
 
---- e8: agent_writer -> ds_shared_memory (writes_to) ---
-  traversal_count : 4
-  activation_rate : 1.0
-  never_activated : False
-  data_flow       : {
-  "avg_data_size_bytes": 1024.0,
-  "schema_mismatch_count": 0,
-  "null_data_count": 4
-}
-  error_crossings : {
-  "errors_traversed": 1,
-  "error_types": [
-    "propagated_failure"
-  ],
-  "downstream_impact": 1
-}
-  latency_contribution_ms: 0.0
+  STRAT-DC-001: max_delegation_depth
+    observed_baseline    : 3.0
+    observed_stddev      : 0.8944
+    suggested_threshold  : 4.7889
+    confidence           : medium
+    sample_size          : 5
 
---- e9: agent_reviewer -> ds_shared_memory (reads_from) ---
-  traversal_count : 3
-  activation_rate : 1.0
-  never_activated : False
-  data_flow       : {
-  "avg_data_size_bytes": 0.0,
-  "schema_mismatch_count": 0,
-  "null_data_count": 3
-}
-  error_crossings : {
-  "errors_traversed": 0,
-  "error_types": [],
-  "downstream_impact": 0
-}
-  latency_contribution_ms: 0.0
+  STRAT-SI-001: error_swallow_rate
+    observed_baseline    : 0.2
+    observed_stddev      : 0.4
+    suggested_threshold  : 1.0
+    confidence           : medium
+    sample_size          : 5
 
---- e10: cap_web_search_tool -> ext_web_api (calls) ---
-  traversal_count : 3
-  activation_rate : 1.0
-  never_activated : False
-  data_flow       : {
-  "avg_data_size_bytes": 0.0,
-  "schema_mismatch_count": 0,
-  "null_data_count": 3
-}
-  error_crossings : {
-  "errors_traversed": 0,
-  "error_types": [],
-  "downstream_impact": 0
-}
-  latency_contribution_ms: 0.0
+  STRAT-AB-001: total_llm_calls_per_run
+    observed_baseline    : 1.0
+    observed_stddev      : 0.0
+    suggested_threshold  : 1.0
+    confidence           : medium
+    sample_size          : 5
 
---- e11: agent_writer -> guard_output (filtered_by) ---
-  traversal_count : 3
-  activation_rate : 1.0
-  never_activated : False
-  data_flow       : {
-  "avg_data_size_bytes": 0.0,
-  "schema_mismatch_count": 0,
-  "null_data_count": 3
-}
-  error_crossings : {
-  "errors_traversed": 0,
-  "error_types": [],
-  "downstream_impact": 0
-}
-  latency_contribution_ms: 3.5
+  STRAT-OC-002: concurrent_state_write_rate
+    observed_baseline    : 0.6667
+    observed_stddev      : 0.0
+    suggested_threshold  : 0.6667
+    confidence           : medium
+    sample_size          : 5
 
-================================================================================
-(c) EMERGENT EDGES
-================================================================================
+  STRAT-SI-004: schema_mismatch_rate
+    observed_baseline    : 0.0
+    observed_stddev      : 0.0
+    suggested_threshold  : 0.0
+    confidence           : medium
+    sample_size          : 5
 
-  emergent_1: agent_reviewer -> cap_web_search_tool
-    edge_type        : calls
-    traversal_count  : 2
-    activation_rate  : 0.6667
-    significance     : low
-    trigger_condition: None
+  STRAT-EA-001: tool_call_failure_rate
+    observed_baseline    : 0.0
+    observed_stddev      : 0.0
+    suggested_threshold  : 0.0
+    confidence           : medium
+    sample_size          : 5
 
-  emergent_2: agent_researcher -> agent_reviewer
-    edge_type        : delegates_to
-    traversal_count  : 2
-    activation_rate  : 0.6667
-    significance     : low
-    trigger_condition: None
+  STRAT-DC-002: delegation_latency_p95_ms
+    observed_baseline    : 50.0001
+    observed_stddev      : 0.0
+    suggested_threshold  : 50.0001
+    confidence           : medium
+    sample_size          : 5
+  [PASS] Baselines are identical across two runs (deterministic)
+  [PASS] Threshold computation is deterministic
+         run1: [4.7889, 1.0, 1.0, 0.6667, 0.0, 0.0, 50.0001], run2: [4.7889, 1.0, 1.0, 0.6667, 0.0, 0.0, 50.0001]
+  [PASS] STRAT-DC-001: has baseline + threshold
+         baseline=3.0, threshold=4.7889
+  [PASS] STRAT-DC-001: baseline is numeric
+  [PASS] STRAT-DC-001: threshold is numeric
+  [PASS] STRAT-SI-001: has baseline + threshold
+         baseline=0.2, threshold=1.0
+  [PASS] STRAT-SI-001: baseline is numeric
+  [PASS] STRAT-SI-001: threshold is numeric
+  [PASS] STRAT-AB-001: has baseline + threshold
+         baseline=1.0, threshold=1.0
+  [PASS] STRAT-AB-001: baseline is numeric
+  [PASS] STRAT-AB-001: threshold is numeric
+  [PASS] STRAT-OC-002: has baseline + threshold
+         baseline=0.6667, threshold=0.6667
+  [PASS] STRAT-OC-002: baseline is numeric
+  [PASS] STRAT-OC-002: threshold is numeric
+  [PASS] STRAT-SI-004: has baseline + threshold
+         baseline=0.0, threshold=0.0
+  [PASS] STRAT-SI-004: baseline is numeric
+  [PASS] STRAT-SI-004: threshold is numeric
+  [PASS] STRAT-EA-001: has baseline + threshold
+         baseline=0.0, threshold=0.0
+  [PASS] STRAT-EA-001: baseline is numeric
+  [PASS] STRAT-EA-001: threshold is numeric
+  [PASS] STRAT-DC-002: has baseline + threshold
+         baseline=50.0001, threshold=50.0001
+  [PASS] STRAT-DC-002: baseline is numeric
+  [PASS] STRAT-DC-002: threshold is numeric
+  [PASS] At least 1 monitoring baseline extracted
+         got 7
 
-================================================================================
-(d) DEAD EDGES
-================================================================================
-  (none detected)
+==============================================================================
+SUMMARY
+==============================================================================
 
-================================================================================
-(e) STRUCTURAL PREDICTION MATCH FLAGS
-================================================================================
-  agent_researcher                errors=  1  prediction_match=True
-  agent_writer                    errors=  2  prediction_match=None
-  agent_reviewer                  errors=  0  prediction_match=None
-  cap_web_search_tool             errors=  0  prediction_match=None
-  cap_file_writer_tool            errors=  0  prediction_match=None
-  cap_summarize_tool              errors=  0  prediction_match=None
-  cap_llm_call                    errors=  0  prediction_match=None
-  cap_review_call                 errors=  0  prediction_match=None
-  ds_shared_memory                errors=  0  prediction_match=None
-  ext_web_api                     errors=  0  prediction_match=None
-  guard_output                    errors=  0  prediction_match=None
+  Total checks: 70
+  Passed      : 70
+  Failed      : 0
 
-================================================================================
-(g) CASCADE ANALYSIS
-================================================================================
-  max_cascade_depth:      1
-  avg_cascade_depth:      0.50
-  cascading_failure_rate: 0.50
-
-  Origin: agent_researcher
-    origin_errors:          1
-    max_depth:              0
-    affected_downstream:    0
-
-  Origin: agent_writer
-    origin_errors:          2
-    max_depth:              0
-    affected_downstream:    0
-
-================================================================================
-(h) SEMANTIC LINEAGE
-================================================================================
-  handoff_count:                 6
-  unvalidated_fraction:          1.00
-  semantic_chain_depth:          2
-  max_blast_radius:              2
-  classification_injection_count:0
-
-  Handoff: agent_researcher -> agent_writer
-    content_hash: res_out_000...
-    validated:    False
-
-  Handoff: agent_researcher -> agent_writer
-    content_hash: res_out_001...
-    validated:    False
-
-  Handoff: agent_researcher -> agent_writer
-    content_hash: res_out_002...
-    validated:    False
-
-  Handoff: agent_writer -> agent_reviewer
-    content_hash: wrt_out_000...
-    validated:    False
-
-  Handoff: agent_writer -> agent_reviewer
-    content_hash: wrt_out_001...
-    validated:    False
-
-================================================================================
-(i) SEMANTIC FLOW ON EDGES
-================================================================================
-  e1: agent_researcher -> agent_writer
-    content_hashes: 3
-    validated:      False
-    has_classification_dependency: False
-  e2: agent_writer -> agent_reviewer
-    content_hashes: 3
-    validated:      False
-    has_classification_dependency: False
-
-================================================================================
-UNMAPPED EVENTS
-================================================================================
-{
-  "node_events": 0,
-  "edge_events": 0
-}
+  All validation checks PASSED.
 
 Done.

@@ -18,6 +18,7 @@ from typing import Any, Iterator
 from stratum_patcher.event_logger import (
     EventLogger,
     capture_output_signature,
+    classify_error,
     get_data_shape,
     hash_content,
     make_node,
@@ -254,6 +255,7 @@ def _wrap_add_node(original: Any) -> Any:
                 logger = EventLogger.get()
                 nid = generate_node_id(_FRAMEWORK, node_name, __file__, 0)
                 source = make_node("agent", nid, node_name)
+                logger.push_active_node(nid)
 
                 start_id = logger.log_event(
                     "agent.task_start",
@@ -263,6 +265,8 @@ def _wrap_add_node(original: Any) -> Any:
                         "input_shape": get_data_shape(a[0]) if a else get_data_shape(
                             kw.get("state")
                         ),
+                        "node_id": nid,
+                        "parent_node_id": logger.parent_node(),
                     },
                 )
 
@@ -281,10 +285,11 @@ def _wrap_add_node(original: Any) -> Any:
                         "node_name": node_name,
                         "latency_ms": round(latency_ms, 2),
                         "status": "error" if error else "success",
+                        "error_type": classify_error(error) if error else None,
+                        "node_id": nid,
                     }
                     if error:
                         payload["error"] = str(error)[:500]
-                        payload["error_type"] = type(error).__name__
                     if result is not None:
                         payload["output_shape"] = get_data_shape(result)
                         try:
@@ -302,6 +307,9 @@ def _wrap_add_node(original: Any) -> Any:
                         payload=payload,
                         parent_event_id=start_id,
                     )
+                    logger.pop_active_node()
+                    if error:
+                        logger.record_error_context(node_id=nid, error_type=classify_error(error), error_msg=str(error))
 
             instrumented_action._stratum_original = original_action  # type: ignore[attr-defined]
             return original(self, node_name, instrumented_action, *args, **kwargs)
@@ -358,6 +366,7 @@ def _wrap_add_conditional_edges(original: Any) -> Any:
                         ),
                     },
                 )
+                _log_routing_decision(src_nid, tgt_nid, "conditional_edge", "condition_function")
                 return result
 
             instrumented_path._stratum_original = original_path  # type: ignore[attr-defined]
@@ -420,6 +429,39 @@ def _wrap_channel_read(original: Any) -> Any:
         return result
 
     return wrapper
+
+
+# ---------------------------------------------------------------------------
+# Implicit interaction detection helpers
+# ---------------------------------------------------------------------------
+
+def _log_state_access(node_id: str, state_key: str, access_type: str, data_hash: str = "") -> None:
+    """Log access to shared state for implicit interaction detection."""
+    logger = EventLogger.get()
+    logger.log_event(
+        "state.access",
+        payload={
+            "node_id": node_id,
+            "state_key": state_key,
+            "access_type": access_type,
+            "data_hash": data_hash,
+        },
+    )
+
+
+def _log_routing_decision(source_node: str, target_node: str, routing_type: str,
+                          decision_basis: str = "") -> None:
+    """Log a routing decision for emergent edge detection."""
+    logger = EventLogger.get()
+    logger.log_event(
+        "routing.decision",
+        payload={
+            "source_node": source_node,
+            "target_node": target_node,
+            "routing_type": routing_type,
+            "decision_basis": decision_basis,
+        },
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -37,6 +37,8 @@ DATA_EVENT_TYPES = {"data.read", "data.write"}
 EXTERNAL_EVENT_TYPES = {"external.call"}
 FILE_EVENT_TYPES = {"file.read", "file.write"}
 SPEAKER_EVENT_TYPES = {"speaker.selected"}
+STATE_ACCESS_EVENT_TYPES = {"state.access"}
+ROUTING_DECISION_EVENT_TYPES = {"routing.decision"}
 
 
 # ---------------------------------------------------------------------------
@@ -271,6 +273,12 @@ def build_run_record(
                 "timestamp_ns": ev["timestamp_ns"],
             })
 
+    # ---- State access events (v6) ----
+    state_access_count = sum(1 for ev in events if ev["event_type"] in STATE_ACCESS_EVENT_TYPES)
+
+    # ---- Routing decision events (v6) ----
+    routing_decision_count = sum(1 for ev in events if ev["event_type"] in ROUTING_DECISION_EVENT_TYPES)
+
     return {
         "repo_id": repo_id,
         "run_id": run_id,
@@ -297,6 +305,8 @@ def build_run_record(
             "max_propagation_depth": max_propagation_depth,
         },
         "delegation_chains": delegation_chains,
+        "state_access_count": state_access_count,
+        "routing_decision_count": routing_decision_count,
         "metadata": meta,
     }
 
@@ -330,6 +340,8 @@ def _empty_run_record(meta: dict[str, Any] | None = None) -> dict[str, Any]:
             "max_propagation_depth": 0,
         },
         "delegation_chains": [],
+        "state_access_count": 0,
+        "routing_decision_count": 0,
         "metadata": meta,
     }
 

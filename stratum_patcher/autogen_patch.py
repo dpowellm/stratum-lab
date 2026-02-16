@@ -17,6 +17,7 @@ from typing import Any
 from stratum_patcher.event_logger import (
     EventLogger,
     capture_output_signature,
+    classify_error,
     get_data_shape,
     hash_content,
     make_node,
@@ -66,8 +67,13 @@ def _wrap_receive(original: Any) -> Any:
                 "context_size_bytes": _context_sig["size_bytes"],
                 "context_source_node": send_nid,
                 "has_classification_dependency": _context_sig["classification_fields"] is not None,
+                "source_node_id": send_nid,
+                "target_node_id": recv_nid,
+                "delegation_type": "implicit",
+                "input_data_hash": msg_hash,
             },
         )
+        logger.record_edge_activation(source=send_nid, target=recv_nid, data_hash=msg_hash)
 
         t0 = time.perf_counter()
         error: Exception | None = None
@@ -178,6 +184,7 @@ def _wrap_generate_reply(original: Any) -> Any:
         agent_name = getattr(self, "name", type(self).__name__)
         nid = generate_node_id(_FRAMEWORK, agent_name, __file__, 0)
         source = make_node("agent", nid, agent_name)
+        logger.push_active_node(nid)
 
         # Describe messages being replied to
         messages = kwargs.get("messages") or (args[0] if args else None)
@@ -193,6 +200,8 @@ def _wrap_generate_reply(original: Any) -> Any:
                 "agent_name": agent_name,
                 "messages_count": msg_count,
                 "sender": sender_name,
+                "node_id": nid,
+                "parent_node_id": logger.parent_node(),
             },
         )
 
@@ -211,10 +220,10 @@ def _wrap_generate_reply(original: Any) -> Any:
                 "agent_name": agent_name,
                 "latency_ms": round(latency_ms, 2),
                 "status": "error" if error else "success",
+                "error_type": classify_error(error) if error else None,
             }
             if error:
                 payload["error"] = str(error)[:500]
-                payload["error_type"] = type(error).__name__
             if result is not None:
                 payload["reply_shape"] = get_data_shape(result)
                 payload["reply_hash"] = hash_content(result)
@@ -237,6 +246,9 @@ def _wrap_generate_reply(original: Any) -> Any:
                 payload=payload,
                 parent_event_id=start_id,
             )
+            logger.pop_active_node()
+            if error:
+                logger.record_error_context(node_id=nid, error_type=classify_error(error), error_msg=str(error))
 
     return wrapper
 
@@ -362,6 +374,7 @@ def _wrap_select_speaker(original: Any) -> Any:
                 source_node=source,
                 payload=payload,
             )
+            _log_routing_decision(nid, selected_name, "manager_delegation", "llm_output")
 
     return wrapper
 
@@ -437,6 +450,39 @@ def _wrap_execute_function(original: Any) -> Any:
             )
 
     return wrapper
+
+
+# ---------------------------------------------------------------------------
+# Implicit interaction detection helpers
+# ---------------------------------------------------------------------------
+
+def _log_state_access(node_id: str, state_key: str, access_type: str, data_hash: str = "") -> None:
+    """Log access to shared state for implicit interaction detection."""
+    logger = EventLogger.get()
+    logger.log_event(
+        "state.access",
+        payload={
+            "node_id": node_id,
+            "state_key": state_key,
+            "access_type": access_type,
+            "data_hash": data_hash,
+        },
+    )
+
+
+def _log_routing_decision(source_node: str, target_node: str, routing_type: str,
+                          decision_basis: str = "") -> None:
+    """Log a routing decision for emergent edge detection."""
+    logger = EventLogger.get()
+    logger.log_event(
+        "routing.decision",
+        payload={
+            "source_node": source_node,
+            "target_node": target_node,
+            "routing_type": routing_type,
+            "decision_basis": decision_basis,
+        },
+    )
 
 
 # ---------------------------------------------------------------------------

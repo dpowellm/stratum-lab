@@ -1,47 +1,79 @@
-========================================================================
-  STRATUM EVENT SCHEMA VALIDATION
-  Events file: C:\Users\dpowe\AppData\Local\Temp\stratum_schema_test_q2c71urf.jsonl
-  Total events emitted: 21
-========================================================================
+==============================================================================
+  STRATUM EVENT SCHEMA VALIDATION -- v6 GRAPH DISCOVERY REFRAME
+  Checks 18-20: error context, state access, routing decisions
+==============================================================================
 
-  [+] execution.start       PASS  all checks passed
-  [+] execution.end         PASS  all checks passed
-  [+] agent.task_start      PASS  all checks passed
-  [+] agent.task_end        PASS  all checks passed
-      semantic fields: output_hash, output_type, output_size_bytes, classification_fields (4/4)
-  [+] delegation.initiated  PASS  all checks passed
-      semantic fields: context_hash, context_type, context_source_node, has_classification_dependency (4/5)
-  [+] delegation.completed  PASS  all checks passed
-  [+] tool.invoked          PASS  all checks passed
-  [+] tool.completed        PASS  all checks passed
-  [+] tool.call_failure     PASS  all checks passed
-  [+] llm.call_start        PASS  all checks passed
-  [+] llm.call_end          PASS  all checks passed
-      semantic fields: output_hash, output_type, output_size_bytes, output_structure, classification_fields (5/5)
-  [+] data.read             PASS  all checks passed
-  [+] data.write            PASS  all checks passed
-  [+] error.occurred        PASS  all checks passed
-  [+] error.propagated      PASS  all checks passed
-  [+] error.cascade         PASS  all checks passed
-  [+] decision.made         PASS  all checks passed
-  [+] guardrail.triggered   PASS  all checks passed
-  [+] external.call         PASS  all checks passed
-  [+] file.read             PASS  all checks passed
-  [+] file.write            PASS  all checks passed
+==============================================================================
+  CHECK 18: ERROR CONTEXT IN EVENTS
+==============================================================================
 
-------------------------------------------------------------------------
-  Results: 21 passed, 0 failed, 21 total
-------------------------------------------------------------------------
+  [+] EventLogger.push_active_node exists                 PASS
+  [+] EventLogger.pop_active_node exists                  PASS
+  [+] EventLogger.current_node exists                     PASS
+  [+] EventLogger.record_error_context exists             PASS
 
-  CROSS-EVENT VALIDATIONS:
+  [+] push_active_node stacks correctly                   PASS
+  [+] pop_active_node returns top node                    PASS
+  [+] record_error_context captures stack                 PASS
+      active_stack: ['test:AgentA:main.py:10', 'test:AgentB:main.py:20']
 
-  [+] All event_id values are unique
-  [+] All timestamp_ns values are positive integers
-  [+] Timestamps are monotonically non-decreasing
-  [+] All parent_event_id references are valid (5 refs)
-  [+] Consistent run_id across all events: schema-test-run-001
-  [+] Consistent repo_id across all events: schema-test-repo-001
+  [+] error event passes validate_event                   PASS
+  [+] error event has active_node_stack                   PASS
+      active_node_stack: ['test:AgentA:main.py:10', 'test:AgentB:main.py:20']
+  [+] active_node_stack has 2 entries                     PASS
 
-========================================================================
+==============================================================================
+  CHECK 19: STATE ACCESS EVENTS
+==============================================================================
+
+  [+] state.access in STATE_ACCESS_EVENT_TYPES            PASS
+      STATE_ACCESS_EVENT_TYPES = {'state.access'}
+  [+] state.access event passes validate_event            PASS
+  [+] state.access payload has required fields            PASS
+      state_key=shared_memory.research_notes
+      accessor_node=test:AgentA:main.py:10
+      access_type=read
+  [+] state.access (write) passes validate_event          PASS
+
+==============================================================================
+  CHECK 20: ROUTING DECISION EVENTS
+==============================================================================
+
+  [+] routing.decision in ROUTING_DECISION_EVENT_TYPES    PASS
+      ROUTING_DECISION_EVENT_TYPES = {'routing.decision'}
+  [+] routing.decision event passes validate_event        PASS
+  [+] routing.decision payload has required fields        PASS
+      decision_type=next_agent
+      source_node=test:Router:main.py:5
+      selected_target=test:AgentA:main.py:10
+      candidates (3): ['test:AgentA:main.py:10', 'test:AgentB:main.py:20', 'test:AgentC:main.py:30']
+  [+] routing.decision (tool_selection) validates         PASS
+
+==============================================================================
+  RUN RECORD INTEGRATION: state_access_count + routing_decision_count
+==============================================================================
+
+  [+] run_record.state_access_count == 2                  PASS
+      state_access_count = 2
+  [+] run_record.routing_decision_count == 2              PASS
+      routing_decision_count = 2
+  [+] run_record.total_events == 9                        PASS
+      total_events = 9
+  [+] type_counts includes state.access                   PASS
+  [+] type_counts includes routing.decision               PASS
+  [+] error_summary.total_errors == 1                     PASS
+
+==============================================================================
+  EDGE CASE: Run with no state/routing events
+==============================================================================
+
+  [+] state_access_count == 0 when none present           PASS
+  [+] routing_decision_count == 0 when none present       PASS
+
+------------------------------------------------------------------------------
+  Results: 26 passed, 0 failed, 26 total
+------------------------------------------------------------------------------
+
+==============================================================================
   ALL CHECKS PASSED
-========================================================================
+==============================================================================

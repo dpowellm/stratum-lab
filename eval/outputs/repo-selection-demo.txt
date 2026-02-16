@@ -1,136 +1,217 @@
-================================================================================
-  REPO SELECTION EVALUATION
-  Synthetic repos generated: 50
-================================================================================
+┌──────────────────────────────────────────────────── CHECKS 10-12 ────────────────────────────────────────────────────┐
+│ Repo Selection Eval -- v6 Graph Discovery Reframe                                                                    │
+│ Synthetic repos generated: 200   Frameworks: 8   Complexity brackets: 4                                              │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 
-  TOP 10 REPOS BY SELECTION SCORE
-  ----------------------------------------------------------------------------
-  Repo ID      Framework    Archetype                    Struct   Rare   Run  Total
-  ----------------------------------------------------------------------------
-  repo_0028    crewai       market_auction                 62.0    6.0  30.0   98.0
-  repo_0034    crewai       parallel_fan_out               60.0    6.0  27.0   93.0
-  repo_0023    langchain    market_auction                 66.0    6.0  20.0   92.0
-  repo_0031    langgraph    sequential_pipeline            61.5    0.0  30.0   91.5
-  repo_0037    langchain    parallel_fan_out               54.0    6.0  30.0   90.0
-  repo_0009    crewai       hierarchical_delegation        52.0    6.0  28.0   86.0
-  repo_0008    crewai       hub_and_spoke_shared_state     48.5    6.0  28.0   82.5
-  repo_0001    langchain    single_agent_tool_use          54.0    6.0  22.0   82.0
-  repo_0021    langgraph    hub_and_spoke_shared_state     53.0    6.0  22.0   81.0
-  repo_0005    crewai       reflection_loop                36.0   18.0  25.0   79.0
+SCHEMA VALIDATION (validate_selection_input)
+   Schema Validation   
+        Results        
+┌─────────────┬───────┐
+│ Metric      │ Value │
+├─────────────┼───────┤
+│ Total repos │   200 │
+│ Valid       │   200 │
+│ Invalid     │     0 │
+└─────────────┴───────┘
 
-  BOTTOM 10 REPOS BY SELECTION SCORE
-  ----------------------------------------------------------------------------
-  Repo ID      Framework    Archetype                    Struct   Rare   Run  Total
-  ----------------------------------------------------------------------------
-  repo_0040    langgraph    human_in_the_loop              41.0    0.0  30.0   71.0
-  repo_0030    langgraph    debate_consensus               46.0    0.0  25.0   71.0
-  repo_0022    crewai       single_agent_tool_use          37.0    6.0  25.0   68.0
-  repo_0012    langgraph    supervisor_worker              45.5    6.0  15.0   66.5
-  repo_0026    autogen      supervisor_worker              42.5    6.0  18.0   66.5
-  repo_0020    langgraph    blackboard_architecture        35.5    6.0  23.0   64.5
-  repo_0042    crewai       blackboard_architecture        27.0    6.0  30.0   63.0
-  repo_0029    autogen      debate_consensus               32.0    0.0  25.0   57.0
-  repo_0010    langgraph    debate_consensus               16.0    0.0  28.0   44.0
-  repo_0000    crewai       guardrail_gated_pipeline       12.0    0.0  27.0   39.0
+INPUT POOL STATISTICS
+       Framework Distribution (Input Pool)        
+┌───────────────────┬───────┬───────┬────────────┐
+│ Framework         │ Count │   Pct │ Bar        │
+├───────────────────┼───────┼───────┼────────────┤
+│ crewai            │    41 │ 20.5% │ ########## │
+│ langgraph         │    28 │ 14.0% │ #######    │
+│ autogen           │    22 │ 11.0% │ #####      │
+│ langchain         │    25 │ 12.5% │ ######     │
+│ openai_assistants │    19 │  9.5% │ ####       │
+│ semantic_kernel   │    22 │ 11.0% │ #####      │
+│ llama_index       │    19 │  9.5% │ ####       │
+│ custom            │    24 │ 12.0% │ ######     │
+└───────────────────┴───────┴───────┴────────────┘
+Complexity Distribution (Input Pool)
+┌─────────┬────────┬───────┬───────┐
+│ Bracket │ Agents │ Count │   Pct │
+├─────────┼────────┼───────┼───────┤
+│ single  │  1-1   │    50 │ 25.0% │
+│ small   │  2-3   │    44 │ 22.0% │
+│ medium  │  4-7   │    50 │ 25.0% │
+│ large   │  8-15  │    56 │ 28.0% │
+└─────────┴────────┴───────┴───────┘
+  XCOMP repos in pool: 47 / 200  (23.5%)
+  Unique topologies in pool: 126
 
-  FRAMEWORK DISTRIBUTION
-  --------------------------------------------------
-  crewai         11 ( 36.7%)  ##################
-  langgraph       9 ( 30.0%)  ###############
-  langchain       6 ( 20.0%)  ##########
-  autogen         4 ( 13.3%)  ######
+CHECK 10: DISCOVERY OPTIMIZER SELECTION
+  Target: 100   Selected: 100
+               Framework Distribution (Selected)                
+┌───────────────────┬──────┬──────────┬──────────┬─────────────┐
+│ Framework         │ Pool │ Selected │ Sel Rate │ Bar         │
+├───────────────────┼──────┼──────────┼──────────┼─────────────┤
+│ crewai            │   41 │       23 │    56.1% │ ########### │
+│ langgraph         │   28 │       15 │    53.6% │ #######     │
+│ autogen           │   22 │       12 │    54.5% │ ######      │
+│ langchain         │   25 │       11 │    44.0% │ #####       │
+│ openai_assistants │   19 │        6 │    31.6% │ ###         │
+│ semantic_kernel   │   22 │       12 │    54.5% │ ######      │
+│ llama_index       │   19 │        9 │    47.4% │ ####        │
+│ custom            │   24 │       12 │    50.0% │ ######      │
+└───────────────────┴──────┴──────────┴──────────┴─────────────┘
+              Complexity Distribution (Selected)              
+┌─────────┬────────┬──────┬──────────┬──────────┬────────────┐
+│ Bracket │ Agents │ Pool │ Selected │ Sel Rate │ Pct of Sel │
+├─────────┼────────┼──────┼──────────┼──────────┼────────────┤
+│ single  │  1-1   │   50 │       23 │    46.0% │      23.0% │
+│ small   │  2-3   │   44 │       22 │    50.0% │      22.0% │
+│ medium  │  4-7   │   50 │       25 │    50.0% │      25.0% │
+│ large   │  8-15  │   56 │       30 │    53.6% │      30.0% │
+└─────────┴────────┴──────┴──────────┴──────────┴────────────┘
 
-  ARCHETYPE DISTRIBUTION
-  ------------------------------------------------------------
-  guardrail_gated_pipeline          5 ( 16.7%)  ########
-  human_in_the_loop                 4 ( 13.3%)  ######
-  sequential_pipeline               3 ( 10.0%)  #####
-  debate_consensus                  3 ( 10.0%)  #####
-  market_auction                    2 (  6.7%)  ###
-  parallel_fan_out                  2 (  6.7%)  ###
-  hierarchical_delegation           2 (  6.7%)  ###
-  hub_and_spoke_shared_state        2 (  6.7%)  ###
-  single_agent_tool_use             2 (  6.7%)  ###
-  supervisor_worker                 2 (  6.7%)  ###
-  blackboard_architecture           2 (  6.7%)  ###
-  reflection_loop                   1 (  3.3%)  #
+Check 10 Assertions:
+  [PASS] Frameworks represented: 8/8
+  [PASS] Complexity brackets covered: 4/4
+  [PASS] Unique topologies in selection: 86/100  (86.0%)
 
-  CONSTRAINT VERIFICATION
-  ------------------------------------------------------------
-  [+] Max per archetype: 5 <= 10 (limit)
-  [+] Frameworks represented: 4 >= 3 (minimum)
-  [+] Min runnability score: 15.0 >= 10.0 (threshold)
-  [+] Total selected: 30
+CHECK 11: XCOMP PRIORITIZATION
+     XCOMP Selection Rates      
+┌──────────────────────┬───────┐
+│ Metric               │ Value │
+├──────────────────────┼───────┤
+│ XCOMP repos in pool  │    47 │
+│ XCOMP repos selected │    41 │
+│ XCOMP selection rate │ 0.872 │
+│ Base selection rate  │ 0.500 │
+│ Boost factor         │ 1.74x │
+└──────────────────────┴───────┘
+  [PASS] XCOMP selection rate (0.872) > base rate (0.500)
+                              Top 10 Selected Repos by Discovery Value                               
+┌────┬───────────┬───────────────────┬────────┬─────────┬───────┬────────────┬─────────────┬────────┐
+│  # │ Repo ID   │ Framework         │ Agents │ Bracket │ XCOMP │ Topology   │ Runnability │ DValue │
+├────┼───────────┼───────────────────┼────────┼─────────┼───────┼────────────┼─────────────┼────────┤
+│  1 │ repo_0066 │ crewai            │      5 │ medium  │  YES  │ 35f9ca8ee7 │        0.91 │ 114.01 │
+│  2 │ repo_0146 │ crewai            │      9 │ large   │  YES  │ 5cc5bfa1df │        0.90 │ 101.56 │
+│  3 │ repo_0043 │ autogen           │      9 │ large   │  YES  │ 54110630e1 │        0.84 │  92.47 │
+│  4 │ repo_0173 │ openai_assistants │      9 │ large   │  YES  │ de82e1690f │        0.82 │  90.35 │
+│  5 │ repo_0044 │ autogen           │     15 │ large   │  YES  │ 758c70f70b │        0.83 │  85.62 │
+│  6 │ repo_0054 │ custom            │      1 │ single  │   -   │ 52a16bef88 │        0.96 │  78.64 │
+│  7 │ repo_0000 │ openai_assistants │      1 │ single  │  YES  │ def3f381f5 │        0.72 │  76.21 │
+│  8 │ repo_0025 │ langgraph         │      1 │ single  │   -   │ d5117110c3 │        0.96 │  73.40 │
+│  9 │ repo_0199 │ openai_assistants │      3 │ small   │  YES  │ 3a56ac8439 │        0.95 │  70.27 │
+│ 10 │ repo_0091 │ langgraph         │      8 │ large   │   -   │ db7ae9755c │        0.79 │  67.52 │
+└────┴───────────┴───────────────────┴────────┴─────────┴───────┴────────────┴─────────────┴────────┘
 
-  CONTROL GROUP BREAKDOWN
-  ------------------------------------------------------------
-  control:   4
-  treatment: 26
-  control repos (tagged):   4
-  treatment repos (tagged): 26
-  avg preconditions (control):   0.0
-  avg preconditions (treatment): 6.2
-  [+] Control group non-empty: 4 repos
-  [+] Treatment > control: 26 > 4
+CHECK 12: COVERAGE VALIDATION REPORT
+  [PASS] report has framework_coverage dict: True
+  [PASS] report has complexity_coverage dict: True
+            Framework Coverage Detail            
+┌────────────┬───────┬────────┬───────────┬─────┐
+│ Framework  │ Count │ Target │    Met    │ Gap │
+├────────────┼───────┼────────┼───────────┼─────┤
+│ crewai     │    23 │    150 │ NO (-127) │ 127 │
+│ langgraph  │    15 │    150 │ NO (-135) │ 135 │
+│ autogen    │    12 │    100 │ NO (-88)  │  88 │
+│ langchain  │    11 │    100 │ NO (-89)  │  89 │
+│ llamaindex │     0 │     60 │ NO (-60)  │  60 │
+│ smolagents │     0 │     40 │ NO (-40)  │  40 │
+│ agno       │     0 │     30 │ NO (-30)  │  30 │
+│ generic    │     0 │     70 │ NO (-70)  │  70 │
+└────────────┴───────┴────────┴───────────┴─────┘
+          Complexity Coverage Detail          
+┌─────────┬───────┬────────┬───────────┬─────┐
+│ Bracket │ Count │ Target │    Met    │ Gap │
+├─────────┼───────┼────────┼───────────┼─────┤
+│ single  │    23 │     80 │ NO (-57)  │  57 │
+│ small   │    22 │    200 │ NO (-178) │ 178 │
+│ medium  │    25 │    350 │ NO (-325) │ 325 │
+│ large   │    30 │    150 │ NO (-120) │ 120 │
+└─────────┴───────┴────────┴───────────┴─────┘
 
-  SUMMARY STATISTICS
-  ------------------------------------------------------------
-  total_scanned: 50
-  total_eligible: 50
-  total_selected: 30
-  by_framework:
-    crewai: 11
-    langgraph: 9
-    langchain: 6
-    autogen: 4
-  by_archetype:
-    guardrail_gated_pipeline: 5
-    human_in_the_loop: 4
-    sequential_pipeline: 3
-    debate_consensus: 3
-    market_auction: 2
-    parallel_fan_out: 2
-    hierarchical_delegation: 2
-    hub_and_spoke_shared_state: 2
-    single_agent_tool_use: 2
-    supervisor_worker: 2
-    blackboard_architecture: 2
-    reflection_loop: 1
-  avg_structural_value: 46.1
-  avg_runnability_score: 25.17
-  avg_agent_count: 5.63
-  total_taxonomy_preconditions_covered: 10
-  frameworks_represented: 4
-  archetypes_represented: 12
-  control_count: 4
-  treatment_count: 26
+  NOTE: Above targets are for --target=1000 (BASE_TARGET). See Check 27 for scaled targets at --target=100.
+         Finding Coverage Detail          
+┌─────────────────┬───────┬────────┬─────┐
+│ Finding ID      │ Count │ Target │ Met │
+├─────────────────┼───────┼────────┼─────┤
+│ STRAT-DC-001    │    26 │     15 │ YES │
+│ STRAT-DC-002    │    27 │     10 │ YES │
+│ STRAT-SI-001    │    20 │     15 │ YES │
+│ STRAT-SI-004    │    22 │     10 │ YES │
+│ STRAT-EA-001    │    21 │     10 │ YES │
+│ STRAT-OC-002    │    24 │     10 │ YES │
+│ STRAT-AB-001    │    20 │     10 │ YES │
+│ STRAT-DC-003    │    15 │      8 │ YES │
+│ STRAT-SI-002    │    23 │      8 │ YES │
+│ STRAT-EA-002    │    28 │      8 │ YES │
+│ STRAT-OC-001    │    28 │      8 │ YES │
+│ STRAT-XCOMP-001 │    28 │      5 │ YES │
+│ STRAT-XCOMP-006 │    32 │      5 │ YES │
+└─────────────────┴───────┴────────┴─────┘
 
-  SCORE DISTRIBUTION
-  ------------------------------------------------------------
-  Mean selection score:  74.67
-  Min selection score:   39.00
-  Max selection score:   98.00
-  Std dev:               12.94
-  Avg structural value:  46.10
-  Avg archetype rarity:  3.40
-  Avg runnability:       25.17
+Coverage gaps identified (12):
+  - crewai: 23/150
+  - langgraph: 15/150
+  - autogen: 12/100
+  - langchain: 11/100
+  - llamaindex: 0/60
+  - smolagents: 0/40
+  - agno: 0/30
+  - generic: 0/70
+  - complexity_single: 23/80
+  - complexity_small: 22/200
+  - complexity_medium: 25/350
+  - complexity_large: 30/150
 
-  COMPLEXITY DISTRIBUTION
-  ----------------------------------------
-  high         21 ( 70.0%)
-  medium        8 ( 26.7%)
-  low           1 (  3.3%)
+  [PASS] report has gaps list: True  (entries: 12)
+  [PASS] unique topologies tracked: 86
 
-  INDIVIDUAL SCORER FUNCTION CHECKS
-  ------------------------------------------------------------
-  [+] High-complexity structural value: 79.0 (expected ~54+)
-  [+] Empty repo structural value:      0.0 (expected 0)
-  [+] Fully runnable runnability score:  30.0 (expected 30)
-  [+] Framework resolution (crewai,langchain): crewai (expected crewai)
-  [+] Framework resolution (unknown_fw): custom (expected custom)
-  [+] Complexity (2 agents, 3 edges): low (expected low)
-  [+] Complexity (8 agents, 25 edges): high (expected high)
+CHECK 27: SCALED TARGET COVERAGE
+  Scaled framework targets met: 4/8
+    crewai                count=23  target=15  YES
+    langgraph             count=15  target=15  YES
+    autogen               count=12  target=10  YES
+    langchain             count=11  target=10  YES
+    llamaindex            count=0  target=6  NO
+    smolagents            count=0  target=4  NO
+    agno                  count=0  target=3  NO
+    generic               count=0  target=7  NO
 
-================================================================================
-  EVALUATION COMPLETE
-================================================================================
+  [PASS] With --target=100, at least 4 framework targets met (got 4)
+
+SUMMARY STATISTICS
+┌──────────────────────────────┬─────────┐
+│ Metric                       │   Value │
+├──────────────────────────────┼─────────┤
+│ Total in pool                │     200 │
+│ Target count                 │     100 │
+│ Actually selected            │     100 │
+│ Selection rate               │   50.0% │
+│ Unique topologies (selected) │      86 │
+│ Unique topologies (pool)     │     126 │
+│ Frameworks represented       │       8 │
+│ Complexity brackets covered  │       4 │
+│ XCOMP repos selected         │      41 │
+│ XCOMP boost factor           │   1.74x │
+│ Schema-valid repos           │ 200/200 │
+│ Coverage gaps                │      12 │
+│ All targets met              │   False │
+│ Avg runnability (selected)   │   0.672 │
+│ Avg discovery value          │   50.01 │
+│ Min discovery value          │   33.82 │
+│ Max discovery value          │  114.01 │
+└──────────────────────────────┴─────────┘
+
+VERDICT
+                  Final Verdict                  
+┌──────────────────────────────────────┬────────┐
+│ Check                                │ Result │
+├──────────────────────────────────────┼────────┤
+│ Check 10a: Framework coverage        │  PASS  │
+│ Check 10b: Complexity coverage       │  PASS  │
+│ Check 10c: Topology uniqueness       │  PASS  │
+│ Check 11:  XCOMP prioritized         │  PASS  │
+│ Check 12a: framework_coverage dict   │  PASS  │
+│ Check 12b: complexity_coverage dict  │  PASS  │
+│ Check 12c: gaps list present         │  PASS  │
+│ Check 12d: unique topologies tracked │  PASS  │
+│ Check 27:  Scaled targets met        │  PASS  │
+└──────────────────────────────────────┴────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ ALL CHECKS PASSED                                                                                                    │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

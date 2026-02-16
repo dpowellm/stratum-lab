@@ -133,6 +133,7 @@ def compute_sensitivity_score(node_behavioral: dict[str, Any]) -> float:
 
 def build_fragility_map(
     enriched_graphs: list[dict[str, Any]],
+    legacy_probabilities: bool = False,
 ) -> list[dict[str, Any]]:
     """Build a fragility map identifying model-sensitive structural positions.
 
@@ -202,12 +203,10 @@ def build_fragility_map(
         sorted_examples = sorted(entries, key=lambda e: e["sensitivity_score"], reverse=True)
         top_examples = sorted_examples[:5]
 
-        fragility_entries.append({
+        entry = {
             "structural_position": role,
             "avg_tool_call_failure_rate": round(float(np.mean(failure_rates)), 4),
             "max_tool_call_failure_rate": round(float(np.max(failure_rates)), 4),
-            "sensitivity_score": round(float(np.mean(sensitivity_scores)), 4),
-            "max_sensitivity_score": round(float(np.max(sensitivity_scores)), 4),
             "affected_repos_count": affected_repos,
             "total_nodes_analyzed": len(entries),
             "quality_dependent_count": quality_dep_count,
@@ -220,13 +219,20 @@ def build_fragility_map(
                     "repo_id": ex["repo_id"],
                     "node_id": ex["node_id"],
                     "node_type": ex["node_type"],
-                    "sensitivity_score": ex["sensitivity_score"],
                     "tool_call_failure_rate": ex["tool_call_failure_rate"],
                 }
                 for ex in top_examples
             ],
-        })
+        }
 
-    # Sort by average sensitivity score descending
-    fragility_entries.sort(key=lambda e: e["sensitivity_score"], reverse=True)
+        if legacy_probabilities:
+            entry["sensitivity_score"] = round(float(np.mean(sensitivity_scores)), 4)
+            entry["max_sensitivity_score"] = round(float(np.max(sensitivity_scores)), 4)
+            for node_entry, ex in zip(entry["top_fragile_nodes"], top_examples):
+                node_entry["sensitivity_score"] = ex["sensitivity_score"]
+
+        fragility_entries.append(entry)
+
+    # Sort by average tool_call_failure_rate descending (structural metric, always present)
+    fragility_entries.sort(key=lambda e: e["avg_tool_call_failure_rate"], reverse=True)
     return fragility_entries

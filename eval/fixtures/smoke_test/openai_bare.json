@@ -1,0 +1,55 @@
+{
+  "repo_id": "smoke-test/openai-bare",
+  "repo_full_name": "smoke-test/openai-bare",
+  "repo_url": "https://github.com/smoke-test/openai-bare",
+  "framework": "langchain",
+  "scanner_version": "0.9.0",
+  "detected_frameworks": ["langchain"],
+  "agent_count": 1,
+  "edge_count": 0,
+  "agent_definitions": [
+    {
+      "agent_id": "agent_assistant",
+      "label": "Assistant",
+      "role": "OpenAI assistant",
+      "tool_names": []
+    }
+  ],
+  "graph_edges": [],
+  "nodes": {
+    "agent_assistant": {
+      "node_type": "agent",
+      "node_id": "agent_assistant",
+      "label": "Assistant"
+    }
+  },
+  "edges": {},
+  "findings": [],
+  "finding_ids": [],
+  "control_inventory": {
+    "present_controls": [],
+    "absent_controls": []
+  },
+  "present_control_types": [],
+  "taxonomy_preconditions": [],
+  "risk_surface": {
+    "max_delegation_depth": 0,
+    "shared_state_conflict_count": 0,
+    "feedback_loop_count": 0,
+    "trust_boundary_crossing_count": 0
+  },
+  "archetype_id": 1,
+  "topology_hash": "smoke_openai_bare_001",
+  "detected_entry_point": "main.py",
+  "detected_requirements": "requirements.txt",
+  "has_readme_with_usage": true,
+  "requires_docker": false,
+  "requires_database": false,
+  "recent_commit": true,
+  "estimated_runnability": 0.95,
+  "graph_complexity": "low",
+  "xcomp_findings": [],
+  "has_entry_point": true,
+  "has_requirements": true,
+  "preconditions": []
+}

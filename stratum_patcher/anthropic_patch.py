@@ -33,6 +33,31 @@ from stratum_patcher.event_logger import (
 _PATCHED = False
 
 # ---------------------------------------------------------------------------
+# vLLM model mapping — translate Anthropic model names to vLLM-served model
+# ---------------------------------------------------------------------------
+
+VLLM_MODEL = os.environ.get("STRATUM_VLLM_MODEL", "")
+
+
+def remap_model(model: str) -> str:
+    """Remap any model name to the vLLM-served model when STRATUM_VLLM_MODEL is set."""
+    if not VLLM_MODEL:
+        return model  # No remapping if env var not set (local dev, tests)
+    if model and model.startswith(("gpt-", "claude-", "o1-", "o3-", "chatgpt-")):
+        return VLLM_MODEL
+    return model
+
+
+def _map_model(model_name: str) -> tuple[str, str]:
+    """Map any model name to the vLLM model.
+
+    Returns (original_model, mapped_model).
+    """
+    mapped = remap_model(model_name)
+    return model_name, mapped
+
+
+# ---------------------------------------------------------------------------
 # Anthropic -> OpenAI translation
 # ---------------------------------------------------------------------------
 
@@ -305,7 +330,8 @@ def _make_openai_call(kwargs: dict[str, Any]) -> Any:
 
     client = _openai.OpenAI(base_url=base_url, api_key=api_key)
 
-    model = kwargs.get("model", os.environ.get("STRATUM_VLLM_MODEL", "Qwen/Qwen2.5-72B-Instruct"))
+    raw_model = kwargs.get("model", "gpt-4")
+    _, model = _map_model(raw_model)
     messages = _translate_messages(kwargs.get("system"), kwargs.get("messages", []))
     tools = _translate_tools(kwargs.get("tools"))
     max_tokens = kwargs.get("max_tokens", 4096)
@@ -337,7 +363,8 @@ async def _make_openai_call_async(kwargs: dict[str, Any]) -> Any:
 
     client = _openai.AsyncOpenAI(base_url=base_url, api_key=api_key)
 
-    model = kwargs.get("model", os.environ.get("STRATUM_VLLM_MODEL", "Qwen/Qwen2.5-72B-Instruct"))
+    raw_model = kwargs.get("model", "gpt-4")
+    _, model = _map_model(raw_model)
     messages = _translate_messages(kwargs.get("system"), kwargs.get("messages", []))
     tools = _translate_tools(kwargs.get("tools"))
     max_tokens = kwargs.get("max_tokens", 4096)
@@ -367,11 +394,14 @@ def _wrap_sync_messages_create(original: Any) -> Any:
         node_id = generate_node_id("anthropic", "Messages", caller_file, caller_line)
         source = make_node("capability", node_id, "anthropic.messages.create")
 
+        original_model, mapped_model = _map_model(kwargs.get("model", "unknown"))
         start_id = logger.log_event(
             "llm.call_start",
             source_node=source,
             payload={
-                "model_requested": kwargs.get("model", "unknown"),
+                "model_requested": original_model,
+                "model_actual": mapped_model,
+                "model_mapped": original_model != mapped_model,
                 "message_count": len(kwargs.get("messages", [])),
                 "has_tools": bool(kwargs.get("tools")),
                 "redirected_to": "vllm_openai_compat",
@@ -407,11 +437,14 @@ def _wrap_async_messages_create(original: Any) -> Any:
         node_id = generate_node_id("anthropic", "AsyncMessages", caller_file, caller_line)
         source = make_node("capability", node_id, "anthropic.async.messages.create")
 
+        original_model, mapped_model = _map_model(kwargs.get("model", "unknown"))
         start_id = logger.log_event(
             "llm.call_start",
             source_node=source,
             payload={
-                "model_requested": kwargs.get("model", "unknown"),
+                "model_requested": original_model,
+                "model_actual": mapped_model,
+                "model_mapped": original_model != mapped_model,
                 "message_count": len(kwargs.get("messages", [])),
                 "has_tools": bool(kwargs.get("tools")),
                 "redirected_to": "vllm_openai_compat",

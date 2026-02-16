@@ -183,6 +183,9 @@ class EventLogger:
         self._run_id: str = os.environ.get("STRATUM_RUN_ID", "unknown")
         self._repo_id: str = os.environ.get("STRATUM_REPO_ID", "unknown")
         self._framework: str = os.environ.get("STRATUM_FRAMEWORK", "unknown")
+        self._active_node_stack: list[str] = []
+        self._error_context_stack: list[dict[str, Any]] = []
+        self._edge_activations: list[dict[str, Any]] = []
         # Ensure directory exists
         try:
             parent = os.path.dirname(self._file_path)
@@ -260,3 +263,70 @@ class EventLogger:
                 pass
 
         return event_id
+
+    def push_active_node(self, node_id: str) -> None:
+        """Called when a node (agent) begins execution."""
+        self._active_node_stack.append(node_id)
+
+    def pop_active_node(self) -> str:
+        """Called when a node (agent) finishes execution."""
+        if self._active_node_stack:
+            return self._active_node_stack.pop()
+        return ""
+
+    def current_node(self) -> str:
+        """Return the currently-executing node ID."""
+        return self._active_node_stack[-1] if self._active_node_stack else ""
+
+    def parent_node(self) -> str:
+        """Return the parent (calling) node, or empty string."""
+        return self._active_node_stack[-2] if len(self._active_node_stack) >= 2 else ""
+
+    def record_edge_activation(self, source: str, target: str, data_hash: str = "") -> None:
+        """Record that an edge was activated (delegation or data flow)."""
+        self._edge_activations.append({
+            "source": source,
+            "target": target,
+            "timestamp": time.time(),
+            "data_hash": data_hash,
+            "run_id": self._run_id,
+        })
+
+    def record_error_context(self, node_id: str, error_type: str, error_msg: str,
+                             upstream_node: str = "", upstream_output_hash: str = "") -> None:
+        """Record error with causal context for propagation tracing."""
+        self._error_context_stack.append({
+            "node_id": node_id,
+            "error_type": error_type,
+            "error_msg": error_msg[:500],
+            "upstream_node": upstream_node,
+            "upstream_output_hash": upstream_output_hash,
+            "timestamp": time.time(),
+            "active_stack": list(self._active_node_stack),
+        })
+
+
+def classify_error(error: BaseException) -> str:
+    """Classify an error into behavioral categories."""
+    error_str = str(error).lower()
+    error_type = type(error).__name__
+
+    if "timeout" in error_str or "timed out" in error_str:
+        return "timeout"
+    if "key" in error_str and ("missing" in error_str or "not found" in error_str):
+        return "schema_mismatch"
+    if "json" in error_str and ("decode" in error_str or "parse" in error_str):
+        return "schema_mismatch"
+    if "type" in error_str and "expected" in error_str:
+        return "schema_mismatch"
+    if "rate" in error_str and "limit" in error_str:
+        return "rate_limit"
+    if "api" in error_str or "http" in error_str or "connection" in error_str:
+        return "api_error"
+    if "permission" in error_str or "access" in error_str:
+        return "permission_error"
+    if error_type in ("KeyError", "TypeError", "ValueError", "AttributeError"):
+        return "schema_mismatch"
+    if error_type in ("TimeoutError", "asyncio.TimeoutError"):
+        return "timeout"
+    return "runtime_error"

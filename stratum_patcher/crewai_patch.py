@@ -20,6 +20,7 @@ from typing import Any
 from stratum_patcher.event_logger import (
     EventLogger,
     capture_output_signature,
+    classify_error,
     get_data_shape,
     hash_content,
     make_node,
@@ -112,6 +113,7 @@ def _wrap_agent_execute_task(original: Any) -> Any:
         agent_role = getattr(self, "role", type(self).__name__)
         node_id = generate_node_id(_FRAMEWORK, agent_role, __file__, 0)
         source = make_node("agent", node_id, agent_role)
+        logger.push_active_node(node_id)
 
         # Try to get task info from args
         task_desc_hash = ""
@@ -142,6 +144,9 @@ def _wrap_agent_execute_task(original: Any) -> Any:
                 "task_description_hash": task_desc_hash,
                 "tools_available": tool_names,
                 "agent_goal_hash": hash_content(getattr(self, "goal", "")),
+                "node_id": node_id,
+                "parent_node_id": logger.parent_node(),
+                "input_source": "delegation",
             },
         )
 
@@ -164,6 +169,9 @@ def _wrap_agent_execute_task(original: Any) -> Any:
             if error:
                 payload["error"] = str(error)[:500]
                 payload["error_type"] = type(error).__name__
+            payload["node_id"] = node_id
+            payload["output_data_hash"] = hash_content(result) if result is not None else None
+            payload["error_type"] = classify_error(error) if error else None
             if result is not None:
                 payload["result_shape"] = get_data_shape(result)
                 try:
@@ -181,6 +189,14 @@ def _wrap_agent_execute_task(original: Any) -> Any:
                 payload=payload,
                 parent_event_id=start_id,
             )
+            logger.pop_active_node()
+            if error:
+                logger.record_error_context(
+                    node_id=node_id,
+                    error_type=classify_error(error),
+                    error_msg=str(error),
+                    upstream_node=logger.parent_node(),
+                )
 
     return wrapper
 
@@ -287,8 +303,14 @@ def _wrap_delegate_work(original: Any) -> Any:
                 "context_size_bytes": _context_sig["size_bytes"],
                 "context_source_node": delegator_id,
                 "has_classification_dependency": _context_sig["classification_fields"] is not None,
+                "source_node_id": delegator_id,
+                "target_node_id": target_id,
+                "delegation_type": "explicit",
+                "input_data_hash": hash_content(_task_context),
             },
         )
+        logger.record_edge_activation(source=delegator_id, target=target_id, data_hash=hash_content(_task_context))
+        _log_routing_decision(delegator_id, target_id, "manager_delegation", "explicit")
 
         t0 = time.perf_counter()
         error: Exception | None = None
@@ -344,6 +366,39 @@ def _patch_tool_class(tool_cls: type) -> None:
         tool_cls._run = patched_run  # type: ignore[attr-defined]
     except Exception:
         pass
+
+
+# ---------------------------------------------------------------------------
+# Implicit interaction detection helpers
+# ---------------------------------------------------------------------------
+
+def _log_state_access(node_id: str, state_key: str, access_type: str, data_hash: str = "") -> None:
+    """Log access to shared state for implicit interaction detection."""
+    logger = EventLogger.get()
+    logger.log_event(
+        "state.access",
+        payload={
+            "node_id": node_id,
+            "state_key": state_key,
+            "access_type": access_type,
+            "data_hash": data_hash,
+        },
+    )
+
+
+def _log_routing_decision(source_node: str, target_node: str, routing_type: str,
+                          decision_basis: str = "") -> None:
+    """Log a routing decision for emergent edge detection."""
+    logger = EventLogger.get()
+    logger.log_event(
+        "routing.decision",
+        payload={
+            "source_node": source_node,
+            "target_node": target_node,
+            "routing_type": routing_type,
+            "decision_basis": decision_basis,
+        },
+    )
 
 
 # ---------------------------------------------------------------------------

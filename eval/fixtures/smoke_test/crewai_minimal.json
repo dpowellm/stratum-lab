@@ -1,0 +1,101 @@
+{
+  "repo_id": "smoke-test/crewai-minimal",
+  "repo_full_name": "smoke-test/crewai-minimal",
+  "repo_url": "https://github.com/smoke-test/crewai-minimal",
+  "framework": "crewai",
+  "scanner_version": "0.9.0",
+  "detected_frameworks": ["crewai"],
+  "agent_count": 2,
+  "edge_count": 2,
+  "agent_definitions": [
+    {
+      "agent_id": "agent_researcher",
+      "label": "Researcher",
+      "role": "Research specialist",
+      "tool_names": ["web_search"]
+    },
+    {
+      "agent_id": "agent_writer",
+      "label": "Writer",
+      "role": "Content writer",
+      "tool_names": []
+    }
+  ],
+  "graph_edges": [
+    {
+      "source": "agent_researcher",
+      "target": "agent_writer",
+      "edge_type": "delegates_to"
+    },
+    {
+      "source": "agent_researcher",
+      "target": "cap_tool_web_search",
+      "edge_type": "uses"
+    }
+  ],
+  "nodes": {
+    "agent_researcher": {
+      "node_type": "agent",
+      "node_id": "agent_researcher",
+      "label": "Researcher"
+    },
+    "agent_writer": {
+      "node_type": "agent",
+      "node_id": "agent_writer",
+      "label": "Writer"
+    },
+    "cap_tool_web_search": {
+      "node_type": "capability",
+      "node_id": "cap_tool_web_search",
+      "label": "WebSearchTool"
+    }
+  },
+  "edges": {
+    "e1": {
+      "source": "agent_researcher",
+      "target": "agent_writer",
+      "edge_type": "delegates_to",
+      "label": "researcher delegates to writer"
+    },
+    "e2": {
+      "source": "agent_researcher",
+      "target": "cap_tool_web_search",
+      "edge_type": "uses",
+      "label": "researcher uses web_search"
+    }
+  },
+  "findings": [
+    {
+      "finding_id": "STRAT-DC-001",
+      "severity": "medium",
+      "description": "Delegation chain without depth limit"
+    }
+  ],
+  "finding_ids": ["STRAT-DC-001"],
+  "control_inventory": {
+    "present_controls": [],
+    "absent_controls": ["error_boundary", "timeout"]
+  },
+  "present_control_types": [],
+  "taxonomy_preconditions": ["unbounded_delegation_depth"],
+  "risk_surface": {
+    "max_delegation_depth": 1,
+    "shared_state_conflict_count": 0,
+    "feedback_loop_count": 0,
+    "trust_boundary_crossing_count": 0
+  },
+  "archetype_id": 4,
+  "topology_hash": "smoke_crewai_minimal_001",
+  "detected_entry_point": "main.py",
+  "detected_requirements": "requirements.txt",
+  "has_readme_with_usage": true,
+  "requires_docker": false,
+  "requires_database": false,
+  "recent_commit": true,
+  "estimated_runnability": 0.85,
+  "graph_complexity": "low",
+  "xcomp_findings": [],
+  "has_entry_point": true,
+  "has_requirements": true,
+  "preconditions": []
+}

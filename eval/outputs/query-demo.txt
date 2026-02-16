@@ -1,734 +1,394 @@
-================================================================================
-STRATUM QUERY DEMO — FULL PRODUCT FLOW
-================================================================================
+--------------------- CHECK 9: Behavioral Record Matches stratum-graph Schema ----------------------
 
-Knowledge base: 30 enriched repos, 4 patterns
-Customer graph: customer_repo (crewai)
-  Nodes: 8
-  Edges: 9
-  Preconditions: ['shared_state_no_arbitration', 'no_timeout_on_delegation', 'unhandled_tool_failure']
+3. validate_behavioral_record()
 
-================================================================================
-(a) GRAPH FINGERPRINT
-================================================================================
-  feature_vector (raw, 20 elements):
-    [ 0] 4.000000
-    [ 1] 2.000000
-    [ 2] 1.000000
-    [ 3] 1.000000
-    [ 4] 0.000000
-    [ 5] 9.000000
-    [ 6] 4.000000
-    [ 7] 4.000000
-    [ 8] 0.000000
-    [ 9] 0.000000
-    [10] 2.000000
-    [11] 1.000000
-    [12] 0.000000
-    [13] 2.222222
-    [14] 0.142857
-    [15] 0.029762
-    [16] 0.000000
-    [17] 1.000000
-    [18] 2.000000
-    [19] 0.000000
+  [+] validate_behavioral_record returns True
+  [+] No missing fields
 
-  feature_vector (normalized to [0,1], 20 elements):
-    [ 0] 0.000000
-    [ 1] 0.000000
-    [ 2] 0.000000
-    [ 3] 0.000000
-    [ 4] 0.000000
-    [ 5] 1.000000
-    [ 6] 1.000000
-    [ 7] 1.000000
-    [ 8] 0.000000
-    [ 9] 0.000000
-    [10] 0.666667
-    [11] 0.000000
-    [12] 0.000000
-    [13] 0.449735
-    [14] 1.000000
-    [15] 1.000000
-    [16] 0.000000
-    [17] 0.000000
-    [18] 0.000000
-    [19] 0.000000
+4. Top-Level Key Verification
 
-  motifs: ['linear_delegation_chain', 'shared_state_without_arbitration', 'trust_boundary_crossing']
-  topology_hash: e21f5535fccb2c73d91aa3f0e135764f92a35075da7ff1c7488ad7a5e6120286
+  [+] Record has exactly 9 top-level keys
+  [+] Key present: edge_validation
+  [+] Key present: emergent_edges
+  [+] Key present: error_propagation
+  [+] Key present: execution_metadata
+  [+] Key present: failure_modes
+  [+] Key present: monitoring_baselines
+  [+] Key present: node_activation
+  [+] Key present: repo_full_name
+  [+] Key present: schema_version
+  [+] repo_full_name is a string
+  [+] schema_version == 'v6'
 
-  node_type_distribution: {
-    "agent": 0.5,
-    "capability": 0.25,
-    "data_store": 0.125,
-    "external": 0.125
-}
+5. edge_validation structure
 
-  edge_type_distribution: {
-    "delegates_to": 0.3333,
-    "uses": 0.2222,
-    "writes_to": 0.2222,
-    "reads_from": 0.1111,
-    "calls": 0.1111
-}
+  [+] edge_validation is a dict
+  [+] edge_validation has 'dead_edges' key
+  [+] edge_validation has 'activation_rates' key
+  [+] dead_edges is a list
+  [+] activation_rates is a dict
+  [+] dead_edges[0] has 'edge_id'
+  [+] dead_edges[0] has 'source'
+  [+] dead_edges[0] has 'target'
+  [+] activation_rates['e1'] has traversal_count
+  [+] activation_rates['e1'] has activation_rate
 
-  structural_metrics: {
-    "agent_count": 4,
-    "capability_count": 2,
-    "data_store_count": 1,
-    "external_service_count": 1,
-    "guardrail_count": 0,
-    "total_edges": 9,
-    "delegation_depth_max": 4.0,
-    "delegation_depth_mean": 4.0,
-    "control_coverage_ratio": 0.0,
-    "observability_coverage_ratio": 0.0,
-    "shared_state_writer_count": 2,
-    "trust_boundary_crossing_count": 1,
-    "feedback_loop_count": 0,
-    "hub_spoke_ratio": 2.2222,
-    "betweenness_centrality_max": 0.1429,
-    "betweenness_centrality_mean": 0.0298,
-    "error_propagation_path_count": 0,
-    "irreversible_capability_count": 1,
-    "agent_to_capability_ratio": 2.0,
-    "has_human_checkpoint": 0
-}
+6. emergent_edges structure
 
-================================================================================
-(b) TOP 5 PATTERN MATCHES
-================================================================================
+  [+] emergent_edges is a list
+  [+] emergent_edges has 2 entries
+  [+] emergent_edges[0] has 'discovery_type'
+  [+] emergent_edges[0] has 'detection_heuristic'
+  [+] emergent_edges[0] discovery_type is a string
+  [+] emergent_edges[0] detection_heuristic is a string
+  [+] emergent_edges[1] has 'discovery_type'
+  [+] emergent_edges[1] has 'detection_heuristic'
+  [+] emergent_edges[1] discovery_type is a string
+  [+] emergent_edges[1] detection_heuristic is a string
 
-  Match 1:
-    pattern_name:      trust_boundary_crossing
-    pattern_id:        pat_trust_boundary_crossing_4aa47e8cbfc0
-    similarity_score:  1.0000
-    match_type:        exact_motif
-    matched_repos:     30
-    behavioral_summary: {
-      "failure_rate": 0.5,
-      "confidence_interval_95": [
-            0.3315,
-            0.6685
-      ],
-      "sample_size": 30,
-      "failure_modes": {
-            "propagate": 13,
-            "retry": 11,
-            "fallback": 8,
-            "ignore": 6
-      },
-      "avg_error_rate": 0.2623,
-      "risk_level": "medium",
-      "framework_comparison": {
-            "frameworks_compared": [
-                  "autogen",
-                  "crewai",
-                  "langgraph"
-            ],
-            "per_framework": {
-                  "crewai": {
-                        "repos_count": 10,
-                        "failure_rate": 0.5
-                  },
-                  "langgraph": {
-                        "repos_count": 10,
-                        "failure_rate": 0.5
-                  },
-                  "autogen": {
-                        "repos_count": 10,
-                        "failure_rate": 0.5
-                  }
-            }
-      }
-}
+7. node_activation structure
 
-  Match 2:
-    pattern_name:      linear_delegation_chain
-    pattern_id:        pat_linear_delegation_chain_0c5aec845910
-    similarity_score:  1.0000
-    match_type:        exact_motif
-    matched_repos:     22
-    behavioral_summary: {
-      "failure_rate": 0.3182,
-      "confidence_interval_95": [
-            0.1636,
-            0.5268
-      ],
-      "sample_size": 22,
-      "failure_modes": {
-            "retry": 6,
-            "fallback": 5,
-            "propagate": 5,
-            "ignore": 3
-      },
-      "avg_error_rate": 0.4005,
-      "risk_level": "low",
-      "fragility": {
-            "position": "chain_node",
-            "sensitivity_score": 0.1159,
-            "avg_tool_failure_rate": 0.1209
-      },
-      "framework_comparison": {
-            "frameworks_compared": [
-                  "autogen",
-                  "crewai",
-                  "langgraph"
-            ],
-            "per_framework": {
-                  "crewai": {
-                        "repos_count": 7,
-                        "failure_rate": 0.2857
-                  },
-                  "langgraph": {
-                        "repos_count": 7,
-                        "failure_rate": 0.2857
-                  },
-                  "autogen": {
-                        "repos_count": 8,
-                        "failure_rate": 0.375
-                  }
-            }
-      }
-}
+  [+] node_activation is a dict
+  [+] node_activation has 'always_active' list
+  [+] node_activation has 'conditional' list
+  [+] node_activation has 'never_active' list
+  [+] always_active has 4 entries
+  [+] conditional has 3 entries
+  [+] never_active has 1 entries
+  [+] All node_activation entries are strings
 
-  Match 3:
-    pattern_name:      shared_state_without_arbitration
-    pattern_id:        pat_shared_state_without_arbitration_8a1886c55ae2
-    similarity_score:  1.0000
-    match_type:        exact_motif
-    matched_repos:     10
-    behavioral_summary: {
-      "failure_rate": 0.5,
-      "confidence_interval_95": [
-            0.2366,
-            0.7634
-      ],
-      "sample_size": 10,
-      "failure_modes": {
-            "propagate": 6,
-            "retry": 4,
-            "fallback": 2
-      },
-      "avg_error_rate": 0.1932,
-      "risk_level": "low"
-}
+8. error_propagation structure
 
-  Match 4:
-    pattern_name:      structural_match_unknown
-    pattern_id:        sim_unknown
-    similarity_score:  0.8315
-    match_type:        structural_similarity
-    matched_repos:     1
+  [+] error_propagation is a list
+  [+] error_propagation has 2 traces
+  [+] error_propagation[0] is a dict
+  [+] error_propagation[0] has 'error_source_node'
+  [+] error_propagation[0] has 'structural_predicted_path'
+  [+] error_propagation[0] structural_predicted_path is a list
+  [+] error_propagation[1] is a dict
+  [+] error_propagation[1] has 'error_source_node'
+  [+] error_propagation[1] has 'structural_predicted_path'
+  [+] error_propagation[1] structural_predicted_path is a list
 
-  Match 5:
-    pattern_name:      hierarchical_delegation
-    pattern_id:        archetype_hierarchical_delegation
-    similarity_score:  0.2333
-    match_type:        archetype
-    matched_repos:     7
-    behavioral_summary: {
-      "archetype": "hierarchical_delegation",
-      "prevalence_rate": 0.2333,
-      "avg_failure_rate": 0.0,
-      "total_sample_size": 0,
-      "patterns_count": 0
-}
+CHECK 26. Rich error propagation fields
 
-================================================================================
-(c) PREDICTED RISKS
-================================================================================
+  [+] At least one error_propagation trace has rich schema fields
 
-  overall_risk_score: 18.9
-  archetype:         hierarchical_delegation
-  archetype_prevalence: 0.23
+9. failure_modes structure
 
-  Predicted risks (3):
+  [+] failure_modes is a list
+  [+] failure_modes has 3 entries
+  [+] failure_modes[0] has 'finding_id'
+  [+] failure_modes[0] has 'manifestation_observed'
+  [+] failure_modes[0] finding_id is a string
+  [+] failure_modes[0] manifestation_observed is a bool
+  [+] failure_modes[1] has 'finding_id'
+  [+] failure_modes[1] has 'manifestation_observed'
+  [+] failure_modes[1] finding_id is a string
+  [+] failure_modes[1] manifestation_observed is a bool
+  [+] failure_modes[2] has 'finding_id'
+  [+] failure_modes[2] has 'manifestation_observed'
+  [+] failure_modes[2] finding_id is a string
+  [+] failure_modes[2] manifestation_observed is a bool
 
-    no_timeout_on_delegation: No Timeout On Delegation
-      manifestation_probability: 0.5000
-      confidence_interval:       (0.268, 0.732)
-      sample_size:               14
-      severity_when_manifested:  medium
-      fragility_flag:            False
-      behavioral_description:    In 50.0% of repos with this structural pattern (n=14), the precondition manifested as a medium-severity failure, typically contained within the affected subsystem. 5 similar repo(s) in the dataset showed comparable structural characteristics.
-      remediation:               Configure explicit timeouts on every delegation edge. Use a circuit-breaker pattern so that a stalled downstream agent does not block the entire pipeline indefinitely.
+10. monitoring_baselines structure
 
-    unhandled_tool_failure: Unhandled Tool Failure
-      manifestation_probability: 0.4000
-      confidence_interval:       (0.1982, 0.6425)
-      sample_size:               15
-      severity_when_manifested:  medium
-      fragility_flag:            False
-      behavioral_description:    In 40.0% of repos with this structural pattern (n=15), the precondition manifested as a medium-severity failure, typically contained within the affected subsystem.
-      remediation:               Wrap every tool call in a try/catch with a defined fallback strategy (retry with backoff, degrade gracefully, or escalate to a human). Log tool failures for observability.
+  [+] monitoring_baselines is a list
+  [+] monitoring_baselines has 4 entries
+  [+] monitoring_baselines[0] has 'metric'
+  [+] monitoring_baselines[0] has 'observed_baseline'
+  [+] monitoring_baselines[0] has 'threshold'
+  [+] monitoring_baselines[0] metric is a string
+  [+] monitoring_baselines[0] observed_baseline is numeric
+  [+] monitoring_baselines[0] threshold is numeric
+  [+] monitoring_baselines[1] has 'metric'
+  [+] monitoring_baselines[1] has 'observed_baseline'
+  [+] monitoring_baselines[1] has 'threshold'
+  [+] monitoring_baselines[1] metric is a string
+  [+] monitoring_baselines[1] observed_baseline is numeric
+  [+] monitoring_baselines[1] threshold is numeric
+  [+] monitoring_baselines[2] has 'metric'
+  [+] monitoring_baselines[2] has 'observed_baseline'
+  [+] monitoring_baselines[2] has 'threshold'
+  [+] monitoring_baselines[2] metric is a string
+  [+] monitoring_baselines[2] observed_baseline is numeric
+  [+] monitoring_baselines[2] threshold is numeric
+  [+] monitoring_baselines[3] has 'metric'
+  [+] monitoring_baselines[3] has 'observed_baseline'
+  [+] monitoring_baselines[3] has 'threshold'
+  [+] monitoring_baselines[3] metric is a string
+  [+] monitoring_baselines[3] observed_baseline is numeric
+  [+] monitoring_baselines[3] threshold is numeric
 
-    shared_state_no_arbitration: Shared State No Arbitration
-      manifestation_probability: 0.3750
-      confidence_interval:       (0.1848, 0.6136)
-      sample_size:               16
-      severity_when_manifested:  medium
-      fragility_flag:            False
-      behavioral_description:    In 37.5% of repos with this structural pattern (n=16), the precondition manifested as a medium-severity failure, typically contained within the affected subsystem. 5 similar repo(s) in the dataset showed comparable structural characteristics.
-      remediation:               Add write arbitration (mutex, queue, or optimistic locking) to every shared data store that receives writes from multiple agents. Consider an event-sourced architecture where each agent appends events rather than mutating state directly.
+11. JSON Serialization
 
-  Positive signals (2):
-    + Single-framework architecture — consistent error handling and lifecycle management
-    + Low topology complexity — simple graph structure reduces emergent interaction risk
+  [+] json.dumps(record) succeeds
+  [+] Serialized JSON is 5697 bytes
+  [+] Round-trip deserialized record is still valid
 
-  Structural-only risks (0):
+12. Complete Behavioral Record
 
-  Dataset coverage: {
-    "preconditions_queried": 3,
-    "preconditions_with_data": 3,
-    "preconditions_without_data": [],
-    "total_sample_size": 45,
-    "patterns_in_kb": 4
-}
+                                     Behavioral Record Summary                                      
++--------------------------------------------------------------------------------------------------+
+| Field                | Type | Value / Summary                                                    |
+|----------------------+------+--------------------------------------------------------------------|
+| repo_full_name       | str  | test-org/crewai-research-crew                                      |
+|----------------------+------+--------------------------------------------------------------------|
+| schema_version       | str  | v6                                                                 |
+|----------------------+------+--------------------------------------------------------------------|
+| execution_metadata   | dict | 10 keys: total_runs, successful_runs, failed_runs, framework,      |
+|                      |      | stratum_lab_version, execution_timestamp, docker_image,            |
+|                      |      | timeout_seconds, model_provider, model_name                        |
+|----------------------+------+--------------------------------------------------------------------|
+| edge_validation      | dict | dead_edges: 1, activation_rates: 4 edges                           |
+|----------------------+------+--------------------------------------------------------------------|
+| emergent_edges       | list | 2 emergent edges discovered                                        |
+|----------------------+------+--------------------------------------------------------------------|
+| node_activation      | dict | always=4, conditional=3, never=1                                   |
+|----------------------+------+--------------------------------------------------------------------|
+| error_propagation    | list | 2 propagation traces                                               |
+|----------------------+------+--------------------------------------------------------------------|
+| failure_modes        | list | 3 findings (2 manifested)                                          |
+|----------------------+------+--------------------------------------------------------------------|
+| monitoring_baselines | list | 4 baselines defined                                                |
++--------------------------------------------------------------------------------------------------+
 
-================================================================================
-(d) SEMANTIC ANALYSIS
-================================================================================
-  semantic_risk_score:           30.0
-  unvalidated_handoff_fraction:  1.00
-  semantic_chain_depth:          0
-  max_blast_radius:              0
-  classification_injection_points:0
-  verdict:                       LOW SEMANTIC RISK: Some unvalidated handoffs but limited chain depth.
++--------------------------------------- execution_metadata ---------------------------------------+
+| {                                                                                                |
+|   "total_runs": 3,                                                                               |
+|   "successful_runs": 2,                                                                          |
+|   "failed_runs": 1,                                                                              |
+|   "framework": "crewai",                                                                         |
+|   "stratum_lab_version": "0.1.0",                                                                |
+|   "execution_timestamp": "2026-02-15T12:00:00Z",                                                 |
+|   "docker_image": "stratum-runner:latest",                                                       |
+|   "timeout_seconds": 300,                                                                        |
+|   "model_provider": "openai",                                                                    |
+|   "model_name": "gpt-4"                                                                          |
+| }                                                                                                |
++--------------------------------------------------------------------------------------------------+
 
-================================================================================
-(e) FULL RISK REPORT (JSON)
-================================================================================
-{
-  "executive_summary": {
-    "archetype": "hierarchical_delegation",
-    "archetype_prevalence": 0.2333,
-    "overall_risk_score": 18.89,
-    "risk_level": "LOW",
-    "top_risks": [
-      {
-        "precondition_id": "no_timeout_on_delegation",
-        "name": "No Timeout On Delegation",
-        "probability": 0.5,
-        "severity": "medium"
-      },
-      {
-        "precondition_id": "unhandled_tool_failure",
-        "name": "Unhandled Tool Failure",
-        "probability": 0.4,
-        "severity": "medium"
-      },
-      {
-        "precondition_id": "shared_state_no_arbitration",
-        "name": "Shared State No Arbitration",
-        "probability": 0.375,
-        "severity": "medium"
-      }
-    ],
-    "positive_signals": [
-      "Single-framework architecture \u2014 consistent error handling and lifecycle management",
-      "Low topology complexity \u2014 simple graph structure reduces emergent interaction risk"
-    ]
-  },
-  "risk_details": [
-    {
-      "precondition_id": "no_timeout_on_delegation",
-      "precondition_name": "No Timeout On Delegation",
-      "manifestation_probability": 0.5,
-      "confidence_interval": [
-        0.268,
-        0.732
-      ],
-      "sample_size": 14,
-      "severity_when_manifested": "medium",
-      "behavioral_description": "In 50.0% of repos with this structural pattern (n=14), the precondition manifested as a medium-severity failure, typically contained within the affected subsystem. 5 similar repo(s) in the dataset showed comparable structural characteristics.",
-      "structural_evidence": [
-        "Exact motif 'trust_boundary_crossing' found in 30 repo(s)",
-        "Exact motif 'linear_delegation_chain' found in 22 repo(s)",
-        "Exact motif 'shared_state_without_arbitration' found in 10 repo(s)",
-        "High structural similarity (0.83) to known pattern 'structural_match_unknown'",
-        "Archetype 'hierarchical_delegation' matches 7 repo(s)"
-      ],
-      "similar_repo_outcomes": [
-        {
-          "repo_id": "dataset_repo_025",
-          "pattern_name": "linear_delegation_chain",
-          "failure_rate": 0.3182,
-          "sample_size": 22
-        },
-        {
-          "repo_id": "dataset_repo_005",
-          "pattern_name": "linear_delegation_chain",
-          "failure_rate": 0.3182,
-          "sample_size": 22
-        },
-        {
-          "repo_id": "dataset_repo_011",
-          "pattern_name": "linear_delegation_chain",
-          "failure_rate": 0.3182,
-          "sample_size": 22
-        },
-        {
-          "repo_id": "dataset_repo_014",
-          "pattern_name": "linear_delegation_chain",
-          "failure_rate": 0.3182,
-          "sample_size": 22
-        },
-        {
-          "repo_id": "dataset_repo_007",
-          "pattern_name": "linear_delegation_chain",
-          "failure_rate": 0.3182,
-          "sample_size": 22
-        }
-      ],
-      "fragility_flag": false,
-      "remediation": "Configure explicit timeouts on every delegation edge. Use a circuit-breaker pattern so that a stalled downstream agent does not block the entire pipeline indefinitely."
-    },
-    {
-      "precondition_id": "unhandled_tool_failure",
-      "precondition_name": "Unhandled Tool Failure",
-      "manifestation_probability": 0.4,
-      "confidence_interval": [
-        0.1982,
-        0.6425
-      ],
-      "sample_size": 15,
-      "severity_when_manifested": "medium",
-      "behavioral_description": "In 40.0% of repos with this structural pattern (n=15), the precondition manifested as a medium-severity failure, typically contained within the affected subsystem.",
-      "structural_evidence": [
-        "Exact motif 'trust_boundary_crossing' found in 30 repo(s)",
-        "Exact motif 'linear_delegation_chain' found in 22 repo(s)",
-        "Exact motif 'shared_state_without_arbitration' found in 10 repo(s)",
-        "High structural similarity (0.83) to known pattern 'structural_match_unknown'",
-        "Archetype 'hierarchical_delegation' matches 7 repo(s)"
-      ],
-      "similar_repo_outcomes": [],
-      "fragility_flag": false,
-      "remediation": "Wrap every tool call in a try/catch with a defined fallback strategy (retry with backoff, degrade gracefully, or escalate to a human). Log tool failures for observability."
-    },
-    {
-      "precondition_id": "shared_state_no_arbitration",
-      "precondition_name": "Shared State No Arbitration",
-      "manifestation_probability": 0.375,
-      "confidence_interval": [
-        0.1848,
-        0.6136
-      ],
-      "sample_size": 16,
-      "severity_when_manifested": "medium",
-      "behavioral_description": "In 37.5% of repos with this structural pattern (n=16), the precondition manifested as a medium-severity failure, typically contained within the affected subsystem. 5 similar repo(s) in the dataset showed comparable structural characteristics.",
-      "structural_evidence": [
-        "Exact motif 'trust_boundary_crossing' found in 30 repo(s)",
-        "Exact motif 'linear_delegation_chain' found in 22 repo(s)",
-        "Exact motif 'shared_state_without_arbitration' found in 10 repo(s)",
-        "High structural similarity (0.83) to known pattern 'structural_match_unknown'",
-        "Archetype 'hierarchical_delegation' matches 7 repo(s)"
-      ],
-      "similar_repo_outcomes": [
-        {
-          "repo_id": "dataset_repo_018",
-          "pattern_name": "shared_state_without_arbitration",
-          "failure_rate": 0.5,
-          "sample_size": 10
-        },
-        {
-          "repo_id": "dataset_repo_000",
-          "pattern_name": "shared_state_without_arbitration",
-          "failure_rate": 0.5,
-          "sample_size": 10
-        },
-        {
-          "repo_id": "dataset_repo_009",
-          "pattern_name": "shared_state_without_arbitration",
-          "failure_rate": 0.5,
-          "sample_size": 10
-        },
-        {
-          "repo_id": "dataset_repo_027",
-          "pattern_name": "shared_state_without_arbitration",
-          "failure_rate": 0.5,
-          "sample_size": 10
-        },
-        {
-          "repo_id": "dataset_repo_012",
-          "pattern_name": "shared_state_without_arbitration",
-          "failure_rate": 0.5,
-          "sample_size": 10
-        }
-      ],
-      "fragility_flag": false,
-      "remediation": "Add write arbitration (mutex, queue, or optimistic locking) to every shared data store that receives writes from multiple agents. Consider an event-sourced architecture where each agent appends events rather than mutating state directly."
-    }
-  ],
-  "structural_only_risks": [],
-  "architecture_analysis": {
-    "node_count": 8,
-    "edge_count": 9,
-    "node_type_distribution": {
-      "agent": 4,
-      "capability": 2,
-      "data_store": 1,
-      "external": 1
-    },
-    "fingerprint": {
-      "feature_vector": [
-        4.0,
-        2.0,
-        1.0,
-        1.0,
-        0.0,
-        9.0,
-        4.0,
-        4.0,
-        0.0,
-        0.0,
-        2.0,
-        1.0,
-        0.0,
-        2.2222222222222223,
-        0.14285714285714285,
-        0.02976190476190476,
-        0.0,
-        1.0,
-        2.0,
-        0.0
-      ],
-      "motifs": [
-        "linear_delegation_chain",
-        "shared_state_without_arbitration",
-        "trust_boundary_crossing"
-      ],
-      "topology_hash": "e21f5535fccb2c73d91aa3f0e135764f92a35075da7ff1c7488ad7a5e6120286",
-      "node_type_distribution": {
-        "agent": 0.5,
-        "capability": 0.25,
-        "data_store": 0.125,
-        "external": 0.125
-      },
-      "edge_type_distribution": {
-        "delegates_to": 0.3333,
-        "uses": 0.2222,
-        "writes_to": 0.2222,
-        "reads_from": 0.1111,
-        "calls": 0.1111
-      },
-      "structural_metrics": {
-        "agent_count": 4,
-        "capability_count": 2,
-        "data_store_count": 1,
-        "external_service_count": 1,
-        "guardrail_count": 0,
-        "total_edges": 9,
-        "delegation_depth_max": 4.0,
-        "delegation_depth_mean": 4.0,
-        "control_coverage_ratio": 0.0,
-        "observability_coverage_ratio": 0.0,
-        "shared_state_writer_count": 2,
-        "trust_boundary_crossing_count": 1,
-        "feedback_loop_count": 0,
-        "hub_spoke_ratio": 2.2222,
-        "betweenness_centrality_max": 0.1429,
-        "betweenness_centrality_mean": 0.0298,
-        "error_propagation_path_count": 0,
-        "irreversible_capability_count": 1,
-        "agent_to_capability_ratio": 2.0,
-        "has_human_checkpoint": 0
-      }
-    }
-  },
-  "semantic_analysis": {
-    "semantic_risk_score": 30.0,
-    "unvalidated_handoff_fraction": 1.0,
-    "semantic_chain_depth": 0,
-    "max_blast_radius": 0,
-    "classification_injection_points": 0,
-    "nondeterministic_nodes": [],
-    "verdict": "LOW SEMANTIC RISK: Some unvalidated handoffs but limited chain depth."
-  },
-  "benchmark_comparison": {
-    "archetype": "hierarchical_delegation",
-    "archetype_prevalence_pct": 23.3,
-    "framework_comparison": {
-      "linear_delegation_chain": {
-        "frameworks_compared": [
-          "autogen",
-          "crewai",
-          "langgraph"
-        ],
-        "per_framework": {
-          "crewai": {
-            "repos_count": 7,
-            "failure_rate": 0.2857
-          },
-          "langgraph": {
-            "repos_count": 7,
-            "failure_rate": 0.2857
-          },
-          "autogen": {
-            "repos_count": 8,
-            "failure_rate": 0.375
-          }
-        }
-      },
-      "trust_boundary_crossing": {
-        "frameworks_compared": [
-          "autogen",
-          "crewai",
-          "langgraph"
-        ],
-        "per_framework": {
-          "crewai": {
-            "repos_count": 10,
-            "failure_rate": 0.5
-          },
-          "langgraph": {
-            "repos_count": 10,
-            "failure_rate": 0.5
-          },
-          "autogen": {
-            "repos_count": 10,
-            "failure_rate": 0.5
-          }
-        }
-      }
-    }
-  },
-  "dataset_coverage": {
-    "preconditions_queried": 3,
-    "preconditions_with_data": 3,
-    "preconditions_without_data": [],
-    "total_sample_size": 45,
-    "patterns_in_kb": 4
-  },
-  "methodology": {
-    "dataset_description": "Behavioral analysis of open-source AI agent repositories",
-    "total_sample_across_risks": 45,
-    "confidence_level": "95% Wilson score intervals",
-    "manifestation_probability_definition": "The fraction of repos with this structural precondition where the corresponding failure mode was observed at runtime."
-  }
-}
++---------------------------------------- edge_validation -----------------------------------------+
+| {                                                                                                |
+|   "dead_edges": [                                                                                |
+|     {                                                                                            |
+|       "edge_id": "e10",                                                                          |
+|       "source": "cap_web_search_tool",                                                           |
+|       "target": "ext_web_api",                                                                   |
+|       "edge_type": "calls",                                                                      |
+|       "runs_observed": 3,                                                                        |
+|       "possible_reasons": [                                                                      |
+|         "tool never invoked web API directly"                                                    |
+|       ]                                                                                          |
+|     }                                                                                            |
+|   ],                                                                                             |
+|   "activation_rates": {                                                                          |
+|     "e1": {                                                                                      |
+|       "traversal_count": 6,                                                                      |
+|       "activation_rate": 1.0,                                                                    |
+|       "never_activated": false                                                                   |
+|     },                                                                                           |
+|     "e2": {                                                                                      |
+|       "traversal_count": 5,                                                                      |
+|       "activation_rate": 0.833,                                                                  |
+|       "never_activated": false                                                                   |
+|     },                                                                                           |
+|     "e3": {                                                                                      |
+|       "traversal_count": 3,                                                                      |
+|       "activation_rate": 0.5,                                                                    |
+|       "never_activated": false                                                                   |
+|     },                                                                                           |
+|     "e10": {                                                                                     |
+|       "traversal_count": 0,                                                                      |
+|       "activation_rate": 0.0,                                                                    |
+|       "never_activated": true                                                                    |
+|     }                                                                                            |
+|   }                                                                                              |
+| }                                                                                                |
++--------------------------------------------------------------------------------------------------+
 
-================================================================================
-(f) RISK REPORT (MARKDOWN)
-================================================================================
-# Stratum Risk Report
++----------------------------------------- emergent_edges -----------------------------------------+
+| [                                                                                                |
+|   {                                                                                              |
+|     "edge_id": "emergent_001",                                                                   |
+|     "source_node_id": "agent_reviewer",                                                          |
+|     "target_node_id": "cap_web_search_tool",                                                     |
+|     "edge_type": "uses",                                                                         |
+|     "traversal_count": 2,                                                                        |
+|     "activation_rate": 0.333,                                                                    |
+|     "discovery_type": "runtime_interaction",                                                     |
+|     "detection_heuristic": "event_pair_matching",                                                |
+|     "significance": "medium",                                                                    |
+|     "trigger_condition": "Reviewer needed additional data on run 3"                              |
+|   },                                                                                             |
+|   {                                                                                              |
+|     "edge_id": "emergent_002",                                                                   |
+|     "source_node_id": "agent_researcher",                                                        |
+|     "target_node_id": "agent_reviewer",                                                          |
+|     "edge_type": "delegates_to",                                                                 |
+|     "traversal_count": 1,                                                                        |
+|     "activation_rate": 0.167,                                                                    |
+|     "discovery_type": "runtime_interaction",                                                     |
+|     "detection_heuristic": "event_pair_matching",                                                |
+|     "significance": "low",                                                                       |
+|     "trigger_condition": "Researcher directly delegated to Reviewer bypassing Writer"            |
+|   }                                                                                              |
+| ]                                                                                                |
++--------------------------------------------------------------------------------------------------+
 
-## Executive Summary
++---------------------------------------- node_activation -----------------------------------------+
+| {                                                                                                |
+|   "always_active": [                                                                             |
+|     "agent_researcher",                                                                          |
+|     "agent_writer",                                                                              |
+|     "cap_llm_call",                                                                              |
+|     "ds_shared_memory"                                                                           |
+|   ],                                                                                             |
+|   "conditional": [                                                                               |
+|     "agent_reviewer",                                                                            |
+|     "cap_web_search_tool",                                                                       |
+|     "guard_output"                                                                               |
+|   ],                                                                                             |
+|   "never_active": [                                                                              |
+|     "cap_summarize_tool"                                                                         |
+|   ]                                                                                              |
+| }                                                                                                |
++--------------------------------------------------------------------------------------------------+
 
-**Architecture Type:** hierarchical_delegation
-**Prevalence in Ecosystem:** 23.3%
-**Overall Risk Score:** 18.9 / 100 (LOW)
++--------------------------------------- error_propagation ----------------------------------------+
+| [                                                                                                |
+|   {                                                                                              |
+|     "trace_id": "err_trace_001",                                                                 |
+|     "error_source_node": "agent_writer",                                                         |
+|     "error_type": "ValueError",                                                                  |
+|     "structural_predicted_path": [                                                               |
+|       "agent_writer",                                                                            |
+|       "ds_shared_memory",                                                                        |
+|       "agent_reviewer"                                                                           |
+|     ],                                                                                           |
+|     "actual_observed_path": [                                                                    |
+|       "agent_writer",                                                                            |
+|       "ds_shared_memory",                                                                        |
+|       "agent_reviewer"                                                                           |
+|     ],                                                                                           |
+|     "propagation_stopped_by": "",                                                                |
+|     "stop_mechanism": "propagated_through",                                                      |
+|     "downstream_impact": {                                                                       |
+|       "nodes_affected": 2,                                                                       |
+|       "downstream_errors": 1,                                                                    |
+|       "downstream_tasks_failed": 0,                                                              |
+|       "cascade_depth": 2                                                                         |
+|     },                                                                                           |
+|     "structural_prediction_match": true,                                                         |
+|     "run_id": "run_002"                                                                          |
+|   },                                                                                             |
+|   {                                                                                              |
+|     "trace_id": "err_trace_002",                                                                 |
+|     "error_source_node": "agent_researcher",                                                     |
+|     "error_type": "TimeoutError",                                                                |
+|     "structural_predicted_path": [                                                               |
+|       "agent_researcher"                                                                         |
+|     ],                                                                                           |
+|     "actual_observed_path": [                                                                    |
+|       "agent_researcher"                                                                         |
+|     ],                                                                                           |
+|     "propagation_stopped_by": "agent_researcher",                                                |
+|     "stop_mechanism": "retry",                                                                   |
+|     "downstream_impact": {                                                                       |
+|       "nodes_affected": 0,                                                                       |
+|       "downstream_errors": 0,                                                                    |
+|       "downstream_tasks_failed": 0,                                                              |
+|       "cascade_depth": 0                                                                         |
+|     },                                                                                           |
+|     "structural_prediction_match": true,                                                         |
+|     "run_id": "run_001"                                                                          |
+|   }                                                                                              |
+| ]                                                                                                |
++--------------------------------------------------------------------------------------------------+
 
-### Top Risks
++----------------------------------------- failure_modes ------------------------------------------+
+| [                                                                                                |
+|   {                                                                                              |
+|     "finding_id": "STRAT-OC-002",                                                                |
+|     "finding_name": "Shared state contention",                                                   |
+|     "manifestation_observed": true,                                                              |
+|     "precondition_id": "shared_state_no_arbitration",                                            |
+|     "description": "Multiple agents write to SharedMemory without locking",                      |
+|     "severity": "high",                                                                          |
+|     "evidence_runs": [                                                                           |
+|       "run_001",                                                                                 |
+|       "run_002"                                                                                  |
+|     ],                                                                                           |
+|     "evidence_events": [                                                                         |
+|       "evt_000042",                                                                              |
+|       "evt_000078"                                                                               |
+|     ]                                                                                            |
+|   },                                                                                             |
+|   {                                                                                              |
+|     "finding_id": "STRAT-DC-002",                                                                |
+|     "finding_name": "Missing delegation timeout",                                                |
+|     "manifestation_observed": false,                                                             |
+|     "precondition_id": "no_timeout_on_delegation",                                               |
+|     "description": "Delegation chain completed within timeout in all runs",                      |
+|     "severity": "none",                                                                          |
+|     "evidence_runs": [],                                                                         |
+|     "evidence_events": []                                                                        |
+|   },                                                                                             |
+|   {                                                                                              |
+|     "finding_id": "STRAT-EA-001",                                                                |
+|     "finding_name": "Unhandled tool failure",                                                    |
+|     "manifestation_observed": true,                                                              |
+|     "precondition_id": "unhandled_tool_failure",                                                 |
+|     "description": "WebSearch tool failure not caught by Researcher agent",                      |
+|     "severity": "medium",                                                                        |
+|     "evidence_runs": [                                                                           |
+|       "run_002"                                                                                  |
+|     ],                                                                                           |
+|     "evidence_events": [                                                                         |
+|       "evt_000105"                                                                               |
+|     ]                                                                                            |
+|   }                                                                                              |
+| ]                                                                                                |
++--------------------------------------------------------------------------------------------------+
 
-1. **No Timeout On Delegation** -- P(manifestation) = 50%, severity: medium
-2. **Unhandled Tool Failure** -- P(manifestation) = 40%, severity: medium
-3. **Shared State No Arbitration** -- P(manifestation) = 38%, severity: medium
++-------------------------------------- monitoring_baselines --------------------------------------+
+| [                                                                                                |
+|   {                                                                                              |
+|     "metric": "agent_task_latency_p95_ms",                                                       |
+|     "observed_baseline": 2450.0,                                                                 |
+|     "threshold": 5000.0,                                                                         |
+|     "unit": "milliseconds",                                                                      |
+|     "node_scope": "agent_researcher"                                                             |
+|   },                                                                                             |
+|   {                                                                                              |
+|     "metric": "error_propagation_rate",                                                          |
+|     "observed_baseline": 0.33,                                                                   |
+|     "threshold": 0.5,                                                                            |
+|     "unit": "ratio",                                                                             |
+|     "node_scope": "global"                                                                       |
+|   },                                                                                             |
+|   {                                                                                              |
+|     "metric": "delegation_chain_depth_max",                                                      |
+|     "observed_baseline": 3,                                                                      |
+|     "threshold": 5,                                                                              |
+|     "unit": "count",                                                                             |
+|     "node_scope": "global"                                                                       |
+|   },                                                                                             |
+|   {                                                                                              |
+|     "metric": "tool_call_failure_rate",                                                          |
+|     "observed_baseline": 0.08,                                                                   |
+|     "threshold": 0.2,                                                                            |
+|     "unit": "ratio",                                                                             |
+|     "node_scope": "cap_web_search_tool"                                                          |
+|   }                                                                                              |
+| ]                                                                                                |
++--------------------------------------------------------------------------------------------------+
 
-### Positive Signals
+--------------------------------------------- Results ----------------------------------------------
 
-- Single-framework architecture — consistent error handling and lifecycle management
-- Low topology complexity — simple graph structure reduces emergent interaction risk
+  Passed: 96
+  Failed: 0
+  Total:  96
 
-## Risk Details
+  ALL CHECKS PASSED
 
-### no_timeout_on_delegation: No Timeout On Delegation
-
-- **Manifestation Probability:** 50% (95% CI: [27%, 73%])
-- **Sample Size:** 14 repos
-- **Severity When Manifested:** medium
-
-> In 50.0% of repos with this structural pattern (n=14), the precondition manifested as a medium-severity failure, typically contained within the affected subsystem. 5 similar repo(s) in the dataset showed comparable structural characteristics.
-
-**Structural Evidence:**
-- `Exact motif 'trust_boundary_crossing' found in 30 repo(s)`
-- `Exact motif 'linear_delegation_chain' found in 22 repo(s)`
-- `Exact motif 'shared_state_without_arbitration' found in 10 repo(s)`
-- `High structural similarity (0.83) to known pattern 'structural_match_unknown'`
-- `Archetype 'hierarchical_delegation' matches 7 repo(s)`
-
-**Remediation:** Configure explicit timeouts on every delegation edge. Use a circuit-breaker pattern so that a stalled downstream agent does not block the entire pipeline indefinitely.
-
-### unhandled_tool_failure: Unhandled Tool Failure
-
-- **Manifestation Probability:** 40% (95% CI: [20%, 64%])
-- **Sample Size:** 15 repos
-- **Severity When Manifested:** medium
-
-> In 40.0% of repos with this structural pattern (n=15), the precondition manifested as a medium-severity failure, typically contained within the affected subsystem.
-
-**Structural Evidence:**
-- `Exact motif 'trust_boundary_crossing' found in 30 repo(s)`
-- `Exact motif 'linear_delegation_chain' found in 22 repo(s)`
-- `Exact motif 'shared_state_without_arbitration' found in 10 repo(s)`
-- `High structural similarity (0.83) to known pattern 'structural_match_unknown'`
-- `Archetype 'hierarchical_delegation' matches 7 repo(s)`
-
-**Remediation:** Wrap every tool call in a try/catch with a defined fallback strategy (retry with backoff, degrade gracefully, or escalate to a human). Log tool failures for observability.
-
-### shared_state_no_arbitration: Shared State No Arbitration
-
-- **Manifestation Probability:** 38% (95% CI: [18%, 61%])
-- **Sample Size:** 16 repos
-- **Severity When Manifested:** medium
-
-> In 37.5% of repos with this structural pattern (n=16), the precondition manifested as a medium-severity failure, typically contained within the affected subsystem. 5 similar repo(s) in the dataset showed comparable structural characteristics.
-
-**Structural Evidence:**
-- `Exact motif 'trust_boundary_crossing' found in 30 repo(s)`
-- `Exact motif 'linear_delegation_chain' found in 22 repo(s)`
-- `Exact motif 'shared_state_without_arbitration' found in 10 repo(s)`
-- `High structural similarity (0.83) to known pattern 'structural_match_unknown'`
-- `Archetype 'hierarchical_delegation' matches 7 repo(s)`
-
-**Remediation:** Add write arbitration (mutex, queue, or optimistic locking) to every shared data store that receives writes from multiple agents. Consider an event-sourced architecture where each agent appends events rather than mutating state directly.
-
-## Architecture Analysis
-
-- **Nodes:** 8
-- **Edges:** 9
-- agent: 4
-- capability: 2
-- data_store: 1
-- external: 1
-
-## Semantic Cascade Analysis
-
-- **Semantic Risk Score:** 30.0 / 100
-- **Unvalidated Handoff Fraction:** 100%
-- **Semantic Chain Depth:** 0
-- **Max Blast Radius:** 0
-- **Classification Injection Points:** 0
-
-> LOW SEMANTIC RISK: Some unvalidated handoffs but limited chain depth.
-
-## Benchmark Comparison
-
-Architecture type **hierarchical_delegation** is found in **23.3%** of the ecosystem.
-
-**Framework-specific data:**
-
-**linear_delegation_chain:**
-- crewai: 29% failure rate (n=7)
-- langgraph: 29% failure rate (n=7)
-- autogen: 38% failure rate (n=8)
-
-**trust_boundary_crossing:**
-- crewai: 50% failure rate (n=10)
-- langgraph: 50% failure rate (n=10)
-- autogen: 50% failure rate (n=10)
-
-## Methodology
-
-- Behavioral analysis of open-source AI agent repositories
-- Total sample across all risks: 45
-- Confidence intervals: 95% Wilson score intervals
-- The fraction of repos with this structural precondition where the corresponding failure mode was observed at runtime.
-
----
-*Generated by Stratum Lab*
-
-================================================================================
-QUERY DEMO COMPLETE
-================================================================================
