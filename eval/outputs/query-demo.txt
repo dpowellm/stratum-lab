@@ -392,3 +392,5 @@ CHECK 26. Rich error propagation fields
 
   ALL CHECKS PASSED
 
+Output saved to: C:\Users\dpowe\OneDrive\Documents\Coding 
+Projects\stratum-observability\stratum-lab\eval\outputs\query-demo.txt

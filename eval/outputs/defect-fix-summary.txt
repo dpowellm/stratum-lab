@@ -72,6 +72,9 @@ FILES UPDATED
    - Pilot quality gate before Phase 1
    - RUN_NUMBER env var passed to containers
    - Resume support via run_metadata_N.json checks
+   - Per-run STRATUM_EVENTS_FILE env var (fixed from stale path)
+   - Removed deleted ecosystem_report.py reference
+   - Fixed aggregate_results.py invocation args
 
 7. scripts/validate_smoke.py
    - v6 awareness: check_v6_compatibility() function

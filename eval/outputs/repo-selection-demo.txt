@@ -1,69 +1,69 @@
-┌──────────────────────────────────────────────────── CHECKS 10-12 ────────────────────────────────────────────────────┐
-│ Repo Selection Eval -- v6 Graph Discovery Reframe                                                                    │
-│ Synthetic repos generated: 200   Frameworks: 8   Complexity brackets: 4                                              │
-└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
++---------------------------------------------------- CHECKS 10-12 ----------------------------------------------------+
+| Repo Selection Eval -- v6 Graph Discovery Reframe                                                                    |
+| Synthetic repos generated: 200   Frameworks: 8   Complexity brackets: 4                                              |
++----------------------------------------------------------------------------------------------------------------------+
 
 SCHEMA VALIDATION (validate_selection_input)
    Schema Validation   
         Results        
-┌─────────────┬───────┐
-│ Metric      │ Value │
-├─────────────┼───────┤
-│ Total repos │   200 │
-│ Valid       │   200 │
-│ Invalid     │     0 │
-└─────────────┴───────┘
++---------------------+
+| Metric      | Value |
+|-------------+-------|
+| Total repos |   200 |
+| Valid       |   200 |
+| Invalid     |     0 |
++---------------------+
 
 INPUT POOL STATISTICS
        Framework Distribution (Input Pool)        
-┌───────────────────┬───────┬───────┬────────────┐
-│ Framework         │ Count │   Pct │ Bar        │
-├───────────────────┼───────┼───────┼────────────┤
-│ crewai            │    41 │ 20.5% │ ########## │
-│ langgraph         │    28 │ 14.0% │ #######    │
-│ autogen           │    22 │ 11.0% │ #####      │
-│ langchain         │    25 │ 12.5% │ ######     │
-│ openai_assistants │    19 │  9.5% │ ####       │
-│ semantic_kernel   │    22 │ 11.0% │ #####      │
-│ llama_index       │    19 │  9.5% │ ####       │
-│ custom            │    24 │ 12.0% │ ######     │
-└───────────────────┴───────┴───────┴────────────┘
++------------------------------------------------+
+| Framework         | Count |   Pct | Bar        |
+|-------------------+-------+-------+------------|
+| crewai            |    41 | 20.5% | ########## |
+| langgraph         |    28 | 14.0% | #######    |
+| autogen           |    22 | 11.0% | #####      |
+| langchain         |    25 | 12.5% | ######     |
+| openai_assistants |    19 |  9.5% | ####       |
+| semantic_kernel   |    22 | 11.0% | #####      |
+| llama_index       |    19 |  9.5% | ####       |
+| custom            |    24 | 12.0% | ######     |
++------------------------------------------------+
 Complexity Distribution (Input Pool)
-┌─────────┬────────┬───────┬───────┐
-│ Bracket │ Agents │ Count │   Pct │
-├─────────┼────────┼───────┼───────┤
-│ single  │  1-1   │    50 │ 25.0% │
-│ small   │  2-3   │    44 │ 22.0% │
-│ medium  │  4-7   │    50 │ 25.0% │
-│ large   │  8-15  │    56 │ 28.0% │
-└─────────┴────────┴───────┴───────┘
++----------------------------------+
+| Bracket | Agents | Count |   Pct |
+|---------+--------+-------+-------|
+| single  |  1-1   |    50 | 25.0% |
+| small   |  2-3   |    44 | 22.0% |
+| medium  |  4-7   |    50 | 25.0% |
+| large   |  8-15  |    56 | 28.0% |
++----------------------------------+
   XCOMP repos in pool: 47 / 200  (23.5%)
   Unique topologies in pool: 126
 
 CHECK 10: DISCOVERY OPTIMIZER SELECTION
   Target: 100   Selected: 100
                Framework Distribution (Selected)                
-┌───────────────────┬──────┬──────────┬──────────┬─────────────┐
-│ Framework         │ Pool │ Selected │ Sel Rate │ Bar         │
-├───────────────────┼──────┼──────────┼──────────┼─────────────┤
-│ crewai            │   41 │       23 │    56.1% │ ########### │
-│ langgraph         │   28 │       15 │    53.6% │ #######     │
-│ autogen           │   22 │       12 │    54.5% │ ######      │
-│ langchain         │   25 │       11 │    44.0% │ #####       │
-│ openai_assistants │   19 │        6 │    31.6% │ ###         │
-│ semantic_kernel   │   22 │       12 │    54.5% │ ######      │
-│ llama_index       │   19 │        9 │    47.4% │ ####        │
-│ custom            │   24 │       12 │    50.0% │ ######      │
-└───────────────────┴──────┴──────────┴──────────┴─────────────┘
++--------------------------------------------------------------+
+| Framework         | Pool | Selected | Sel Rate | Bar         |
+|-------------------+------+----------+----------+-------------|
+| crewai            |   41 |       23 |    56.1% | ########### |
+| langgraph         |   28 |       15 |    53.6% | #######     |
+| autogen           |   22 |       12 |    54.5% | ######      |
+| langchain         |   25 |       11 |    44.0% | #####       |
+| openai_assistants |   19 |        6 |    31.6% | ###         |
+| semantic_kernel   |   22 |       12 |    54.5% | ######      |
+| llama_index       |   19 |        9 |    47.4% | ####        |
+| custom            |   24 |       12 |    50.0% | ######      |
++--------------------------------------------------------------+
               Complexity Distribution (Selected)              
-┌─────────┬────────┬──────┬──────────┬──────────┬────────────┐
-│ Bracket │ Agents │ Pool │ Selected │ Sel Rate │ Pct of Sel │
-├─────────┼────────┼──────┼──────────┼──────────┼────────────┤
-│ single  │  1-1   │   50 │       23 │    46.0% │      23.0% │
-│ small   │  2-3   │   44 │       22 │    50.0% │      22.0% │
-│ medium  │  4-7   │   50 │       25 │    50.0% │      25.0% │
-│ large   │  8-15  │   56 │       30 │    53.6% │      30.0% │
-└─────────┴────────┴──────┴──────────┴──────────┴────────────┘
++------------------------------------------------------------+
+| Bracket | Agents | Pool | Selected | Sel Rate | Pct of Sel |
+|---------+--------+------+----------+----------+------------|
+| single  |  1-1   |   50 |       23 |    46.0% |      23.0% |
+| small   |  2-3   |   44 |       22 |    50.0% |      22.0% |
+| medium  |  4-7   |   50 |       25 |    50.0% |      25.0% |
+| large   |  8-15  |   56 |       30 |    53.6% |      30.0% |
++------------------------------------------------------------+
 
 Check 10 Assertions:
   [PASS] Frameworks represented: 8/8
@@ -72,59 +72,153 @@ Check 10 Assertions:
 
 CHECK 11: XCOMP PRIORITIZATION
      XCOMP Selection Rates      
-┌──────────────────────┬───────┐
-│ Metric               │ Value │
-├──────────────────────┼───────┤
-│ XCOMP repos in pool  │    47 │
-│ XCOMP repos selected │    41 │
-│ XCOMP selection rate │ 0.872 │
-│ Base selection rate  │ 0.500 │
-│ Boost factor         │ 1.74x │
-└──────────────────────┴───────┘
++------------------------------+
+| Metric               | Value |
+|----------------------+-------|
+| XCOMP repos in pool  |    47 |
+| XCOMP repos selected |    41 |
+| XCOMP selection rate | 0.872 |
+| Base selection rate  | 0.500 |
+| Boost factor         | 1.74x |
++------------------------------+
   [PASS] XCOMP selection rate (0.872) > base rate (0.500)
                               Top 10 Selected Repos by Discovery Value                               
-┌────┬───────────┬───────────────────┬────────┬─────────┬───────┬────────────┬─────────────┬────────┐
-│  # │ Repo ID   │ Framework         │ Agents │ Bracket │ XCOMP │ Topology   │ Runnability │ DValue │
-├────┼───────────┼───────────────────┼────────┼─────────┼───────┼────────────┼─────────────┼────────┤
-│  1 │ repo_0066 │ crewai            │      5 │ medium  │  YES  │ 35f9ca8ee7 │        0.91 │ 114.01 │
-│  2 │ repo_0146 │ crewai            │      9 │ large   │  YES  │ 5cc5bfa1df │        0.90 │ 101.56 │
-│  3 │ repo_0043 │ autogen           │      9 │ large   │  YES  │ 54110630e1 │        0.84 │  92.47 │
-│  4 │ repo_0173 │ openai_assistants │      9 │ large   │  YES  │ de82e1690f │        0.82 │  90.35 │
-│  5 │ repo_0044 │ autogen           │     15 │ large   │  YES  │ 758c70f70b │        0.83 │  85.62 │
-│  6 │ repo_0054 │ custom            │      1 │ single  │   -   │ 52a16bef88 │        0.96 │  78.64 │
-│  7 │ repo_0000 │ openai_assistants │      1 │ single  │  YES  │ def3f381f5 │        0.72 │  76.21 │
-│  8 │ repo_0025 │ langgraph         │      1 │ single  │   -   │ d5117110c3 │        0.96 │  73.40 │
-│  9 │ repo_0199 │ openai_assistants │      3 │ small   │  YES  │ 3a56ac8439 │        0.95 │  70.27 │
-│ 10 │ repo_0091 │ langgraph         │      8 │ large   │   -   │ db7ae9755c │        0.79 │  67.52 │
-└────┴───────────┴───────────────────┴────────┴─────────┴───────┴────────────┴─────────────┴────────┘
++---------------------------------------------------------------------------------------------------+
+|  # | Repo ID   | Framework         | Agents | Bracket | XCOMP | Topology   | Runnability | DValue |
+|----+-----------+-------------------+--------+---------+-------+------------+-------------+--------|
+|  1 | repo_0066 | crewai            |      5 | medium  |  YES  | 35f9ca8ee7 |        0.91 | 114.01 |
+|  2 | repo_0146 | crewai            |      9 | large   |  YES  | 5cc5bfa1df |        0.90 | 101.56 |
+|  3 | repo_0043 | autogen           |      9 | large   |  YES  | 54110630e1 |        0.84 |  92.47 |
+|  4 | repo_0173 | openai_assistants |      9 | large   |  YES  | de82e1690f |        0.82 |  90.35 |
+|  5 | repo_0044 | autogen           |     15 | large   |  YES  | 758c70f70b |        0.83 |  85.62 |
+|  6 | repo_0054 | custom            |      1 | single  |   -   | 52a16bef88 |        0.96 |  78.64 |
+|  7 | repo_0000 | openai_assistants |      1 | single  |  YES  | def3f381f5 |        0.72 |  76.21 |
+|  8 | repo_0025 | langgraph         |      1 | single  |   -   | d5117110c3 |        0.96 |  73.40 |
+|  9 | repo_0199 | openai_assistants |      3 | small   |  YES  | 3a56ac8439 |        0.95 |  70.27 |
+| 10 | repo_0091 | langgraph         |      8 | large   |   -   | db7ae9755c |        0.79 |  67.52 |
++---------------------------------------------------------------------------------------------------+
 
 CHECK 12: COVERAGE VALIDATION REPORT
   [PASS] report has framework_coverage dict: True
   [PASS] report has complexity_coverage dict: True
             Framework Coverage Detail            
-┌────────────┬───────┬────────┬───────────┬─────┐
-│ Framework  │ Count │ Target │    Met    │ Gap │
-├────────────┼───────┼────────┼───────────┼─────┤
-│ crewai     │    23 │    150 │ NO (-127) │ 127 │
-│ langgraph  │    15 │    150 │ NO (-135) │ 135 │
-│ autogen    │    12 │    100 │ NO (-88)  │  88 │
-│ langchain  │    11 │    100 │ NO (-89)  │  89 │
-│ llamaindex │     0 │     60 │ NO (-60)  │  60 │
-│ smolagents │     0 │     40 │ NO (-40)  │  40 │
-│ agno       │     0 │     30 │ NO (-30)  │  30 │
-│ generic    │     0 │     70 │ NO (-70)  │  70 │
-└────────────┴───────┴────────┴───────────┴─────┘
++-----------------------------------------------+
+| Framework  | Count | Target |    Met    | Gap |
+|------------+-------+--------+-----------+-----|
+| crewai     |    23 |    150 | NO (-127) | 127 |
+| langgraph  |    15 |    150 | NO (-135) | 135 |
+| autogen    |    12 |    100 | NO (-88)  |  88 |
+| langchain  |    11 |    100 | NO (-89)  |  89 |
+| llamaindex |     0 |     60 | NO (-60)  |  60 |
+| smolagents |     0 |     40 | NO (-40)  |  40 |
+| agno       |     0 |     30 | NO (-30)  |  30 |
+| generic    |     0 |     70 | NO (-70)  |  70 |
++-----------------------------------------------+
           Complexity Coverage Detail          
-┌─────────┬───────┬────────┬───────────┬─────┐
-│ Bracket │ Count │ Target │    Met    │ Gap │
-├─────────┼───────┼────────┼───────────┼─────┤
-│ single  │    23 │     80 │ NO (-57)  │  57 │
-│ small   │    22 │    200 │ NO (-178) │ 178 │
-│ medium  │    25 │    350 │ NO (-325) │ 325 │
-│ large   │    30 │    150 │ NO (-120) │ 120 │
-└─────────┴───────┴────────┴───────────┴─────┘
++--------------------------------------------+
+| Bracket | Count | Target |    Met    | Gap |
+|---------+-------+--------+-----------+-----|
+| single  |    23 |     80 | NO (-57)  |  57 |
+| small   |    22 |    200 | NO (-178) | 178 |
+| medium  |    25 |    350 | NO (-325) | 325 |
+| large   |    30 |    150 | NO (-120) | 120 |
++--------------------------------------------+
 
   NOTE: Above targets are for --target=1000 (BASE_TARGET). See Check 27 for scaled targets at --target=100.
+         Finding Coverage Detail          
++----------------------------------------+
+| Finding ID      | Count | Target | Met |
+|-----------------+-------+--------+-----|
+| STRAT-DC-001    |    26 |     15 | YES |
+| STRAT-DC-002    |    27 |     10 | YES |
+| STRAT-SI-001    |    20 |     15 | YES |
+| STRAT-SI-004    |    22 |     10 | YES |
+| STRAT-EA-001    |    21 |     10 | YES |
+| STRAT-OC-002    |    24 |     10 | YES |
+| STRAT-AB-001    |    20 |     10 | YES |
+| STRAT-DC-003    |    15 |      8 | YES |
+| STRAT-SI-002    |    23 |      8 | YES |
+| STRAT-EA-002    |    28 |      8 | YES |
+| STRAT-OC-001    |    28 |      8 | YES |
+| STRAT-XCOMP-001 |    28 |      5 | YES |
+| STRAT-XCOMP-006 |    32 |      5 | YES |
++----------------------------------------+
+
+Coverage gaps identified (12):
+  - crewai: 23/150
+  - langgraph: 15/150
+  - autogen: 12/100
+  - langchain: 11/100
+  - llamaindex: 0/60
+  - smolagents: 0/40
+  - agno: 0/30
+  - generic: 0/70
+  - complexity_single: 23/80
+  - complexity_small: 22/200
+  - complexity_medium: 25/350
+  - complexity_large: 30/150
+
+  [PASS] report has gaps list: True  (entries: 12)
+  [PASS] unique topologies tracked: 86
+
+CHECK 27: SCALED TARGET COVERAGE
+  Scaled framework targets met: 4/8
+    crewai                count=23  target=15  YES
+    langgraph             count=15  target=15  YES
+    autogen               count=12  target=10  YES
+    langchain             count=11  target=10  YES
+    llamaindex            count=0  target=6  NO
+    smolagents            count=0  target=4  NO
+    agno                  count=0  target=3  NO
+    generic               count=0  target=7  NO
+
+  [PASS] With --target=100, at least 4 framework targets met (got 4)
+
+SUMMARY STATISTICS
++----------------------------------------+
+| Metric                       |   Value |
+|------------------------------+---------|
+| Total in pool                |     200 |
+| Target count                 |     100 |
+| Actually selected            |     100 |
+| Selection rate               |   50.0% |
+| Unique topologies (selected) |      86 |
+| Unique topologies (pool)     |     126 |
+| Frameworks represented       |       8 |
+| Complexity brackets covered  |       4 |
+| XCOMP repos selected         |      41 |
+| XCOMP boost factor           |   1.74x |
+| Schema-valid repos           | 200/200 |
+| Coverage gaps                |      12 |
+| All targets met              |   False |
+| Avg runnability (selected)   |   0.672 |
+| Avg discovery value          |   50.01 |
+| Min discovery value          |   33.82 |
+| Max discovery value          |  114.01 |
++----------------------------------------+
+
+VERDICT
+                  Final Verdict                  
++-----------------------------------------------+
+| Check                                | Result |
+|--------------------------------------+--------|
+| Check 10a: Framework coverage        |  PASS  |
+| Check 10b: Complexity coverage       |  PASS  |
+| Check 10c: Topology uniqueness       |  PASS  |
+| Check 11:  XCOMP prioritized         |  PASS  |
+| Check 12a: framework_coverage dict   |  PASS  |
+| Check 12b: complexity_coverage dict  |  PASS  |
+| Check 12c: gaps list present         |  PASS  |
+| Check 12d: unique topologies tracked |  PASS  |
+| Check 27:  Scaled targets met        |  PASS  |
++-----------------------------------------------+
++----------------------------------------------------------------------------------------------------------------------+
+| ALL CHECKS PASSED                                                                                                    |
++----------------------------------------------------------------------------------------------------------------------+
+
+Output written to C:\Users\dpowe\OneDrive\Documents\Coding 
+Projects\stratum-observability\stratum-lab\eval\outputs\repo-selection-demo.txt
+0 (BASE_TARGET). See Check 27 for scaled targets at --target=100.
          Finding Coverage Detail          
 ┌─────────────────┬───────┬────────┬─────┐
 │ Finding ID      │ Count │ Target │ Met │

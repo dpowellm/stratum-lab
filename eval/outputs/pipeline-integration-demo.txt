@@ -1,4 +1,4 @@
-Working directory: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_eval_sr_5d4fa
+Working directory: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_eval_6dh9uh96
 
 ==============================================================================
 STEP 1: BUILD SYNTHETIC BEHAVIORAL RECORDS
@@ -35,7 +35,7 @@ STEP 1: BUILD SYNTHETIC BEHAVIORAL RECORDS
 ==============================================================================
 STEP 2: EXPORT FEEDBACK
 ==============================================================================
-  Output directory:    C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_eval_sr_5d4fa\feedback
+  Output directory:    C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_eval_6dh9uh96\feedback
   Files written:       5
     emergent_heuristics.json                  6,214 bytes
     edge_confidence_weights.json              1,293 bytes
@@ -64,8 +64,8 @@ CHECK 13: emergent_heuristics.json
 CHECK 24: DISCOVERY TYPE TAXONOMY VALID
 ==============================================================================
   by_discovery_type keys:  {'implicit_data_sharing', 'dynamic_delegation', 'error_triggered_fallback'}
-  Valid taxonomy set:       {'implicit_data_sharing', 'dynamic_delegation', 'error_triggered_fallback', 
-'framework_internal_routing'}
+  Valid taxonomy set:       {'implicit_data_sharing', 'dynamic_delegation', 'framework_internal_routing', 
+'error_triggered_fallback'}
   Is subset:                True
 
   CHECK 24: PASS
@@ -2611,10 +2611,12 @@ PIPELINE INTEGRATION EVAL SUMMARY
                  Validation Check Results                  
 ┌───────┬────────────────────────────────────────┬────────┐
 │ Check │ Description                            │ Result │
-├───────┼────────────────────────────────────────┼────────┤
-│ 13    │ Feedback: emergent heuristics          │ PASS   │
-│ 14    │ Feedback: edge weights                 │ PASS   │
-│ 15    │ Feedback: failure catalog              │ PASS   │
+├───────┼────────────────────────────────────────┼────────�  RESULT: ALL CHECKS PASSED
+
+  Output written to: C:\Users\dpowe\OneDrive\Documents\Coding 
+Projects\stratum-observability\stratum-lab\eval\outputs\pipeline-integration-de
+mo.txt
+           │ PASS   │
 │ 16    │ Feedback: monitoring baselines         │ PASS   │
 │ 17    │ Feedback: prediction match             │ PASS   │
 │ 19    │ Catalog example has error_propagation  │ PASS   │

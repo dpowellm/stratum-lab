@@ -423,6 +423,7 @@ class Orchestrator:
     # ------------------------------------------------------------------
 
     INTERACTION_EVENT_TYPES = frozenset({
+        "agent.task_start", "agent.task_end",
         "delegation.initiated", "delegation.completed",
         "tool.invoked", "tool.completed",
         "data.read", "data.write",

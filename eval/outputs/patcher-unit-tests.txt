@@ -9,7 +9,7 @@ Projects\stratum-observability\stratum-lab\eval\outputs\patcher-unit-tests.txt
   PASS  run_id from env  --  got 'test-run-001'
   PASS  repo_id from env  --  got 'test-repo-001'
   PASS  framework from env  --  got 'test-framework'
-  PASS  log_event returns evt_ prefixed id  --  got 'evt_56c916ea193a4ae2'
+  PASS  log_event returns evt_ prefixed id  --  got 'evt_4682ba67ca04413e'
   PASS  Event written to JSONL file  --  found 1 events
   PASS  Event has all required fields  --  all present
   PASS  event_id matches returned value
@@ -220,3 +220,6 @@ Projects\\stratum-observability\\stratum-lab\\eval\\test_patchers.py'
   RESULTS: 181 passed, 0 failed, 181 total
 ========================================================================
   ALL CHECKS PASSED
+
+Output written to C:\Users\dpowe\OneDrive\Documents\Coding 
+Projects\stratum-observability\stratum-lab\eval\outputs\patcher-unit-tests.txt

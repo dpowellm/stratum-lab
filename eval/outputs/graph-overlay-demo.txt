@@ -66,11 +66,11 @@ EVAL 2: EMERGENT EDGE DETECTION (Check 3)
       trigger_condition  : routing decision (llm_decision) based on llm_output
   [PASS] At least 3 emergent edges detected (got 3)
   [PASS] Error-triggered fallback detected
-         discovery types: {'dynamic_delegation', 'implicit_data_sharing', 'error_triggered_fallback'}
+         discovery types: {'error_triggered_fallback', 'dynamic_delegation', 'implicit_data_sharing'}
   [PASS] Dynamic delegation detected
-         discovery types: {'dynamic_delegation', 'implicit_data_sharing', 'error_triggered_fallback'}
+         discovery types: {'error_triggered_fallback', 'dynamic_delegation', 'implicit_data_sharing'}
   [PASS] Implicit data sharing detected
-         discovery types: {'dynamic_delegation', 'implicit_data_sharing', 'error_triggered_fallback'}
+         discovery types: {'error_triggered_fallback', 'dynamic_delegation', 'implicit_data_sharing'}
   [PASS] Emergent emergent_000 has actionable detection_heuristic
          heuristic length: 144
   [PASS] Emergent emergent_001 has actionable detection_heuristic
@@ -152,7 +152,7 @@ EVAL 3: ERROR PROPAGATION TRACING (Check 4)
   [PASS] Trace from Planner: structural_predicted_path populated
          path: ['agent_planner', 'agent_coder', 'ds_shared_context', 'agent_fallback', 'agent_reviewer', 'agent_deployer', 'cap_code_search_tool', 'cap_linter_tool', 'cap_unused_tool', 'cap_deploy_tool', 'guard_code_review', 'ext_ci_api']
   [PASS] Trace from Planner: actual_observed_path populated
-         path: ['Planner', 'Coder', 'agent_reviewer']
+         path: ['Planner', 'Coder', 'agent_reviewer
   [PASS] Trace from Planner: structural_predicted_path populated
          path: ['agent_planner', 'agent_coder', 'ds_shared_context', 'agent_fallback', 'agent_reviewer', 'agent_deployer', 'cap_code_search_tool', 'cap_linter_tool', 'cap_unused_tool', 'cap_deploy_tool', 'guard_code_review', 'ext_ci_api']
   [PASS] Trace from Planner: actual_observed_path populated
@@ -211,14 +211,14 @@ EVAL 6: FAILURE MODE CLASSIFICATION (Check 7)
     failure_type             : Cascading errors through unsupervised delegation chain
     occurrences              : 2
     downstream_impact        : True
-    failure_description      : Observed 2 instances across signals: no_human_gate_activation, delegation_depth_>=3
+    failure_description      : Observed 2 instances across signals: delegation_depth_>=3, no_human_gate_activation
 
   STRAT-SI-001: Error laundering
     manifestation_observed   : True
     failure_type             : Error silently swallowed, downstream agents process corrupted data
     occurrences              : 2
     downstream_impact        : False
-    failure_description      : Observed 2 instances across signals: silent_error_handling, error_swallowed
+    failure_description      : Observed 2 instances across signals: error_swallowed, silent_error_handling
   [PASS] STRAT-SI-001 (error laundering) classified
   [PASS] STRAT-SI-001 manifestation observed
          manifestation_observed: True
@@ -330,3 +330,4 @@ SUMMARY
   All validation checks PASSED.
 
 Done.
+
