@@ -34,8 +34,22 @@ BENCHMARK_DIR = DATA_DIR / "benchmark"
 
 # Execution status codes
 class ExecutionStatus:
+    # Tier 1: Native execution
     SUCCESS = "SUCCESS"
     PARTIAL_SUCCESS = "PARTIAL_SUCCESS"
+    NO_EVENTS = "NO_EVENTS"
+    TIMEOUT_NO_EVENTS = "TIMEOUT_NO_EVENTS"
+    UNRESOLVABLE_IMPORT = "UNRESOLVABLE_IMPORT"
+    NO_ENTRY_POINT = "NO_ENTRY_POINT"
+    CLONE_FAILED = "CLONE_FAILED"
+    RUNTIME_ERROR = "RUNTIME_ERROR"
+    SERVER_BASED = "SERVER_BASED"
+    # Tier 2: Synthetic harness
+    TIER2_SUCCESS = "TIER2_SUCCESS"
+    TIER2_PARTIAL = "TIER2_PARTIAL"
+    # Tier 3: Unrunnable
+    UNRUNNABLE = "UNRUNNABLE"
+    # Legacy status codes (kept for backward compatibility)
     DEPENDENCY_FAILURE = "DEPENDENCY_FAILURE"
     ENTRY_POINT_FAILURE = "ENTRY_POINT_FAILURE"
     MODEL_FAILURE = "MODEL_FAILURE"

@@ -192,14 +192,15 @@ def run_container(
 
     try:
         # Create and start the container.
-        # The image ENTRYPOINT (runner.py) receives repo_url and entry_point
-        # as positional arguments.
+        # The image ENTRYPOINT (run_repo.sh) receives repo_url and timeout
+        # as positional arguments.  Entry point detection is handled inside
+        # the container by run_repo.sh's multi-strategy scoring.
         container = client.containers.create(
             image=image_tag,
-            command=[repo_url, entry_point],
+            command=[repo_url, str(timeout)],
             environment=env,
             volumes={
-                output_tmpdir: {"bind": "/output", "mode": "rw"},
+                output_tmpdir: {"bind": "/app/output", "mode": "rw"},
             },
             working_dir=CONTAINER_WORKDIR,
             mem_limit="2g",

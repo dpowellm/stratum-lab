@@ -172,11 +172,14 @@ def main() -> None:
     status = "success"
 
     try:
-        # Ensure the entry point's directory is on sys.path so its
-        # relative imports work.
-        entry_dir = os.path.dirname(os.path.abspath(entry_point))
-        if entry_dir not in sys.path:
-            sys.path.insert(0, entry_dir)
+        # Add repo root (and src/ if it exists) to sys.path for imports.
+        # We intentionally do NOT add the entry point's own directory,
+        # because that can shadow stdlib modules (e.g. a repo's types.py
+        # shadows Python's types module).
+        repo_root = os.environ.get("STRATUM_REPO_ROOT", "/app/repo")
+        for _p in [repo_root, os.path.join(repo_root, "src")]:
+            if os.path.isdir(_p) and _p not in sys.path:
+                sys.path.insert(0, _p)
 
         import runpy
         runpy.run_path(entry_point, run_name="__main__")
