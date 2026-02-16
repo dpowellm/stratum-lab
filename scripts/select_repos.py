@@ -15,6 +15,7 @@ Flags:
     --github-token TOKEN   GitHub personal access token for API calls
     --include-forks        Include forked repos (default: skip)
     --deduplicate          Enable hash-based duplicate detection
+    --topology-diversity   Rerank selection to maximize unique topology patterns
 """
 from __future__ import annotations
 import argparse, hashlib, json, os, sys, time
@@ -133,6 +134,67 @@ def deduplicate(scored: list[tuple[float, str, dict]],
         print(f"Dedup: removed {dupes} potential duplicate(s)", file=sys.stderr)
     return list(seen.values())
 
+# -- XCOMP and topology helpers -----------------------------------------------
+
+def is_xcomp(repo_metadata: dict[str, Any]) -> bool:
+    """Check if repo has cross-component interactions.
+
+    XCOMP repos produce the richest behavioral records because they exercise
+    interactions between agents, tools, data stores, external services, and guards.
+    A repo qualifies as XCOMP if it has at least 2 different component types.
+    """
+    has_tools = repo_metadata.get("tool_count", 0) > 0
+    has_data_stores = repo_metadata.get("data_store_count", 0) > 0
+    has_external = repo_metadata.get("external_service_count", 0) > 0
+    has_guards = repo_metadata.get("guard_count", 0) > 0
+    component_types = sum([has_tools, has_data_stores, has_external, has_guards])
+    return component_types >= 2  # At least 2 different component types
+
+
+def compute_topology_hash(repo_metadata: dict[str, Any]) -> str:
+    """Hash based on agent_count, framework, tool_count, etc.
+
+    Used to track unique topology patterns across the selection and ensure
+    diversity (target 86%+ unique topologies).
+    """
+    key = (f"{repo_metadata.get('framework', repo_metadata.get('primary_framework', 'unknown'))}:"
+           f"{repo_metadata.get('agent_count', 0)}:"
+           f"{repo_metadata.get('tool_count', 0)}:"
+           f"{repo_metadata.get('data_store_count', 0)}")
+    return hashlib.md5(key.encode()).hexdigest()[:8]
+
+
+def rerank_for_topology_diversity(
+    scored: list[tuple[float, str, dict]],
+    top_n: int = 0,
+) -> list[tuple[float, str, dict]]:
+    """Rerank selection to maximize unique topology patterns.
+
+    Uses a greedy approach: iterate through score-sorted candidates and prefer
+    repos that introduce a new topology hash over those that duplicate an
+    existing one.  Repos with duplicate topologies are pushed to the end
+    rather than dropped, so --top N still returns N results.
+    """
+    if not scored:
+        return scored
+
+    seen_hashes: set[str] = set()
+    unique_picks: list[tuple[float, str, dict]] = []
+    duplicate_picks: list[tuple[float, str, dict]] = []
+
+    for entry in scored:
+        _, _, raw = entry
+        topo_hash = compute_topology_hash(raw)
+        if topo_hash not in seen_hashes:
+            seen_hashes.add(topo_hash)
+            unique_picks.append(entry)
+        else:
+            duplicate_picks.append(entry)
+
+    reranked = unique_picks + duplicate_picks
+    return reranked
+
+
 # -- Mode A: scan-results scoring ---------------------------------------------
 
 def score_repo(r: dict[str, Any]) -> float:
@@ -239,12 +301,62 @@ def score_repo(r: dict[str, Any]) -> float:
     if r.get("fork", False):
         score -= 15
 
+    # -- event-diversity scoring (PATCH_SPEC_V2 section 4.4) --
+
+    tool_count = r.get("tool_count", 0)
+    data_store_count = r.get("data_store_count", 0)
+    capabilities = [str(c).lower() for c in (r.get("capabilities", []) or [])]
+    patterns = [str(p).lower() for p in (r.get("patterns", []) or [])]
+    deployment_strs = " ".join(str(v) for v in deployment.values()) if deployment else ""
+
+    # +15 has tool definitions (will trigger tool.invoked events)
+    if tool_count > 0 or n_tools > 0 or "tool" in deployment_strs.lower():
+        score += 15
+
+    # +12 has delegation patterns (will trigger delegation events)
+    has_delegation = (n_deleg > 0
+                      or any("delegation" in c or "delegat" in c for c in capabilities)
+                      or any("delegation" in p or "delegat" in p for p in patterns))
+    if has_delegation:
+        score += 12
+
+    # +10 has shared state management (will trigger state.access events)
+    if data_store_count > 0:
+        score += 10
+
+    # +8 has conditional routing (will trigger routing.decision events)
+    has_routing = (any("routing" in c or "conditional" in c or "router" in c for c in capabilities)
+                   or any("routing" in p or "conditional" in p or "router" in p for p in patterns)
+                   or "routing" in deployment_strs.lower()
+                   or "router" in blob)
+    if has_routing:
+        score += 8
+
+    # +8 agent_count between 3-7 (non-trivial topology, simple enough to run)
+    if 3 <= agent_count <= 7:
+        score += 8
+
+    # +5 has error handling patterns (will trigger error propagation traces)
+    has_error_handling = (any("error" in c or "exception" in c or "retry" in c for c in capabilities)
+                         or any("error" in p or "exception" in p or "retry" in p for p in patterns)
+                         or any("error" in c or "fallback" in c for c in capabilities))
+    if has_error_handling:
+        score += 5
+
+    # XCOMP multiplier: repos with cross-component interactions score 1.7x
+    if is_xcomp(r):
+        score *= 1.7
+
     return round(score, 2)
 
 
 def load_scan_results(path: Path, *, include_forks: bool = False,
                       do_dedup: bool = False,
-                      ) -> list[tuple[float, str]]:
+                      ) -> list[tuple[float, str, dict]]:
+    """Load scan_results.jsonl entries, score them, and return (score, url, raw_data) tuples.
+
+    The raw_data dict is preserved for downstream XCOMP and topology analysis.
+    """
     raw_entries: list[tuple[float, str, dict]] = []
     with open(path) as f:
         for num, line in enumerate(f, 1):
@@ -265,7 +377,7 @@ def load_scan_results(path: Path, *, include_forks: bool = False,
                 raw_entries.append((score_repo(r), url, r))
     if do_dedup:
         raw_entries = deduplicate(raw_entries)
-    return [(s, u) for s, u, _ in raw_entries]
+    return raw_entries
 
 # -- Mode B: plain URL list ---------------------------------------------------
 
@@ -400,6 +512,8 @@ def main() -> None:
                    help="Include forked repos (default: skip)")
     p.add_argument("--deduplicate", action="store_true",
                    help="Enable hash-based duplicate detection")
+    p.add_argument("--topology-diversity", action="store_true",
+                   help="Rerank selection to maximize unique topology patterns")
     args = p.parse_args()
 
     if args.discover and args.input_file:
@@ -409,31 +523,61 @@ def main() -> None:
 
     token = args.github_token or os.environ.get("GITHUB_TOKEN", "")
 
+    # scored_full carries (score, url, raw_data) for XCOMP/topology analysis.
+    # Modes that lack raw scan data use an empty dict as the third element.
+    has_raw_data = False
+
     if args.discover:
-        scored = discover_repos(token=token,
-                                include_forks=args.include_forks)
+        scored_2 = discover_repos(token=token,
+                                  include_forks=args.include_forks)
+        scored_full = [(s, u, {}) for s, u in scored_2]
     elif args.plain:
-        scored = load_plain_urls(Path(args.input_file), token=token or None,
-                                 include_forks=args.include_forks)
+        scored_2 = load_plain_urls(Path(args.input_file), token=token or None,
+                                   include_forks=args.include_forks)
+        scored_full = [(s, u, {}) for s, u in scored_2]
     else:
-        scored = load_scan_results(Path(args.input_file),
-                                   include_forks=args.include_forks,
-                                   do_dedup=args.deduplicate)
+        scored_full = load_scan_results(Path(args.input_file),
+                                        include_forks=args.include_forks,
+                                        do_dedup=args.deduplicate)
+        has_raw_data = True
 
-    scored.sort(key=lambda x: x[0], reverse=True)
+    scored_full.sort(key=lambda x: x[0], reverse=True)
     if args.min_score > 0:
-        scored = [(s, u) for s, u in scored if s >= args.min_score]
-    if args.top > 0:
-        scored = scored[:args.top]
+        scored_full = [(s, u, r) for s, u, r in scored_full if s >= args.min_score]
 
+    # Apply topology diversity reranking before --top cutoff
+    if args.topology_diversity and has_raw_data:
+        scored_full = rerank_for_topology_diversity(scored_full, top_n=args.top)
+
+    if args.top > 0:
+        scored_full = scored_full[:args.top]
+
+    # Write output (score + url)
     out = sys.stdout if args.output == "-" else open(args.output, "w")
     try:
-        for score, url in scored:
+        for score, url, _ in scored_full:
             out.write(f"{score}\t{url}\n")
     finally:
         if out is not sys.stdout:
             out.close()
-    print(f"Selected {len(scored)} repos", file=sys.stderr)
+
+    # -- Summary stats --
+    n_selected = len(scored_full)
+    print(f"Selected {n_selected} repos", file=sys.stderr)
+
+    # XCOMP and topology stats (only meaningful with scan-results data)
+    if has_raw_data and n_selected > 0:
+        xcomp_count = sum(1 for _, _, r in scored_full if is_xcomp(r))
+        topo_hashes = {compute_topology_hash(r) for _, _, r in scored_full}
+        unique_topos = len(topo_hashes)
+        diversity_ratio = unique_topos / n_selected if n_selected > 0 else 0.0
+
+        print(f"XCOMP repos: {xcomp_count}/{n_selected} "
+              f"({100 * xcomp_count / n_selected:.1f}%)", file=sys.stderr)
+        print(f"Unique topologies: {unique_topos}/{n_selected} "
+              f"(diversity {100 * diversity_ratio:.1f}%"
+              f"{' -- target 86%+ met' if diversity_ratio >= 0.86 else ' -- below 86% target'})",
+              file=sys.stderr)
 
 
 if __name__ == "__main__":

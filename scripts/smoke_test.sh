@@ -223,6 +223,263 @@ print(('ok:' if ok else 'fail:') + ';'.join(results))
 if echo "$T6_CHK" | grep -q "^ok:"; then pass_test "Output classifier ($T6_CHK)"
 else fail_test "Output classifier: $T6_CHK"; fi
 
+# --- Test 7: Multi-run Simulation -------------------------------------------
+echo ""
+echo "--- Test 7: Multi-run Simulation ---"
+T7=$(mktemp -d)
+T7_OK=true
+for run_num in 1 2 3; do
+    export RUN_NUMBER=$run_num
+    export STRATUM_RUN_NUMBER=$run_num
+    export STRATUM_EVENTS_FILE="$T7/events_run_${run_num}.jsonl"
+    export STRATUM_RUN_ID="smoke-7-run-${run_num}"
+    export STRATUM_REPO_ID="smoke-multirun"
+    export STRATUM_FRAMEWORK="crewai"
+    export STRATUM_VLLM_MODEL="$VLLM_MODEL"
+    export OPENAI_BASE_URL="${VLLM_HOST}/v1"
+    export OPENAI_API_KEY="sk-stratum-local"
+    export PYTHONPATH="$PATCHER_ROOT:${PYTHONPATH:-}"
+    cat > "$T7/run_${run_num}.py" <<'PYEOF'
+import os, sys, stratum_patcher.openai_patch, stratum_patcher.crewai_patch
+from crewai import Agent, Task, Crew, LLM
+url = os.environ["OPENAI_BASE_URL"]
+model = os.environ["STRATUM_VLLM_MODEL"]
+key = os.environ["OPENAI_API_KEY"]
+llm = LLM(model=f"openai/{model}", base_url=url, api_key=key)
+researcher = Agent(role="Researcher", goal="Find key facts about a topic",
+    backstory="An experienced researcher", llm=llm, verbose=False, allow_delegation=False)
+writer = Agent(role="Writer", goal="Write a clear summary from research findings",
+    backstory="A skilled technical writer", llm=llm, verbose=False, allow_delegation=False)
+t1 = Task(description="Research observability basics. Keep it brief.",
+    expected_output="A short list of key facts", agent=researcher)
+t2 = Task(description="Write a one-paragraph summary of the research.",
+    expected_output="A concise paragraph", agent=writer)
+crew = Crew(agents=[researcher, writer], tasks=[t1, t2], verbose=False)
+crew.kickoff()
+PYEOF
+    python "$T7/run_${run_num}.py" > "$T7/out_${run_num}" 2> "$T7/err_${run_num}"
+    if [ $? -ne 0 ]; then
+        T7_OK=false
+    fi
+done
+if [ "$T7_OK" = "false" ]; then
+    fail_test "Multi-run: one or more CrewAI runs failed"
+else
+    T7_CHK=$(python -c "
+import os, json, sys
+base = sys.argv[1]
+ok = True; counts = []
+for run_num in (1, 2, 3):
+    path = os.path.join(base, f'events_run_{run_num}.jsonl')
+    if not os.path.isfile(path):
+        print(f'missing:events_run_{run_num}.jsonl'); sys.exit(0)
+    with open(path) as f:
+        lines = [l for l in f if l.strip()]
+    if len(lines) == 0:
+        print(f'empty:events_run_{run_num}.jsonl'); sys.exit(0)
+    counts.append(len(lines))
+# Verify files are separate (each file should have its own run_id)
+run_ids = set()
+for run_num in (1, 2, 3):
+    path = os.path.join(base, f'events_run_{run_num}.jsonl')
+    with open(path) as f:
+        for line in f:
+            ev = json.loads(line.strip())
+            run_ids.add(ev.get('run_id', ''))
+if len(run_ids) >= 3:
+    print(f'ok:runs={counts},distinct_run_ids={len(run_ids)}')
+else:
+    print(f'fail:only {len(run_ids)} distinct run_ids across 3 files')
+" "$T7" 2>&1)
+    if echo "$T7_CHK" | grep -q "^ok:"; then
+        pass_test "Multi-run simulation ($T7_CHK)"
+    else
+        fail_test "Multi-run simulation: $T7_CHK"
+    fi
+fi
+# Preserve T7 dir for Test 8
+T7_SAVED="$T7"
+
+# --- Test 8: Behavioral Record Generation -----------------------------------
+echo ""
+echo "--- Test 8: Behavioral Record Generation ---"
+T8=$(mktemp -d)
+if [ -d "$T7_SAVED" ] && [ -f "$T7_SAVED/events_run_1.jsonl" ]; then
+    # Set up mock results directory structure expected by build_behavioral_record
+    HASH="smoke_test_hash"
+    mkdir -p "$T8/results/$HASH"
+    # Copy per-run event files from Test 7
+    for run_num in 1 2 3; do
+        cp "$T7_SAVED/events_run_${run_num}.jsonl" "$T8/results/$HASH/"
+        # Create run_metadata_N.json files
+        python -c "
+import json, sys
+meta = {
+    'repo_full_name': 'smoke-test/multirun-repo',
+    'run_number': $run_num,
+    'run_id': 'smoke-7-run-$run_num',
+    'framework': 'crewai',
+    'vllm_model': '$VLLM_MODEL',
+    'status': 'SUCCESS',
+    'event_count': 0
+}
+# Count events
+with open(sys.argv[1]) as f:
+    meta['event_count'] = sum(1 for l in f if l.strip())
+with open(sys.argv[2], 'w') as f:
+    json.dump(meta, f, indent=2)
+" "$T8/results/$HASH/events_run_${run_num}.jsonl" "$T8/results/$HASH/run_metadata_${run_num}.json"
+    done
+    # Use the behavioral_record module to build the record
+    export PYTHONPATH="$PATCHER_ROOT:${PYTHONPATH:-}"
+    T8_CHK=$(python -c "
+import json, sys, os, glob as globmod
+sys.path.insert(0, '$PATCHER_ROOT')
+from stratum_lab.output.behavioral_record import build_behavioral_record
+
+results_hash_dir = sys.argv[1]
+# Load runs from the results dir
+runs = []
+for run_file in sorted(globmod.glob(os.path.join(results_hash_dir, 'events_run_*.jsonl'))):
+    events = []
+    with open(run_file) as f:
+        for line in f:
+            if line.strip():
+                events.append(json.loads(line.strip()))
+    meta_file = run_file.replace('events_run_', 'run_metadata_').replace('.jsonl', '.json')
+    if os.path.isfile(meta_file):
+        with open(meta_file) as f:
+            run_meta = json.load(f)
+    else:
+        run_meta = {'repo_full_name': 'smoke-test/multirun-repo'}
+    runs.append({'events': events, 'metadata': run_meta})
+
+if not runs:
+    print('fail:no_runs_loaded')
+    sys.exit(0)
+
+# Build the behavioral record using the module function
+record = build_behavioral_record(
+    repo_full_name='smoke-test/multirun-repo',
+    execution_metadata={'runs': len(runs), 'framework': 'crewai'},
+    edge_validation={'structural_edges_total': 0, 'structural_edges_activated': 0, 'dead_edges': [], 'activation_rates': {}},
+    emergent_edges=[],
+    node_activation={'always_active': [], 'conditional': [], 'never_active': []},
+    error_propagation=[],
+    failure_modes=[],
+    monitoring_baselines=[],
+)
+
+# Write output
+output_path = sys.argv[2]
+with open(output_path, 'w') as f:
+    json.dump(record, f, indent=2)
+
+# Validate: check 9 required v6 top-level keys
+required = {'repo_full_name','schema_version','execution_metadata','edge_validation',
+            'emergent_edges','node_activation','error_propagation','failure_modes','monitoring_baselines'}
+missing = required - set(record.keys())
+if missing:
+    print(f'fail:missing_keys={missing}')
+elif record.get('schema_version') != 'v6':
+    print(f'fail:schema_version={record.get(\"schema_version\")}')
+else:
+    print(f'ok:keys={len(record)},schema=v6')
+" "$T8/results/$HASH" "$T8/behavioral_record.json" 2>&1)
+    if echo "$T8_CHK" | grep -q "^ok:"; then
+        pass_test "Behavioral record generation ($T8_CHK)"
+    else
+        fail_test "Behavioral record generation: $T8_CHK"
+    fi
+else
+    fail_test "Behavioral record generation skipped (no multi-run data from Test 7)"
+fi
+# Preserve behavioral record for Test 10
+T8_RECORD=""; if [ -f "$T8/behavioral_record.json" ]; then T8_RECORD=$(mktemp); cp "$T8/behavioral_record.json" "$T8_RECORD"; fi
+
+# --- Test 9: Varied Topology Harness ----------------------------------------
+echo ""
+echo "--- Test 9: Varied Topology Harness ---"
+T9=$(mktemp -d); mkdir -p "$T9/repo" "$T9/output"
+export_env "$T9/output" smoke-9 smoke-varied-topo synthetic
+# Create a fake repo with CrewAI imports AND allow_delegation to trigger non-sequential variant
+cat > "$T9/repo/main.py" <<'PYEOF'
+from crewai import Agent, Task, Crew
+manager = Agent(role="Manager", goal="Oversee project execution",
+    backstory="A seasoned project manager", allow_delegation=True)
+researcher = Agent(role="Researcher", goal="Research topics in depth",
+    backstory="An experienced researcher", allow_delegation=True)
+writer = Agent(role="Writer", goal="Write comprehensive reports",
+    backstory="A skilled technical writer")
+t1 = Task(description="Plan the research approach", expected_output="Research plan", agent=manager)
+t2 = Task(description="Conduct research on AI observability", expected_output="Research notes", agent=researcher)
+t3 = Task(description="Write a summary report", expected_output="Summary report", agent=writer)
+crew = Crew(agents=[manager, researcher, writer], tasks=[t1, t2, t3])
+result = crew.kickoff()
+PYEOF
+python "$SCRIPT_DIR/synthetic_harness.py" "$T9/repo" "$VLLM_HOST" "$T9/output" > "$T9/out" 2> "$T9/err"
+T9_EXIT=$?
+if [ $T9_EXIT -ne 0 ]; then
+    fail_test "Varied topology harness failed (exit $T9_EXIT)"; head -3 "$T9/err" 2>/dev/null
+elif [ -f "$T9/output/stratum_events.jsonl" ]; then
+    T9_CHK=$(python -c "
+import json, sys
+events_file = sys.argv[1]
+with open(events_file) as f:
+    events = [json.loads(l) for l in f if l.strip()]
+cnt = len(events)
+if cnt < 1:
+    print('fail:no_events')
+else:
+    # Check that variant was detected (delegation expected for allow_delegation repo)
+    types = {e.get('event_type','') for e in events}
+    print(f'ok:events={cnt},types={len(types)}')
+" "$T9/output/stratum_events.jsonl" 2>&1)
+    if echo "$T9_CHK" | grep -q "^ok:"; then
+        # Also check stderr for variant selection info
+        VARIANT=$(grep -o "using [a-z]*" "$T9/err" 2>/dev/null | head -1 || true)
+        pass_test "Varied topology harness ($T9_CHK ${VARIANT:-})"
+    else
+        fail_test "Varied topology harness: $T9_CHK"
+    fi
+else
+    fail_test "Varied topology harness: no events file"
+fi
+rm -rf "$T9"
+
+# --- Test 10: validate_behavioral_record() ----------------------------------
+echo ""
+echo "--- Test 10: validate_behavioral_record() ---"
+if [ -n "$T8_RECORD" ] && [ -f "$T8_RECORD" ]; then
+    export PYTHONPATH="$PATCHER_ROOT:${PYTHONPATH:-}"
+    T10_CHK=$(python -c "
+import json, sys
+sys.path.insert(0, '$PATCHER_ROOT')
+from stratum_lab.output.behavioral_record import validate_behavioral_record
+
+with open(sys.argv[1]) as f:
+    record = json.load(f)
+
+valid, errors = validate_behavioral_record(record)
+if valid:
+    print(f'ok:v6_valid,keys={len(record)}')
+else:
+    print(f'fail:errors={errors}')
+" "$T8_RECORD" 2>&1)
+    if echo "$T10_CHK" | grep -q "^ok:"; then
+        pass_test "validate_behavioral_record ($T10_CHK)"
+    else
+        fail_test "validate_behavioral_record: $T10_CHK"
+    fi
+else
+    fail_test "validate_behavioral_record skipped (no record from Test 8)"
+fi
+
+# Cleanup preserved temp files
+rm -rf "$T7_SAVED"
+rm -rf "$T8"
+[ -n "$T8_RECORD" ] && rm -f "$T8_RECORD"
+
 # --- Final Summary -----------------------------------------------------------
 echo ""
 echo "==========================="

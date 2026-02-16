@@ -2,7 +2,8 @@
 """Validate per-repo scan output directories with enriched output.
 
 Checks status.json, stratum_events.jsonl schema, topology, content flow,
-model remapping, and quality grading.
+model remapping, quality grading, v6 behavioral record compatibility,
+and multi-run awareness.
 
 Correct field paths:
     event["source_node"]["node_id"]     -- NOT event["source_node_id"]
@@ -72,28 +73,134 @@ def _grade(
     content_flows: list[tuple[str, str]],
     event_types: set[str],
     llm_call_count: int,
+    has_parent_or_input: bool = False,
 ) -> str:
     """Grade a repo's event quality.
 
     RICH:  2+ unique agent nodes AND output_hash on agent.task_end AND
-           traceable content flow (agent B's input_source matches agent A
-           who has output_hash).
-    BASIC: Has llm.call_end events but missing node attribution or content flow.
+           parent_node_id/input_source on agent.task_start AND at least one
+           of: delegation.initiated, tool.invoked, state.access, routing.decision.
+    BASIC: Has llm.call_end events with agent.task_start/end lifecycle.
+    THIN:  Only llm events, no agent lifecycle.
     EMPTY: Zero events or only error/lifecycle events.
     """
     has_agent_nodes = len(agent_node_ids) >= 2
     has_output_hash = len(output_hashes) > 0
-    has_content_flow = len(content_flows) > 0
+    rich_event_types = {"delegation.initiated", "tool.invoked",
+                        "state.access", "routing.decision"}
+    has_rich_event = bool(event_types & rich_event_types)
+    has_agent_lifecycle = bool(
+        {"agent.task_start", "agent.task_end"} & event_types
+    )
 
-    if has_agent_nodes and has_output_hash and has_content_flow:
+    if (has_agent_nodes and has_output_hash and has_parent_or_input
+            and has_rich_event):
         return "RICH"
-    if llm_call_count > 0:
+    if llm_call_count > 0 and has_agent_lifecycle:
         return "BASIC"
+    if llm_call_count > 0:
+        return "THIN"
     # Only lifecycle/error events or zero events
     substantive = event_types - LIFECYCLE_EVENT_TYPES
     if not substantive:
         return "EMPTY"
-    return "BASIC"
+    return "THIN"
+
+
+# -- v6 event types that feed specific behavioral record sections -----------
+_V6_EDGE_VALIDATION_TYPES = {
+    "edge.traversed", "delegation.initiated", "delegation.completed",
+    "tool.invoked", "tool.completed",
+}
+_V6_NODE_ACTIVATION_TYPES = {
+    "agent.task_start", "agent.task_end",
+    "llm.call_start", "llm.call_end",
+    "tool.invoked", "tool.completed",
+}
+_V6_BEHAVIORAL_DIVERSITY_TYPES = {
+    "agent.task_start", "agent.task_end",
+    "llm.call_start", "llm.call_end",
+    "delegation.initiated", "delegation.completed",
+    "tool.invoked", "tool.completed",
+    "state.access", "routing.decision",
+}
+
+
+def check_v6_compatibility(
+    event_types: set[str],
+) -> dict:
+    """Check whether collected events are sufficient for v6 behavioral record.
+
+    Returns a dict with:
+      - compatible: "YES" | "NO" | "PARTIAL"
+      - sections: dict mapping v6 section name -> bool (will be populated)
+      - present_v6_types: sorted list of event types that feed v6 sections
+      - missing_for_full: sorted list of event types needed for full v6
+    """
+    present_edge = event_types & _V6_EDGE_VALIDATION_TYPES
+    present_node = event_types & _V6_NODE_ACTIVATION_TYPES
+    present_diversity = event_types & _V6_BEHAVIORAL_DIVERSITY_TYPES
+
+    sections = {
+        "edge_validation": bool(present_edge),
+        "node_activation": bool(present_node),
+        "behavioral_diversity": len(present_diversity) >= 3,
+    }
+
+    all_v6_types = (
+        _V6_EDGE_VALIDATION_TYPES
+        | _V6_NODE_ACTIVATION_TYPES
+        | _V6_BEHAVIORAL_DIVERSITY_TYPES
+    )
+    present_v6 = event_types & all_v6_types
+    missing = all_v6_types - event_types
+
+    populated = sum(sections.values())
+    total_sections = len(sections)
+
+    if populated == total_sections:
+        compat = "YES"
+    elif populated == 0:
+        compat = "NO"
+    else:
+        compat = "PARTIAL"
+
+    return {
+        "compatible": compat,
+        "sections": sections,
+        "present_v6_types": sorted(present_v6),
+        "missing_for_full": sorted(missing),
+    }
+
+
+def _collect_run_files(repo_dir: Path) -> dict:
+    """Detect multi-run event files (events_run_*.jsonl).
+
+    Returns a dict with:
+      - run_files: list of filenames found
+      - run_count: number of run files
+      - enough_for_activation_rate: bool (need 3+)
+      - per_run_event_counts: dict filename -> event count
+    """
+    run_files = sorted(repo_dir.glob("events_run_*.jsonl"))
+    per_run: dict[str, int] = {}
+    for rf in run_files:
+        count = 0
+        try:
+            with open(rf) as f:
+                for line in f:
+                    if line.strip():
+                        count += 1
+        except OSError:
+            count = -1  # indicate read error
+        per_run[rf.name] = count
+
+    return {
+        "run_files": [rf.name for rf in run_files],
+        "run_count": len(run_files),
+        "enough_for_activation_rate": len(run_files) >= 3,
+        "per_run_event_counts": per_run,
+    }
 
 
 def validate_repo(
@@ -156,6 +263,8 @@ def validate_repo(
     content_flows: list[tuple[str, str]] = []
     # node_id -> input_source (from agent.task_start payload)
     input_sources: dict[str, str] = {}
+    # node_id -> parent_node_id (from agent.task_start payload)
+    parent_node_ids: dict[str, str] = {}
 
     # Model remapping tracking
     # (model_requested, model_actual) -> count
@@ -245,11 +354,14 @@ def validate_repo(
                     if src_nid not in agent_sequence:
                         agent_sequence.append(src_nid)
 
-                # agent.task_start -> input_source
+                # agent.task_start -> input_source, parent_node_id
                 if et == "agent.task_start" and src_nid:
                     isrc = payload.get("input_source")
                     if isrc:
                         input_sources[src_nid] = isrc
+                    pnid = payload.get("parent_node_id")
+                    if pnid:
+                        parent_node_ids[src_nid] = pnid
                     if src_nid not in agent_sequence:
                         agent_sequence.append(src_nid)
 
@@ -302,10 +414,18 @@ def validate_repo(
             agent_node_ids.add(nid)
 
     # -- Grading ------------------------------------------------------------
+    has_parent_or_input = bool(input_sources or parent_node_ids)
     grade = _grade(
         agent_node_ids, output_hashes, content_flows,
         set(event_types_seen), llm_call_count,
+        has_parent_or_input=has_parent_or_input,
     )
+
+    # -- v6 compatibility ---------------------------------------------------
+    v6_compat = check_v6_compatibility(set(event_types_seen))
+
+    # -- Multi-run awareness ------------------------------------------------
+    multi_run = _collect_run_files(repo_dir)
 
     # -- Build topology string ----------------------------------------------
     topology_parts: list[str] = []
@@ -348,6 +468,9 @@ def validate_repo(
     meta["delegation_count"] = delegation_count
     meta["tool_call_count"] = tool_call_count
     meta["topology"] = topology_str
+    meta["parent_node_ids"] = parent_node_ids
+    meta["v6_compatibility"] = v6_compat
+    meta["multi_run"] = multi_run
 
     return len(issues) == 0, issues, meta
 
@@ -418,11 +541,38 @@ def _print_repo_detail(meta: dict) -> None:
     print()
     print(f"Grade: {grade} ", end="")
     if grade == "RICH":
-        print("(has nodes + edges + content flow)")
+        print("(2+ agents, output_hash, parent/input, delegation/tool/state/routing)")
     elif grade == "BASIC":
-        print("(has llm.call_end but missing node attribution or content flow)")
+        print("(LLM calls with agent lifecycle)")
+    elif grade == "THIN":
+        print("(LLM events only, no agent lifecycle)")
     else:
         print("(zero events or only error/lifecycle events)")
+
+    # -- v6 compatibility detail -------------------------------------------
+    v6 = meta.get("v6_compatibility", {})
+    if v6:
+        compat = v6.get("compatible", "NO")
+        print()
+        print(f"v6 compatibility: {compat}")
+        sections = v6.get("sections", {})
+        for sec_name, populated in sections.items():
+            status_label = "will populate" if populated else "EMPTY"
+            print(f"  {sec_name}: {status_label}")
+        present = v6.get("present_v6_types", [])
+        if present:
+            print(f"  v6 event types present: {', '.join(present)}")
+
+    # -- Multi-run detail --------------------------------------------------
+    mr = meta.get("multi_run", {})
+    if mr and mr.get("run_count", 0) > 0:
+        print()
+        run_count = mr["run_count"]
+        enough = mr["enough_for_activation_rate"]
+        print(f"Runs available: {run_count} "
+              f"({'enough for full v6' if enough else 'need 3+ for activation rate'})")
+        for fname, cnt in mr.get("per_run_event_counts", {}).items():
+            print(f"  {fname}: {cnt} events")
 
     # Print issues if any
     issues = meta.get("issues", [])
@@ -491,6 +641,22 @@ def main() -> None:
             _print_repo_detail(meta)
             print()
 
+    # -- Aggregate v6 readiness for JSON/summary ----------------------------
+    v6_summary: dict = {"YES": 0, "PARTIAL": 0, "NO": 0}
+    total_run_files = 0
+    repos_with_3plus_runs = 0
+    for r in all_results:
+        v6 = r.get("v6_compatibility", {})
+        if v6:
+            v6_summary[v6.get("compatible", "NO")] = (
+                v6_summary.get(v6.get("compatible", "NO"), 0) + 1
+            )
+        mr = r.get("multi_run", {})
+        if mr:
+            total_run_files += mr.get("run_count", 0)
+            if mr.get("enough_for_activation_rate"):
+                repos_with_3plus_runs += 1
+
     # -- JSON output --------------------------------------------------------
     if args.json:
         json.dump(
@@ -503,6 +669,11 @@ def main() -> None:
                     str(k): v for k, v in sorted(tier_counts.items())
                 },
                 "grade_counts": dict(grade_counts),
+                "v6_readiness": {
+                    "compatibility": v6_summary,
+                    "total_run_files": total_run_files,
+                    "repos_with_3plus_runs": repos_with_3plus_runs,
+                },
                 "results": all_results,
             },
             sys.stdout,
@@ -539,6 +710,37 @@ def main() -> None:
         for g, cnt in grade_counts.most_common():
             bar = "#" * min(cnt, 40)
             print(f"  {g:<10s} {cnt:>4d}  {bar}")
+
+    # -- v6 readiness summary ----------------------------------------------
+    v6_counts: Counter[str] = Counter()
+    total_runs = 0
+    repos_with_enough_runs = 0
+    v6_event_types_present: Counter[str] = Counter()
+    for r in all_results:
+        v6 = r.get("v6_compatibility", {})
+        if v6:
+            v6_counts[v6.get("compatible", "NO")] += 1
+            for et in v6.get("present_v6_types", []):
+                v6_event_types_present[et] += 1
+        mr = r.get("multi_run", {})
+        if mr:
+            total_runs += mr.get("run_count", 0)
+            if mr.get("enough_for_activation_rate"):
+                repos_with_enough_runs += 1
+
+    if v6_counts:
+        print()
+        print("v6 readiness:")
+        for compat_level in ("YES", "PARTIAL", "NO"):
+            cnt = v6_counts.get(compat_level, 0)
+            if cnt:
+                print(f"  {compat_level:<10s} {cnt:>4d}")
+        print(f"  Total multi-run files: {total_runs}")
+        print(f"  Repos with 3+ runs (full v6): {repos_with_enough_runs}")
+        if v6_event_types_present:
+            print("  v6-feeding event types across repos:")
+            for et, cnt in v6_event_types_present.most_common():
+                print(f"    {et}: {cnt} repos")
 
     # Topology summary for successful repos
     topo = [r for r in all_results if r.get("grade") and r.get("passed")]

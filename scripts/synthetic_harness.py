@@ -2,9 +2,13 @@
 """Tier 2 Synthetic Harness -- fallback when native execution fails.
 
 Scans a cloned repo for AI agent framework patterns, extracts agent/task
-definitions (roles, goals, backstories) using regex, and generates a minimal
+definitions (roles, goals, backstories) using regex, and generates a
 self-contained Python script that exercises the real agent definitions
 against a vLLM endpoint.
+
+Generates varied topologies (delegation, reviewed, tooled, conditional,
+branching, groupchat, twoway) based on patterns found in the repo source,
+rather than always producing minimal sequential crews.
 
 This is LEGITIMATE because it exercises the REAL agent definitions from the
 repo -- just without broken dependencies, missing API keys, or custom tools.
@@ -107,6 +111,74 @@ def detect_frameworks(repo_path: Path) -> dict[str, int]:
                 if re.search(pattern, content):
                     scores[framework] = scores.get(framework, 0) + 1
     return scores
+
+
+# ── Variant selection ────────────────────────────────────────────────────
+
+def read_all_py_files(repo_path: Path) -> str:
+    """Concatenate all Python source files (excluding vendored dirs) into
+    a single string for pattern matching.  Result is capped at 2 MB to
+    avoid excessive memory use."""
+    parts: list[str] = []
+    total = 0
+    cap = 2 * 1024 * 1024  # 2 MB
+    for py_file in _iter_python_files(repo_path, skip_tests=True):
+        content = _read_file(py_file)
+        if content:
+            parts.append(content)
+            total += len(content)
+            if total >= cap:
+                break
+    return "\n".join(parts)
+
+
+def find_agents(source_code: str) -> list[str]:
+    """Return a list of agent role names found in *source_code* via
+    ``Agent(role=...)`` patterns.  Used by variant selection to gauge
+    the number of distinct agents."""
+    roles: list[str] = []
+    for m in re.finditer(
+        r"Agent\s*\([^)]*role\s*=\s*[\"']([^\"']+)[\"']", source_code, re.DOTALL
+    ):
+        role = m.group(1).strip()
+        if role and role not in roles:
+            roles.append(role)
+    return roles
+
+
+def select_variant(repo_path: Path, framework: str) -> str:
+    """Choose a topology variant based on what was found in repo source.
+
+    Returns a variant name string used to dispatch to the appropriate
+    script-generation template.
+    """
+    source_code = read_all_py_files(repo_path)
+
+    if framework == "crewai":
+        if "allow_delegation" in source_code or "delegation" in source_code.lower():
+            return "delegation"
+        if "tool" in source_code.lower() and (
+            "@tool" in source_code or "BaseTool" in source_code
+        ):
+            return "tooled"
+        if len(find_agents(source_code)) >= 3:
+            return "reviewed"
+        return "delegation"  # default: at least exercise delegation path
+
+    if framework == "langgraph":
+        if (
+            "conditional" in source_code.lower()
+            or "add_conditional_edges" in source_code
+        ):
+            return "conditional"
+        return "branching"
+
+    if framework == "autogen":
+        if "GroupChat" in source_code:
+            return "groupchat"
+        return "twoway"
+
+    return "delegation"  # fallback
 
 
 # ── Agent / Task extraction ──────────────────────────────────────────────
@@ -259,13 +331,37 @@ def _env_preamble(vllm_url: str, api_key: str, repo_root: str) -> str:
 def generate_crewai_script(
     agents: list[dict[str, str]],
     tasks: list[dict[str, str]],
+    variant: str = "sequential",
 ) -> str:
-    """Generate a self-contained CrewAI script.
+    """Generate a self-contained CrewAI script with topology variety.
+
+    Variants:
+      - ``"sequential"``  : basic sequential crew (original behaviour)
+      - ``"delegation"``  : sequential with ``allow_delegation=True``
+      - ``"reviewed"``    : 3 agents (researcher, writer, reviewer)
+      - ``"tooled"``      : adds a simple tool to one agent
 
     CrewAI requires explicit LLM configuration via litellm.  The model
     string MUST carry an ``openai/`` prefix so litellm routes the call
     to the vLLM-compatible endpoint.
     """
+    if variant == "delegation":
+        return _generate_crewai_delegation(agents, tasks)
+    if variant == "reviewed":
+        return _generate_crewai_reviewed(agents)
+    if variant == "tooled":
+        return _generate_crewai_tooled(agents, tasks)
+    # Default / "sequential" — original behaviour
+    return _generate_crewai_sequential(agents, tasks)
+
+
+# -- CrewAI variant: sequential (original) ---------------------------------
+
+def _generate_crewai_sequential(
+    agents: list[dict[str, str]],
+    tasks: list[dict[str, str]],
+) -> str:
+    """Original sequential CrewAI script generator (unchanged)."""
     vllm_url, vllm_model, api_key, repo_root = _env_config()
 
     # The openai/ prefix is REQUIRED for litellm routing.
@@ -349,12 +445,263 @@ def generate_crewai_script(
     )
 
 
-def generate_langgraph_script(nodes: list[str]) -> str:
-    """Generate a self-contained LangGraph script.
+# -- CrewAI variant: delegation (exercises delegation.initiated events) ----
+
+def _generate_crewai_delegation(
+    agents: list[dict[str, str]],
+    tasks: list[dict[str, str]],
+) -> str:
+    """Sequential crew with ``allow_delegation=True`` on the manager agent.
+
+    Task description includes "Delegate sub-tasks as needed" to trigger
+    delegation events.
+    """
+    vllm_url, vllm_model, api_key, repo_root = _env_config()
+    model_str = f"openai/{vllm_model}"
+    preamble = _env_preamble(vllm_url, api_key, repo_root)
+
+    # Use the first extracted agent as manager, second as worker (fallback
+    # to sensible defaults).
+    mgr = agents[0] if agents else {}
+    wrk = agents[1] if len(agents) > 1 else {}
+
+    mgr_role = mgr.get("role", "Project Manager")
+    mgr_goal = mgr.get("goal", "Oversee the project and delegate effectively")
+    mgr_backstory = mgr.get("backstory", "An experienced project leader")
+
+    wrk_role = wrk.get("role", "Research Analyst")
+    wrk_goal = wrk.get("goal", "Execute delegated tasks thoroughly")
+    wrk_backstory = wrk.get("backstory", "A diligent researcher and analyst")
+
+    return (
+        preamble
+        + textwrap.dedent(f"""\
+        from crewai import Agent, Task, Crew, LLM
+
+        llm = LLM(
+            model={model_str!r},
+            base_url={vllm_url!r},
+            api_key={api_key!r},
+        )
+
+        manager = Agent(
+            role={mgr_role!r},
+            goal={mgr_goal!r},
+            backstory={mgr_backstory!r},
+            llm=llm,
+            allow_delegation=True,
+            verbose=True,
+        )
+
+        worker = Agent(
+            role={wrk_role!r},
+            goal={wrk_goal!r},
+            backstory={wrk_backstory!r},
+            llm=llm,
+            verbose=True,
+        )
+
+        task = Task(
+            description="Complete a thorough analysis. Delegate sub-tasks as needed.",
+            expected_output="A comprehensive analysis report.",
+            agent=manager,
+        )
+
+        crew = Crew(
+            agents=[manager, worker],
+            tasks=[task],
+            verbose=True,
+        )
+
+        result = crew.kickoff()
+        print("Crew completed (delegation variant):", type(result).__name__)
+        """)
+    )
+
+
+# -- CrewAI variant: reviewed (exercises trust boundary crossing) ----------
+
+def _generate_crewai_reviewed(agents: list[dict[str, str]]) -> str:
+    """3 agents: researcher, writer, reviewer.  The reviewer checks
+    outputs, exercising trust-boundary-crossing patterns.
+    """
+    vllm_url, vllm_model, api_key, repo_root = _env_config()
+    model_str = f"openai/{vllm_model}"
+    preamble = _env_preamble(vllm_url, api_key, repo_root)
+
+    # Pull roles from extracted agents when available.
+    r = agents[0] if agents else {}
+    w = agents[1] if len(agents) > 1 else {}
+    # The reviewer is always synthetic to guarantee the review step.
+
+    r_role = r.get("role", "Researcher")
+    r_goal = r.get("goal", "Research the topic thoroughly")
+    r_backstory = r.get("backstory", "An experienced researcher with a keen eye for detail")
+
+    w_role = w.get("role", "Technical Writer")
+    w_goal = w.get("goal", "Write clear and accurate reports")
+    w_backstory = w.get("backstory", "A skilled writer who turns research into readable content")
+
+    return (
+        preamble
+        + textwrap.dedent(f"""\
+        from crewai import Agent, Task, Crew, LLM
+
+        llm = LLM(
+            model={model_str!r},
+            base_url={vllm_url!r},
+            api_key={api_key!r},
+        )
+
+        researcher = Agent(
+            role={r_role!r},
+            goal={r_goal!r},
+            backstory={r_backstory!r},
+            llm=llm,
+            verbose=True,
+        )
+
+        writer = Agent(
+            role={w_role!r},
+            goal={w_goal!r},
+            backstory={w_backstory!r},
+            llm=llm,
+            verbose=True,
+        )
+
+        reviewer = Agent(
+            role="Quality Reviewer",
+            goal="Review and validate outputs for accuracy",
+            backstory="You are a careful reviewer who checks for errors and inconsistencies.",
+            llm=llm,
+            verbose=True,
+        )
+
+        task1 = Task(
+            description="Research the topic thoroughly.",
+            expected_output="Research findings.",
+            agent=researcher,
+        )
+
+        task2 = Task(
+            description="Write a report based on the research.",
+            expected_output="A written report.",
+            agent=writer,
+        )
+
+        task3 = Task(
+            description="Review the report for accuracy and completeness.",
+            expected_output="Review feedback.",
+            agent=reviewer,
+        )
+
+        crew = Crew(
+            agents=[researcher, writer, reviewer],
+            tasks=[task1, task2, task3],
+            verbose=True,
+        )
+
+        result = crew.kickoff()
+        print("Crew completed (reviewed variant):", type(result).__name__)
+        """)
+    )
+
+
+# -- CrewAI variant: tooled (exercises tool.invoked events) ----------------
+
+def _generate_crewai_tooled(
+    agents: list[dict[str, str]],
+    tasks: list[dict[str, str]],
+) -> str:
+    """Adds a simple tool (text word counter) to one agent to exercise
+    ``tool.invoked`` events.
+    """
+    vllm_url, vllm_model, api_key, repo_root = _env_config()
+    model_str = f"openai/{vllm_model}"
+    preamble = _env_preamble(vllm_url, api_key, repo_root)
+
+    a = agents[0] if agents else {}
+    a_role = a.get("role", "Analyst")
+    a_goal = a.get("goal", "Analyse text using available tools")
+    a_backstory = a.get("backstory", "A meticulous analyst who uses tools to get precise results")
+
+    return (
+        preamble
+        + textwrap.dedent(f"""\
+        from crewai import Agent, Task, Crew, LLM
+        from crewai.tools import tool
+
+        @tool("word_counter")
+        def word_counter(text: str) -> str:
+            \"\"\"Count the number of words in the provided text.\"\"\"
+            count = len(text.split())
+            return f"The text contains {{count}} words."
+
+        llm = LLM(
+            model={model_str!r},
+            base_url={vllm_url!r},
+            api_key={api_key!r},
+        )
+
+        analyst = Agent(
+            role={a_role!r},
+            goal={a_goal!r},
+            backstory={a_backstory!r},
+            llm=llm,
+            tools=[word_counter],
+            verbose=True,
+        )
+
+        task = Task(
+            description=(
+                "Analyse the following text using the word_counter tool, "
+                "then summarise your findings: "
+                "'Artificial intelligence is transforming software development "
+                "by enabling automated code review, intelligent testing, and "
+                "predictive maintenance of complex systems.'"
+            ),
+            expected_output="Word count result and a brief analysis.",
+            agent=analyst,
+        )
+
+        crew = Crew(
+            agents=[analyst],
+            tasks=[task],
+            verbose=True,
+        )
+
+        result = crew.kickoff()
+        print("Crew completed (tooled variant):", type(result).__name__)
+        """)
+    )
+
+
+def generate_langgraph_script(
+    nodes: list[str],
+    variant: str = "sequential",
+) -> str:
+    """Generate a self-contained LangGraph script with topology variety.
+
+    Variants:
+      - ``"sequential"``   : basic linear chain (original behaviour)
+      - ``"conditional"``  : linear with conditional edge (routing.decision)
+      - ``"branching"``    : fan-out / fan-in topology
 
     Uses ``ChatOpenAI`` from ``langchain_openai`` pointed at the vLLM
     endpoint.
     """
+    if variant == "conditional":
+        return _generate_langgraph_conditional(nodes)
+    if variant == "branching":
+        return _generate_langgraph_branching(nodes)
+    # Default / "sequential" — original behaviour
+    return _generate_langgraph_sequential(nodes)
+
+
+# -- LangGraph variant: sequential (original) ------------------------------
+
+def _generate_langgraph_sequential(nodes: list[str]) -> str:
+    """Original sequential LangGraph script generator (unchanged)."""
     vllm_url, vllm_model, api_key, repo_root = _env_config()
 
     if not nodes:
@@ -411,8 +758,177 @@ def generate_langgraph_script(nodes: list[str]) -> str:
     )
 
 
-def generate_autogen_script(agents: list[dict[str, str]]) -> str:
-    """Generate a self-contained AutoGen script using ``config_list``."""
+# -- LangGraph variant: conditional (exercises routing.decision events) ----
+
+def _generate_langgraph_conditional(nodes: list[str]) -> str:
+    """Linear graph with a conditional edge based on state, using
+    ``add_conditional_edges`` with a routing function.
+    """
+    vllm_url, vllm_model, api_key, repo_root = _env_config()
+    preamble = _env_preamble(vllm_url, api_key, repo_root)
+
+    # We need at least two real nodes plus the routing targets.
+    if not nodes:
+        nodes = ["analyser", "writer"]
+    nodes = nodes[:4]
+
+    # The first node will have a conditional edge that routes to either
+    # the second node or directly to END.
+    first = nodes[0]
+    second = nodes[1] if len(nodes) > 1 else "writer"
+
+    return (
+        preamble
+        + textwrap.dedent(f"""\
+        from langgraph.graph import StateGraph, START, END
+        from langchain_openai import ChatOpenAI
+        from langchain_core.messages import HumanMessage, SystemMessage
+
+        llm = ChatOpenAI(
+            model={vllm_model!r},
+            base_url={vllm_url!r},
+            api_key={api_key!r},
+        )
+
+        def {first}_fn(state: dict) -> dict:
+            result = llm.invoke([
+                SystemMessage(content="You are a {first} node. Decide if more work is needed."),
+                HumanMessage(content=f"Analyse: {{state.get('input', 'topic')}}"),
+            ])
+            state["{first}_output"] = result.content
+            # Set a flag the router will inspect.
+            state["needs_more"] = len(result.content) > 20
+            return state
+
+        def {second}_fn(state: dict) -> dict:
+            result = llm.invoke([
+                SystemMessage(content="You are a {second} node."),
+                HumanMessage(content=f"Expand on: {{state.get('{first}_output', '')}}"),
+            ])
+            state["{second}_output"] = result.content
+            return state
+
+        def route_decision(state: dict) -> str:
+            \"\"\"Route to the next node or finish based on state.\"\"\"
+            if state.get("needs_more", False):
+                return "{second}"
+            return "end"
+
+        graph = StateGraph(dict)
+        graph.add_node("{first}", {first}_fn)
+        graph.add_node("{second}", {second}_fn)
+
+        graph.add_edge(START, "{first}")
+        graph.add_conditional_edges(
+            "{first}",
+            route_decision,
+            {{"{second}": "{second}", "end": END}},
+        )
+        graph.add_edge("{second}", END)
+
+        app = graph.compile()
+        result = app.invoke({{"input": "Analyze the impact of AI on software development"}})
+        print("Graph completed (conditional variant):", list(result.keys()))
+        """)
+    )
+
+
+# -- LangGraph variant: branching (fan-out topology) -----------------------
+
+def _generate_langgraph_branching(nodes: list[str]) -> str:
+    """Graph with multiple parallel paths that merge at a collector node."""
+    vllm_url, vllm_model, api_key, repo_root = _env_config()
+    preamble = _env_preamble(vllm_url, api_key, repo_root)
+
+    # Ensure we have at least two branch nodes.
+    if not nodes or len(nodes) < 2:
+        nodes = ["branch_a", "branch_b"]
+    nodes = nodes[:4]
+
+    branch_funcs: list[str] = []
+    add_nodes_lines: list[str] = []
+    fan_out_edges: list[str] = []
+    fan_in_edges: list[str] = []
+    for node_name in nodes:
+        branch_funcs.append(textwrap.dedent(f"""\
+            def {node_name}_fn(state: dict) -> dict:
+                result = llm.invoke([
+                    SystemMessage(content="You are the {node_name} branch of a parallel pipeline."),
+                    HumanMessage(content=f"Process: {{state.get('input', 'topic')}}"),
+                ])
+                state["{node_name}_output"] = result.content
+                return state
+        """))
+        add_nodes_lines.append(f'graph.add_node("{node_name}", {node_name}_fn)')
+        fan_out_edges.append(f'graph.add_edge(START, "{node_name}")')
+        fan_in_edges.append(f'graph.add_edge("{node_name}", "collector")')
+
+    nl = chr(10)
+
+    return (
+        preamble
+        + textwrap.dedent(f"""\
+        from langgraph.graph import StateGraph, START, END
+        from langchain_openai import ChatOpenAI
+        from langchain_core.messages import HumanMessage, SystemMessage
+
+        llm = ChatOpenAI(
+            model={vllm_model!r},
+            base_url={vllm_url!r},
+            api_key={api_key!r},
+        )
+
+        {nl.join(branch_funcs)}
+
+        def collector_fn(state: dict) -> dict:
+            \"\"\"Merge outputs from all branches.\"\"\"
+            branch_keys = [k for k in state if k.endswith("_output")]
+            combined = "; ".join(str(state[k])[:200] for k in branch_keys)
+            result = llm.invoke([
+                SystemMessage(content="Summarise the following branch outputs."),
+                HumanMessage(content=combined),
+            ])
+            state["final_output"] = result.content
+            return state
+
+        graph = StateGraph(dict)
+        {nl.join("        " + n for n in add_nodes_lines)}
+        graph.add_node("collector", collector_fn)
+
+        {nl.join("        " + e for e in fan_out_edges)}
+        {nl.join("        " + e for e in fan_in_edges)}
+        graph.add_edge("collector", END)
+
+        app = graph.compile()
+        result = app.invoke({{"input": "Analyze the impact of AI on software development"}})
+        print("Graph completed (branching variant):", list(result.keys()))
+        """)
+    )
+
+
+def generate_autogen_script(
+    agents: list[dict[str, str]],
+    variant: str = "sequential",
+) -> str:
+    """Generate a self-contained AutoGen script with topology variety.
+
+    Variants:
+      - ``"sequential"`` : basic two-agent chat (original behaviour)
+      - ``"twoway"``     : two-agent chat with a simple tool
+      - ``"groupchat"``  : GroupChat with 3+ agents and GroupChatManager
+    """
+    if variant == "groupchat":
+        return _generate_autogen_groupchat(agents)
+    if variant == "twoway":
+        return _generate_autogen_twoway(agents)
+    # Default / "sequential" — original behaviour
+    return _generate_autogen_sequential(agents)
+
+
+# -- AutoGen variant: sequential (original) --------------------------------
+
+def _generate_autogen_sequential(agents: list[dict[str, str]]) -> str:
+    """Original two-agent AutoGen script generator (unchanged)."""
     vllm_url, vllm_model, api_key, repo_root = _env_config()
 
     if not agents or len(agents) < 2:
@@ -465,6 +981,136 @@ def generate_autogen_script(agents: list[dict[str, str]]) -> str:
             message="Analyze the key trends in AI agent frameworks and provide a brief summary.",
         )
         print("Chat completed")
+        """)
+    )
+
+
+# -- AutoGen variant: twoway (basic with tool use) -------------------------
+
+def _generate_autogen_twoway(agents: list[dict[str, str]]) -> str:
+    """Two-agent chat with a simple registered tool to exercise
+    ``tool.invoked`` events.
+    """
+    vllm_url, vllm_model, api_key, repo_root = _env_config()
+    preamble = _env_preamble(vllm_url, api_key, repo_root)
+
+    a1 = agents[0] if agents else {"name": "assistant"}
+    a2 = agents[1] if len(agents) > 1 else {"name": "user_proxy"}
+
+    return (
+        preamble
+        + textwrap.dedent(f"""\
+        import autogen
+
+        config_list = [{{
+            "model": {vllm_model!r},
+            "base_url": {vllm_url!r},
+            "api_key": {api_key!r},
+        }}]
+
+        def word_count(text: str) -> str:
+            \"\"\"Count words in the given text.\"\"\"
+            return f"Word count: {{len(text.split())}}"
+
+        assistant = autogen.AssistantAgent(
+            name={a1.get("name", "assistant")!r},
+            system_message="You are a helpful assistant. Use the word_count tool when asked to analyse text.",
+            llm_config={{"config_list": config_list}},
+        )
+
+        user_proxy = autogen.UserProxyAgent(
+            name={a2.get("name", "user_proxy")!r},
+            human_input_mode="NEVER",
+            max_consecutive_auto_reply=3,
+            code_execution_config=False,
+        )
+
+        # Register the tool with both agents.
+        assistant.register_for_llm(name="word_count", description="Count words in text")(word_count)
+        user_proxy.register_for_execution(name="word_count")(word_count)
+
+        user_proxy.initiate_chat(
+            assistant,
+            message="Use the word_count tool to count the words in: 'AI agents are transforming how we build software systems.'",
+        )
+        print("Chat completed (twoway variant)")
+        """)
+    )
+
+
+# -- AutoGen variant: groupchat (exercises dynamic speaker selection) ------
+
+def _generate_autogen_groupchat(agents: list[dict[str, str]]) -> str:
+    """GroupChat with 3+ agents and a GroupChatManager to exercise
+    dynamic speaker selection events.
+    """
+    vllm_url, vllm_model, api_key, repo_root = _env_config()
+    preamble = _env_preamble(vllm_url, api_key, repo_root)
+
+    # Ensure at least 3 agents.
+    defaults = [
+        {"name": "planner", "system_message": "You are a strategic planner."},
+        {"name": "coder", "system_message": "You are a software developer."},
+        {"name": "reviewer", "system_message": "You review code and plans for quality."},
+    ]
+    effective_agents = list(agents) if agents else []
+    while len(effective_agents) < 3:
+        effective_agents.append(defaults[len(effective_agents) % len(defaults)])
+
+    # Cap at 5 agents.
+    effective_agents = effective_agents[:5]
+
+    agent_defs: list[str] = []
+    agent_vars: list[str] = []
+    for i, a in enumerate(effective_agents):
+        var = f"agent_{i}"
+        agent_defs.append(textwrap.dedent(f"""\
+        {var} = autogen.AssistantAgent(
+            name={a.get("name", f"agent_{i}")!r},
+            system_message={a.get("system_message", "You are a helpful assistant.")!r},
+            llm_config={{"config_list": config_list}},
+        )"""))
+        agent_vars.append(var)
+
+    nl = chr(10)
+    agents_list = ", ".join(agent_vars)
+
+    return (
+        preamble
+        + textwrap.dedent(f"""\
+        import autogen
+
+        config_list = [{{
+            "model": {vllm_model!r},
+            "base_url": {vllm_url!r},
+            "api_key": {api_key!r},
+        }}]
+
+        {nl.join(agent_defs)}
+
+        user_proxy = autogen.UserProxyAgent(
+            name="user_proxy",
+            human_input_mode="NEVER",
+            max_consecutive_auto_reply=0,
+            code_execution_config=False,
+        )
+
+        group_chat = autogen.GroupChat(
+            agents=[user_proxy, {agents_list}],
+            messages=[],
+            max_round=6,
+        )
+
+        manager = autogen.GroupChatManager(
+            groupchat=group_chat,
+            llm_config={{"config_list": config_list}},
+        )
+
+        user_proxy.initiate_chat(
+            manager,
+            message="Design a simple REST API for a task management application. Plan it, write the code, then review it.",
+        )
+        print("GroupChat completed (groupchat variant)")
         """)
     )
 
@@ -549,6 +1195,13 @@ def main() -> int:
         file=sys.stderr,
     )
 
+    # -- Select topology variant -------------------------------------------
+    variant = select_variant(repo_path, best_framework)
+    print(
+        f"[synthetic] Selected variant: {variant} (for {best_framework})",
+        file=sys.stderr,
+    )
+
     # -- Generate the appropriate script -----------------------------------
     script = ""
 
@@ -573,7 +1226,7 @@ def main() -> int:
                         "backstory": "A skilled technical writer",
                     },
                 ]
-            script = generate_crewai_script(agents, tasks)
+            script = generate_crewai_script(agents, tasks, variant=variant)
 
         elif best_framework == "langgraph":
             nodes = extract_langgraph_nodes(repo_path)
@@ -581,7 +1234,7 @@ def main() -> int:
                 f"[synthetic] Extracted {len(nodes)} graph nodes: {nodes}",
                 file=sys.stderr,
             )
-            script = generate_langgraph_script(nodes)
+            script = generate_langgraph_script(nodes, variant=variant)
 
         elif best_framework == "autogen":
             agents = extract_autogen_agents(repo_path)
@@ -589,7 +1242,7 @@ def main() -> int:
                 f"[synthetic] Extracted {len(agents)} agents",
                 file=sys.stderr,
             )
-            script = generate_autogen_script(agents)
+            script = generate_autogen_script(agents, variant=variant)
 
         elif best_framework == "openai":
             script = generate_openai_script()

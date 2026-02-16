@@ -37,7 +37,8 @@ if [ -z "$VLLM_HOST" ]; then
     exit 1
 fi
 
-EVENTS_FILE="$OUTPUT_DIR/stratum_events.jsonl"
+export STRATUM_RUN_NUMBER="${RUN_NUMBER:-1}"
+EVENTS_FILE="$OUTPUT_DIR/events_run_${STRATUM_RUN_NUMBER}.jsonl"
 
 mkdir -p "$OUTPUT_DIR"
 
@@ -654,11 +655,11 @@ log "  Final status: $FINAL_STATUS (tier=$TIER, exit_code=$FINAL_EXIT_CODE)"
 
 write_output "$FINAL_STATUS" "$FINAL_EXIT_CODE" "${ENTRY:-}" "$TIER"
 
-# Build behavioral graph from events (if any)
-if [ -f "$EVENTS_FILE" ] && [ -s "$EVENTS_FILE" ] && [ -f /app/graph_builder.py ]; then
-    log "  Building behavioral graph from $(wc -l < "$EVENTS_FILE" | tr -d ' ') events ..."
-    python3 /app/graph_builder.py "$EVENTS_FILE" "$OUTPUT_DIR/graph.json" 2>/dev/null || true
-fi
+# NOTE: graph_builder.py removed -- build_behavioral_records.py handles this post-hoc now.
+# if [ -f "$EVENTS_FILE" ] && [ -s "$EVENTS_FILE" ] && [ -f /app/graph_builder.py ]; then
+#     log "  Building behavioral graph from $(wc -l < "$EVENTS_FILE" | tr -d ' ') events ..."
+#     python3 /app/graph_builder.py "$EVENTS_FILE" "$OUTPUT_DIR/graph.json" 2>/dev/null || true
+# fi
 
 EVENT_COUNT=0
 if [ -f "$EVENTS_FILE" ]; then
@@ -669,6 +670,54 @@ fi
 END_EPOCH=$(date +%s)
 DURATION=$(( END_EPOCH - START_EPOCH ))
 
+# Write per-run metadata
+REPO_NAME=$(echo "$REPO_URL" | sed 's|.*/||;s|\.git$||')
+REPO_FULL_NAME=$(echo "$REPO_URL" | sed 's|https://github.com/||;s|\.git$||')
+FRAMEWORK_DETECTED="unknown"
+if [ -f /tmp/repo/requirements.txt ]; then
+    grep -qi crewai /tmp/repo/requirements.txt && FRAMEWORK_DETECTED="crewai"
+    grep -qi langgraph /tmp/repo/requirements.txt && FRAMEWORK_DETECTED="langgraph"
+    grep -qi autogen /tmp/repo/requirements.txt && FRAMEWORK_DETECTED="autogen"
+fi
+# Also check pyproject.toml dependencies if requirements.txt didn't yield a match
+if [ "$FRAMEWORK_DETECTED" = "unknown" ] && [ -f /tmp/repo/pyproject.toml ]; then
+    grep -qi crewai /tmp/repo/pyproject.toml && FRAMEWORK_DETECTED="crewai"
+    grep -qi langgraph /tmp/repo/pyproject.toml && FRAMEWORK_DETECTED="langgraph"
+    grep -qi autogen /tmp/repo/pyproject.toml && FRAMEWORK_DETECTED="autogen"
+fi
+# Check Python imports across repo source files as a final fallback
+if [ "$FRAMEWORK_DETECTED" = "unknown" ]; then
+    if grep -rqi 'import crewai\|from crewai' /tmp/repo --include='*.py' 2>/dev/null; then
+        FRAMEWORK_DETECTED="crewai"
+    elif grep -rqi 'import langgraph\|from langgraph' /tmp/repo --include='*.py' 2>/dev/null; then
+        FRAMEWORK_DETECTED="langgraph"
+    elif grep -rqi 'import autogen\|from autogen' /tmp/repo --include='*.py' 2>/dev/null; then
+        FRAMEWORK_DETECTED="autogen"
+    fi
+fi
+
+python3 -c "
+import json, sys, os
+from datetime import datetime, timezone
+d = {
+    'repo_url': sys.argv[1],
+    'repo_full_name': sys.argv[2],
+    'run_number': int(os.environ.get('STRATUM_RUN_NUMBER', '1')),
+    'run_id': os.environ.get('STRATUM_RUN_ID', ''),
+    'exit_code': int(sys.argv[3]),
+    'status': sys.argv[4],
+    'tier': int(sys.argv[5]),
+    'entry_point': sys.argv[6],
+    'framework_detected': sys.argv[7],
+    'events_file': 'events_run_' + os.environ.get('STRATUM_RUN_NUMBER', '1') + '.jsonl',
+    'event_count': int(sys.argv[8]),
+    'timestamp': datetime.now(timezone.utc).isoformat(),
+    'timeout_seconds': int(sys.argv[9]),
+    'model_name': os.environ.get('STRATUM_VLLM_MODEL', ''),
+}
+json.dump(d, open(os.path.join(sys.argv[10], f'run_metadata_{d[\"run_number\"]}.json'), 'w'), indent=2)
+" "$REPO_URL" "$REPO_FULL_NAME" "$FINAL_EXIT_CODE" "$FINAL_STATUS" "$TIER" "${ENTRY:-}" "$FRAMEWORK_DETECTED" "$EVENT_COUNT" "$TIMEOUT" "$OUTPUT_DIR"
+
 log "============================================"
 log "  Repo:        $REPO_URL"
 log "  Status:      $FINAL_STATUS"
@@ -677,6 +726,8 @@ log "  Entry:       ${ENTRY:-<none>}"
 log "  Events:      $EVENT_COUNT"
 log "  Duration:    ${DURATION}s"
 log "  Run ID:      $RUN_ID"
+log "  Framework:   $FRAMEWORK_DETECTED"
+log "  Run Number:  $STRATUM_RUN_NUMBER"
 log "============================================"
 
 exit 0

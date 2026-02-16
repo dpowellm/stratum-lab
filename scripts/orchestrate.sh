@@ -1,20 +1,27 @@
 #!/usr/bin/env bash
 # ============================================================================
-# orchestrate.sh — Run N concurrent stratum-lab Docker containers
+# orchestrate.sh — Two-phase orchestration for stratum-lab Docker containers
 #
 # Usage:
 #   orchestrate.sh <repo_list_file> <output_dir> \
 #       [--concurrency N] [--timeout S] [--vllm-url URL] [--vllm-host HOST]
 #       [--image NAME] [--vllm-model MODEL] [--script-dir DIR]
+#       [--phase2-runs N] [--pilot-size N] [--skip-pilot]
 #
 # repo_list_file: one GitHub URL per line (or TSV with score\tURL)
 # output_dir:     base directory for per-repo output subdirectories
 #
+# Phases:
+#   Pilot:  Run PILOT_SIZE repos through Phase 1 to validate patcher/vLLM
+#   Phase 1 (Discovery): All repos x 1 run each
+#   Phase 2 (Depth):     Successful repos x PHASE2_RUNS more runs
+#   Phase 3 (Collection): Build behavioral records from all runs
+#
 # Features:
 #   - SHA256 hash directory names (first 12 chars) — collision-safe at 1000+ repos
-#   - Resume support: skips repos with existing status.json
+#   - Resume support: skips repos/runs with existing run_metadata_N.json
 #   - scan_log.txt: one-line-per-repo append log with timestamp, hash, status, URL
-#   - Progress tracking with running totals: Success/Partial/Tier2/Failed + Rate + ETA
+#   - Progress tracking with phase context and running totals
 #   - Passes through STRATUM_VLLM_MODEL to containers
 #   - STRATUM_RUN_ID / STRATUM_REPO_ID set per container
 #   - Writes scan_summary.csv on completion
@@ -25,6 +32,8 @@
 #   - Bind-mount scripts instead of COPY
 #   - Docker system prune every 100 repos
 #   - VLLM_TIMEOUT env var for containers
+#   - Pilot quality gate before full scan
+#   - Two-phase orchestration with depth runs for successful repos
 #
 # No set -e — we handle errors explicitly.
 # ============================================================================
@@ -39,17 +48,27 @@ VLLM_MODEL="${STRATUM_VLLM_MODEL:-}"
 VLLM_TIMEOUT=60
 SCRIPT_DIR=""
 
+# Two-phase defaults
+PHASE1_RUNS=1
+PHASE2_RUNS=4
+PHASE2_TOTAL=$((PHASE1_RUNS + PHASE2_RUNS))  # 5 total runs per repo
+PILOT_SIZE=30
+SKIP_PILOT=false
+
 # ── Parse arguments ──────────────────────────────────────────────────────
 POSITIONAL=()
 while [ $# -gt 0 ]; do
     case "$1" in
-        --concurrency) CONCURRENCY="$2"; shift 2 ;;
-        --timeout)     TIMEOUT="$2"; shift 2 ;;
-        --vllm-url)    VLLM_URL="$2"; shift 2 ;;
-        --vllm-host)   VLLM_HOST_ADDR="$2"; shift 2 ;;
-        --vllm-model)  VLLM_MODEL="$2"; shift 2 ;;
-        --image)       IMAGE="$2"; shift 2 ;;
-        --script-dir)  SCRIPT_DIR="$2"; shift 2 ;;
+        --concurrency)  CONCURRENCY="$2"; shift 2 ;;
+        --timeout)      TIMEOUT="$2"; shift 2 ;;
+        --vllm-url)     VLLM_URL="$2"; shift 2 ;;
+        --vllm-host)    VLLM_HOST_ADDR="$2"; shift 2 ;;
+        --vllm-model)   VLLM_MODEL="$2"; shift 2 ;;
+        --image)        IMAGE="$2"; shift 2 ;;
+        --script-dir)   SCRIPT_DIR="$2"; shift 2 ;;
+        --phase2-runs)  PHASE2_RUNS="$2"; PHASE2_TOTAL=$((PHASE1_RUNS + PHASE2_RUNS)); shift 2 ;;
+        --pilot-size)   PILOT_SIZE="$2"; shift 2 ;;
+        --skip-pilot)   SKIP_PILOT=true; shift ;;
         --help|-h)
             echo "Usage: orchestrate.sh <repo_list> <output_dir> [options]"
             echo ""
@@ -61,6 +80,9 @@ while [ $# -gt 0 ]; do
             echo "  --vllm-model MODEL  Model name for vLLM"
             echo "  --image NAME        Docker image name (default: stratum-lab-base)"
             echo "  --script-dir DIR    Directory containing run_repo.sh and synthetic_harness.py"
+            echo "  --phase2-runs N     Number of additional depth runs per successful repo (default: 4)"
+            echo "  --pilot-size N      Number of repos for pilot quality gate (default: 30)"
+            echo "  --skip-pilot        Skip the pilot quality gate"
             echo "  --help, -h          Show this help"
             exit 0
             ;;
@@ -84,6 +106,8 @@ if [ ! -f "$REPO_LIST" ]; then
 fi
 
 mkdir -p "$OUTPUT_DIR"
+RESULTS_DIR="$OUTPUT_DIR/results"
+mkdir -p "$RESULTS_DIR"
 
 # ── Resolve SCRIPT_DIR ───────────────────────────────────────────────────
 # If --script-dir was not provided, default to the directory containing this script
@@ -159,10 +183,13 @@ wait_for_vllm() {
 TOTAL=0; COMPLETED=0; SKIPPED=0; LAUNCHED=0; SHUTDOWN=false
 COUNT_SUCCESS=0; COUNT_PARTIAL=0; COUNT_TIER2=0; COUNT_FAILED=0
 SCAN_START_TIME=$(date +%s)
+CURRENT_PHASE="Init"
+PHASE_TOTAL=0
 
 declare -A BG_PIDS         # bg_pid -> repo_url
 declare -A BG_REPO_DIRS    # bg_pid -> output_dir_name
 declare -A BG_START_TIMES  # bg_pid -> epoch seconds
+declare -A BG_RUN_NUMBERS  # bg_pid -> run number
 
 # Generate a run UUID for this orchestration run
 RUN_UUID=$(python3 -c "import uuid; print(uuid.uuid4())" 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || echo "run-$(date +%s)")
@@ -183,7 +210,10 @@ echo "[orchestrate] Scripts: $SCRIPT_DIR"
 echo "[orchestrate] run_repo.sh: $RUN_REPO_SH"
 [ -n "$SYNTHETIC_HARNESS_PY" ] && echo "[orchestrate] synthetic_harness.py: $SYNTHETIC_HARNESS_PY"
 echo "[orchestrate] Output: $OUTPUT_DIR"
+echo "[orchestrate] Results: $RESULTS_DIR"
 echo "[orchestrate] Run ID: $RUN_UUID"
+echo "[orchestrate] Phase2 runs: $PHASE2_RUNS (total runs per successful repo: $PHASE2_TOTAL)"
+echo "[orchestrate] Pilot size: $PILOT_SIZE (skip_pilot=$SKIP_PILOT)"
 echo ""
 
 # ── SIGINT / SIGTERM handler ─────────────────────────────────────────────
@@ -221,7 +251,10 @@ print_progress() {
     # Calculate ETA
     local eta_str="--"
     if [ "$COMPLETED" -gt 0 ] && [ "$elapsed" -gt 0 ]; then
-        local remaining=$((TOTAL - COMPLETED - SKIPPED))
+        local remaining=$((PHASE_TOTAL - COMPLETED - SKIPPED))
+        if [ "$remaining" -lt 0 ]; then
+            remaining=0
+        fi
         local per_repo
         per_repo=$(python3 -c "print(round($elapsed / $COMPLETED, 1))" 2>/dev/null || echo "0")
         local eta_seconds
@@ -231,8 +264,8 @@ print_progress() {
         eta_str="${eta_hours}h"
     fi
 
-    printf "[%d/%d] Success: %d | Partial: %d | Tier2: %d | Failed: %d | Rate: %d%% | ETA: %s\n" \
-        "$COMPLETED" "$TOTAL" "$COUNT_SUCCESS" "$COUNT_PARTIAL" "$COUNT_TIER2" "$COUNT_FAILED" "$rate" "$eta_str"
+    printf "[%s: %d/%d] Success: %d | Partial: %d | Tier2: %d | Failed: %d | Rate: %d%% | ETA: %s\n" \
+        "$CURRENT_PHASE" "$COMPLETED" "$PHASE_TOTAL" "$COUNT_SUCCESS" "$COUNT_PARTIAL" "$COUNT_TIER2" "$COUNT_FAILED" "$rate" "$eta_str"
 }
 
 print_status_summary() {
@@ -249,7 +282,7 @@ write_summary() {
     local csv="$OUTPUT_DIR/scan_summary.csv"
     echo "repo,status,tier,exit_code,entry_point,event_count,duration_seconds" > "$csv"
 
-    for dir in "$OUTPUT_DIR"/*/; do
+    for dir in "$RESULTS_DIR"/*/; do
         [ -d "$dir" ] || continue
         local sf="$dir/status.json"
         if [ -f "$sf" ]; then
@@ -309,6 +342,7 @@ collect_finished() {
 
             local repo_url="${BG_PIDS[$pid]}"
             local repo_dir="${BG_REPO_DIRS[$pid]}"
+            local run_number="${BG_RUN_NUMBERS[$pid]}"
             local start_time="${BG_START_TIMES[$pid]}"
             local end_time
             end_time=$(date +%s)
@@ -319,21 +353,21 @@ collect_finished() {
             # Determine status and tier from status.json or exit code
             local status="UNKNOWN"
             local tier="1"
-            if [ -f "$OUTPUT_DIR/$repo_dir/status.json" ]; then
+            if [ -f "$RESULTS_DIR/$repo_dir/status.json" ]; then
                 status=$(python3 -c "
 import json, sys
 try:
     print(json.load(open(sys.argv[1])).get('status','UNKNOWN'))
 except Exception:
     print('ERROR')
-" "$OUTPUT_DIR/$repo_dir/status.json" 2>/dev/null)
+" "$RESULTS_DIR/$repo_dir/status.json" 2>/dev/null)
                 tier=$(python3 -c "
 import json, sys
 try:
     print(json.load(open(sys.argv[1])).get('tier',1))
 except Exception:
     print('1')
-" "$OUTPUT_DIR/$repo_dir/status.json" 2>/dev/null)
+" "$RESULTS_DIR/$repo_dir/status.json" 2>/dev/null)
             elif [ "$exit_code" -ne 0 ]; then
                 status="ERROR"
             fi
@@ -341,17 +375,18 @@ except Exception:
             # Update running totals
             classify_status "$status" "$tier"
 
-            # Progress line with running totals
+            # Progress line with phase context
             print_progress
 
             # Append to scan_log.txt
             local timestamp
             timestamp=$(date -u +"%Y-%m-%dT%H:%M:%S")
-            echo "$timestamp $repo_dir $status $repo_url" >> "$OUTPUT_DIR/scan_log.txt"
+            echo "$timestamp $repo_dir run=$run_number $status $repo_url" >> "$OUTPUT_DIR/scan_log.txt"
 
             unset "BG_PIDS[$pid]"
             unset "BG_REPO_DIRS[$pid]"
             unset "BG_START_TIMES[$pid]"
+            unset "BG_RUN_NUMBERS[$pid]"
         fi
     done
 }
@@ -367,46 +402,28 @@ active_jobs() {
     echo "$count"
 }
 
-# ── Main loop ────────────────────────────────────────────────────────────
-while IFS= read -r line; do
-    if [ "$SHUTDOWN" = true ]; then
-        break
-    fi
-
-    line=$(echo "$line" | xargs 2>/dev/null || true)
-    [ -z "$line" ] && continue
-    [[ "$line" == \#* ]] && continue
-
-    # Support TSV format: score\tURL — take last field
-    repo_url=$(echo "$line" | awk '{print $NF}')
-    repo_dir=$(repo_hash "$repo_url")
-
-    # Resume: skip if already scanned
-    if [ -f "$OUTPUT_DIR/$repo_dir/status.json" ]; then
-        SKIPPED=$((SKIPPED + 1))
-        continue
-    fi
-
-    # Wait until we have a free slot
-    while [ "$(active_jobs)" -ge "$CONCURRENCY" ]; do
+# ── Wait for all background jobs to finish ───────────────────────────────
+drain_jobs() {
+    while [ "$(active_jobs)" -gt 0 ]; do
         collect_finished
-        sleep 1
+        sleep 2
     done
-
-    # Collect any that finished while reading the list
     collect_finished
+}
 
-    # vLLM health check before launching container
-    wait_for_vllm
+# ── Launch a container for a single repo+run ─────────────────────────────
+launch_container() {
+    local repo_url="$1"
+    local repo_dir="$2"
+    local run_number="$3"
 
-    # Launch container in background
-    mkdir -p "$OUTPUT_DIR/$repo_dir"
+    mkdir -p "$RESULTS_DIR/$repo_dir"
     LAUNCHED=$((LAUNCHED + 1))
 
     # Build volume mount args
-    MOUNT_ARGS=(
+    local MOUNT_ARGS=(
         -v "$RUN_REPO_SH:/app/run_repo.sh:ro"
-        -v "$OUTPUT_DIR/$repo_dir:/app/output"
+        -v "$RESULTS_DIR/$repo_dir:/app/output"
     )
     if [ -n "$SYNTHETIC_HARNESS_PY" ]; then
         MOUNT_ARGS+=(-v "$SYNTHETIC_HARNESS_PY:/app/synthetic_harness.py:ro")
@@ -425,32 +442,259 @@ while IFS= read -r line; do
             -e "STRATUM_CAPTURE_PROMPTS=1" \
             -e "VLLM_HOST=$VLLM_HOST" \
             -e "VLLM_TIMEOUT=$VLLM_TIMEOUT" \
+            -e "RUN_NUMBER=$run_number" \
             "$IMAGE" \
             bash /app/run_repo.sh "$repo_url" "$VLLM_HOST" "/app/output" "$TIMEOUT" \
             >/dev/null 2>&1 || true
     ) &
-    bg_pid=$!
+    local bg_pid=$!
 
     BG_PIDS[$bg_pid]="$repo_url"
     BG_REPO_DIRS[$bg_pid]="$repo_dir"
     BG_START_TIMES[$bg_pid]=$(date +%s)
+    BG_RUN_NUMBERS[$bg_pid]="$run_number"
 
     # Docker system prune every 100 repos to reclaim disk space
     if [ $((LAUNCHED % 100)) -eq 0 ]; then
         docker system prune -f > /dev/null 2>&1
     fi
+}
 
-done < "$REPO_LIST"
+# ── Run a list of repos through Phase 1 (1 run each) ────────────────────
+run_phase1_for_list() {
+    local repo_file="$1"
 
-# Wait for all remaining containers
-while [ "$(active_jobs)" -gt 0 ]; do
-    collect_finished
-    sleep 2
-done
-collect_finished
+    while IFS= read -r line; do
+        if [ "$SHUTDOWN" = true ]; then
+            break
+        fi
+
+        line=$(echo "$line" | xargs 2>/dev/null || true)
+        [ -z "$line" ] && continue
+        [[ "$line" == \#* ]] && continue
+
+        # Support TSV format: score\tURL — take last field
+        local repo_url
+        repo_url=$(echo "$line" | awk '{print $NF}')
+        local repo_dir
+        repo_dir=$(repo_hash "$repo_url")
+
+        # Resume: skip if run 1 already completed
+        if [ -f "$RESULTS_DIR/$repo_dir/run_metadata_1.json" ]; then
+            SKIPPED=$((SKIPPED + 1))
+            continue
+        fi
+
+        # Wait until we have a free slot
+        while [ "$(active_jobs)" -ge "$CONCURRENCY" ]; do
+            collect_finished
+            sleep 1
+        done
+
+        # Collect any that finished while reading the list
+        collect_finished
+
+        # vLLM health check before launching container
+        wait_for_vllm
+
+        # Launch container with run_number=1
+        launch_container "$repo_url" "$repo_dir" 1
+    done < "$repo_file"
+
+    # Wait for all remaining containers
+    drain_jobs
+}
+
+# ============================================================================
+# PILOT QUALITY GATE
+# ============================================================================
+if [ "$SKIP_PILOT" = false ] && [ "$TOTAL" -gt "$PILOT_SIZE" ]; then
+    echo "=== PILOT: $PILOT_SIZE repos ==="
+    head -"$PILOT_SIZE" "$REPO_LIST" > "$OUTPUT_DIR/pilot_repos.txt"
+
+    # Reset counters for pilot
+    COMPLETED=0; SKIPPED=0
+    COUNT_SUCCESS=0; COUNT_PARTIAL=0; COUNT_TIER2=0; COUNT_FAILED=0
+    CURRENT_PHASE="Pilot"
+    PHASE_TOTAL=$PILOT_SIZE
+
+    run_phase1_for_list "$OUTPUT_DIR/pilot_repos.txt"
+
+    echo ""
+    echo "[orchestrate] Pilot complete: $COMPLETED completed, $SKIPPED skipped"
+    print_status_summary
+
+    # Check pilot quality
+    if [ -f "$SCRIPT_DIR/check_pilot_quality.py" ]; then
+        echo ""
+        echo "[orchestrate] Running pilot quality check..."
+        python3 "$SCRIPT_DIR/check_pilot_quality.py" \
+            --results-dir "$RESULTS_DIR" \
+            --instr-threshold 0.20 \
+            --model-threshold 0.15
+        if [ $? -ne 0 ]; then
+            echo "PILOT FAILED -- fix patcher/vLLM before running full scan"
+            exit 1
+        fi
+        echo "PILOT PASSED -- proceeding to full scan"
+    else
+        echo "[orchestrate] Warning: check_pilot_quality.py not found in $SCRIPT_DIR, skipping quality gate"
+    fi
+    echo ""
+elif [ "$SKIP_PILOT" = true ]; then
+    echo "[orchestrate] Pilot skipped (--skip-pilot)"
+    echo ""
+else
+    echo "[orchestrate] Pilot skipped (total repos $TOTAL <= pilot size $PILOT_SIZE)"
+    echo ""
+fi
+
+# ============================================================================
+# PHASE 1: DISCOVERY (all repos x 1 run each)
+# ============================================================================
+echo "=== PHASE 1: DISCOVERY ($TOTAL repos x $PHASE1_RUNS run) ==="
+
+# Reset counters for Phase 1 (pilot repos with existing metadata will be skipped via resume)
+COMPLETED=0; SKIPPED=0; LAUNCHED=0
+COUNT_SUCCESS=0; COUNT_PARTIAL=0; COUNT_TIER2=0; COUNT_FAILED=0
+CURRENT_PHASE="Phase1"
+PHASE_TOTAL=$TOTAL
+
+run_phase1_for_list "$REPO_LIST"
 
 echo ""
-echo "[orchestrate] Done: $COMPLETED completed, $SKIPPED skipped, $TOTAL total"
+echo "=== PHASE 1 COMPLETE ==="
+echo "[orchestrate] Phase 1: $COMPLETED completed, $SKIPPED skipped out of $TOTAL total"
+print_status_summary
+
+# Identify successful repos
+find "$RESULTS_DIR" -name "status.json" -exec grep -l '"status"' {} \; 2>/dev/null | while read -r sf; do
+    local_status=$(python3 -c "
+import json, sys
+try:
+    s = json.load(open(sys.argv[1])).get('status','')
+    if s in ('SUCCESS','PARTIAL_SUCCESS','TIER2_SUCCESS','PARTIAL'):
+        print('OK')
+except Exception:
+    pass
+" "$sf" 2>/dev/null)
+    if [ "$local_status" = "OK" ]; then
+        dirname "$sf" | xargs basename
+    fi
+done > "$OUTPUT_DIR/successful_hashes.txt" 2>/dev/null
+
+# Fallback: also check status.txt files for backwards compatibility
+if [ -f "$OUTPUT_DIR/successful_hashes.txt" ]; then
+    find "$RESULTS_DIR" -name "status.txt" 2>/dev/null | while read -r st; do
+        if grep -q "SUCCESS\|PARTIAL_SUCCESS\|TIER2_SUCCESS" "$st" 2>/dev/null; then
+            dirname "$st" | xargs basename
+        fi
+    done >> "$OUTPUT_DIR/successful_hashes.txt" 2>/dev/null
+    # Deduplicate
+    sort -u "$OUTPUT_DIR/successful_hashes.txt" -o "$OUTPUT_DIR/successful_hashes.txt"
+fi
+
+SUCCESSFUL=0
+if [ -f "$OUTPUT_DIR/successful_hashes.txt" ]; then
+    SUCCESSFUL=$(wc -l < "$OUTPUT_DIR/successful_hashes.txt" | tr -d ' ')
+fi
+echo ""
+echo "[orchestrate] Successful repos for Phase 2: $SUCCESSFUL"
+
+# ============================================================================
+# PHASE 2: DEPTH (successful repos x PHASE2_RUNS more runs)
+# ============================================================================
+if [ "$SUCCESSFUL" -gt 0 ] && [ "$PHASE2_RUNS" -gt 0 ]; then
+    echo ""
+    echo "=== PHASE 2: DEPTH ($SUCCESSFUL repos x $PHASE2_RUNS more runs) ==="
+
+    # Reset counters for Phase 2
+    COMPLETED=0; SKIPPED=0; LAUNCHED=0
+    COUNT_SUCCESS=0; COUNT_PARTIAL=0; COUNT_TIER2=0; COUNT_FAILED=0
+    CURRENT_PHASE="Phase2"
+    PHASE_TOTAL=$((SUCCESSFUL * PHASE2_RUNS))
+
+    while IFS= read -r hash; do
+        if [ "$SHUTDOWN" = true ]; then
+            break
+        fi
+
+        [ -z "$hash" ] && continue
+
+        # Read repo URL from Phase 1 metadata
+        local_repo_url=""
+        if [ -f "$RESULTS_DIR/$hash/run_metadata_1.json" ]; then
+            local_repo_url=$(python3 -c "import json; print(json.load(open('$RESULTS_DIR/$hash/run_metadata_1.json'))['repo_url'])" 2>/dev/null)
+        fi
+        if [ -z "$local_repo_url" ]; then
+            # Fallback: try status.json
+            if [ -f "$RESULTS_DIR/$hash/status.json" ]; then
+                local_repo_url=$(python3 -c "import json; print(json.load(open('$RESULTS_DIR/$hash/status.json')).get('repo',''))" 2>/dev/null)
+            fi
+        fi
+        if [ -z "$local_repo_url" ]; then
+            echo "[orchestrate] Warning: cannot determine repo URL for hash $hash, skipping"
+            continue
+        fi
+
+        for run in $(seq 2 "$PHASE2_TOTAL"); do
+            if [ "$SHUTDOWN" = true ]; then
+                break
+            fi
+
+            # Resume: skip if this run already completed
+            if [ -f "$RESULTS_DIR/$hash/run_metadata_${run}.json" ]; then
+                SKIPPED=$((SKIPPED + 1))
+                continue
+            fi
+
+            # Wait until we have a free slot
+            while [ "$(active_jobs)" -ge "$CONCURRENCY" ]; do
+                collect_finished
+                sleep 1
+            done
+
+            # Collect any that finished
+            collect_finished
+
+            # vLLM health check before launching container
+            wait_for_vllm
+
+            # Launch container with run_number=$run
+            launch_container "$local_repo_url" "$hash" "$run"
+        done
+    done < "$OUTPUT_DIR/successful_hashes.txt"
+
+    # Wait for all remaining containers
+    drain_jobs
+
+    echo ""
+    echo "=== PHASE 2 COMPLETE ==="
+    echo "[orchestrate] Phase 2: $COMPLETED completed, $SKIPPED skipped out of $PHASE_TOTAL total runs"
+    print_status_summary
+else
+    echo ""
+    echo "[orchestrate] Skipping Phase 2: no successful repos or phase2-runs=0"
+fi
+
+# ============================================================================
+# PHASE 3: COLLECTION
+# ============================================================================
+echo ""
+echo "=== PHASE 3: COLLECTION ==="
+
+if [ -f "$SCRIPT_DIR/build_behavioral_records.py" ]; then
+    mkdir -p "$OUTPUT_DIR/behavioral_records"
+    python3 "$SCRIPT_DIR/build_behavioral_records.py" \
+        --results-dir "$RESULTS_DIR" \
+        --output-dir "$OUTPUT_DIR/behavioral_records/"
+else
+    echo "[orchestrate] Warning: build_behavioral_records.py not found in $SCRIPT_DIR, skipping collection"
+fi
+
+# ── Final summary and post-processing ────────────────────────────────────
+echo ""
+echo "[orchestrate] Done: Phase 1 + Phase 2 complete"
 print_status_summary
 
 write_summary
@@ -475,3 +719,5 @@ echo "Status distribution:"
 if [ -f "$OUTPUT_DIR/scan_summary.csv" ]; then
     tail -n +2 "$OUTPUT_DIR/scan_summary.csv" | cut -d',' -f2 | sort | uniq -c | sort -rn
 fi
+
+echo "=== SCAN COMPLETE ==="

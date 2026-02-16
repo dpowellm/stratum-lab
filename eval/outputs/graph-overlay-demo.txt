@@ -66,11 +66,11 @@ EVAL 2: EMERGENT EDGE DETECTION (Check 3)
       trigger_condition  : routing decision (llm_decision) based on llm_output
   [PASS] At least 3 emergent edges detected (got 3)
   [PASS] Error-triggered fallback detected
-         discovery types: {'dynamic_delegation', 'error_triggered_fallback', 'implicit_data_sharing'}
+         discovery types: {'dynamic_delegation', 'implicit_data_sharing', 'error_triggered_fallback'}
   [PASS] Dynamic delegation detected
-         discovery types: {'dynamic_delegation', 'error_triggered_fallback', 'implicit_data_sharing'}
+         discovery types: {'dynamic_delegation', 'implicit_data_sharing', 'error_triggered_fallback'}
   [PASS] Implicit data sharing detected
-         discovery types: {'dynamic_delegation', 'error_triggered_fallback', 'implicit_data_sharing'}
+         discovery types: {'dynamic_delegation', 'implicit_data_sharing', 'error_triggered_fallback'}
   [PASS] Emergent emergent_000 has actionable detection_heuristic
          heuristic length: 144
   [PASS] Emergent emergent_001 has actionable detection_heuristic
@@ -211,7 +211,7 @@ EVAL 6: FAILURE MODE CLASSIFICATION (Check 7)
     failure_type             : Cascading errors through unsupervised delegation chain
     occurrences              : 2
     downstream_impact        : True
-    failure_description      : Observed 2 instances across signals: delegation_depth_>=3, no_human_gate_activation
+    failure_description      : Observed 2 instances across signals: no_human_gate_activation, delegation_depth_>=3
 
   STRAT-SI-001: Error laundering
     manifestation_observed   : True

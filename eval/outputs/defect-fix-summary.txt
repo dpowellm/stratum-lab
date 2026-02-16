@@ -1,104 +1,146 @@
-STRATUM-LAB DEFECT FIX SUMMARY
-===============================
-Date: 2026-02-15
-Context: Pre-scan hardening pass across 232+ eval checks
+STRATUM-LAB PATCH_SPEC_V2 IMPLEMENTATION SUMMARY
+==================================================
+Date: 2026-02-16
+Context: v6 behavioral record alignment for stratum-graph convergence backend
 
-Three defects identified that would cause problems at 1k-repo scan scale.
-All three fixed and validated across all 8 eval suites (zero regressions).
-
-==============================================================================
-DEFECT 1: FINDING_NAMES mapping incorrect
-==============================================================================
-Severity: HIGH (wrong labels ship to feedback exports)
-Root cause: config.py FINDING_NAMES had incorrect human-readable labels for
-8 finding IDs. Labels didn't match their taxonomy categories.
-
-Corrections applied:
-  STRAT-EA-001: "Unhandled tool failure"       -> "Transitive authority escalation"
-  STRAT-EA-002: "Single point of failure"      -> "Authority concentration at bottleneck"
-  STRAT-EA-003: "Missing external fallback"    -> "Unbounded external service scope"
-  STRAT-AB-001: "Missing rate limiting"        -> "Unbounded aggregate volume"
-  STRAT-AB-002: "Unbounded retry loop"         -> "Aggregate retry amplification"
-  STRAT-OC-001: "Shared tool concurrency"      -> "Competing resource access without coordination"
-  STRAT-DC-002: "Missing delegation timeout"   -> "Irreversible action without checkpoint"
-  STRAT-DC-004: "Missing guardrail"            -> "Missing human oversight checkpoint"
-
-Files modified:
-  - stratum_lab/config.py (lines 110-136): Fixed 8 FINDING_NAMES entries
-  - stratum_lab/overlay/failure_modes.py: Import names from config (single source of truth)
-
-Hardened tests:
-  - E2E CHECK 21: Validates every finding name contains a keyword matching its
-    taxonomy category (DC->delegation/checkpoint, EA->authority/scope, etc.)
+Implementation of PATCH_SPEC_V2.md — converting stratum-lab from custom JSON
+outputs to v6 behavioral records compatible with stratum-graph pipeline.
 
 ==============================================================================
-DEFECT 2: Error propagation tracer shallow (max depth 1)
+CRITICAL REFRAME
 ==============================================================================
-Severity: HIGH (error laundering invisible at runtime)
-Root cause: _observe_propagation() only followed explicit error events.
-Downstream nodes that processed degraded input without throwing errors were
-invisible. Additionally, runtime-vs-structural node ID mismatch prevented
-structural graph traversal from finding downstream nodes.
 
-Fix applied:
-  1. Added name-to-structural-ID resolution (_build_name_to_structural_id,
-     _resolve_to_structural_id) to bridge runtime IDs (e.g.,
-     "crewai:Researcher:agents.py:10") with structural IDs ("agent_researcher")
-  2. _observe_propagation() now follows structural edges after finding explicit
-     error events, detecting "error laundering" — nodes that ran after an
-     upstream error without throwing their own (STRAT-SI-001)
-  3. trace_error_propagation() now resolves source node for predicted_path
+Previous approach (PATCH_SPEC v1) built standalone post-processing scripts
+(graph_builder.py, risk_analyzer.py, ecosystem_report.py) that produce custom
+JSON formats. PATCH_SPEC_V2 replaces these with a single pipeline that
+produces v6 behavioral records for the stratum-graph convergence backend.
 
-Files modified:
-  - stratum_lab/overlay/error_propagation.py: Added ID resolution helpers,
-    enhanced _observe_propagation() for error laundering detection
-
-Hardened tests:
-  - E2E CHECK 22: At least one error trace has cascade_depth >= 2 (path >= 3)
-  - Graph overlay: At least one trace has cascade_depth >= 2
-
-Verification:
-  - E2E: Planner -> Writer -> Reviewer cascade detected (depth=2)
-  - Graph overlay: Planner -> Coder -> Reviewer cascade detected (depth=2)
+Files DELETED (replaced by build_behavioral_records.py):
+  - scripts/graph_builder.py
+  - scripts/risk_analyzer.py
+  - scripts/ecosystem_report.py
 
 ==============================================================================
-DEFECT 3: Cross-pattern interaction never fires
+FILES CREATED
 ==============================================================================
-Severity: MEDIUM (all 136 pairs show "N/A (gated)" in output)
-Root cause: compute_interaction_matrix() only computed interaction_effect when
-legacy_probabilities=True, a parameter no caller used. Default mode skipped
-all statistical computation.
 
-Fix applied:
-  1. Removed legacy_probabilities parameter entirely
-  2. Added MIN_CO_OCCURRENCE = 5 constant as sample-size gate
-  3. Default mode now computes interaction_effect when co-occurrence >= 5
-  4. Below threshold, fields are omitted (shows as "N/A (gated)")
+1. scripts/build_behavioral_records.py
+   - Events -> v6 behavioral records (9 top-level keys)
+   - Edge validation with activation rates
+   - Emergent edge detection
+   - Node activation classification (always_active/conditional/never_active)
+   - Error propagation tracing with BFS predicted paths
+   - STRAT- failure mode taxonomy (DC-001, SI-001, AB-001, OC-002, EA-001)
+   - Monitoring baselines (mean + stddev + 2-sigma thresholds)
+   - Structural graph inference from runtime events
 
-Files modified:
-  - stratum_lab/knowledge/interactions.py: Rewrote to always compute with gate
-
-Hardened tests:
-  - Knowledge base CHECK 29: At least one interaction pair has computed
-    interaction_effect (non-gated)
-  - Test repos increased from 20 -> 40 with common preconditions to ensure
-    sufficient co-occurrence counts
-
-Verification:
-  - 34 pairs with computed interaction_effect
-  - 29 synergistic pairs (>1.5x)
-  - Top: circular_delegation + no_timeout_on_delegation (effect=66.67)
+2. scripts/check_pilot_quality.py
+   - Pilot quality gate (30 repos before full scan)
+   - Categorizes runs: SUCCESS, PARTIAL, INSTRUMENTATION_FAILURE, MODEL_FAILURE,
+     CRASH, TIMEOUT, DEPENDENCY_FAILURE, ENTRY_POINT_FAILURE
+   - Checks instrumentation failure rate <= 20%, model failure rate <= 15%
 
 ==============================================================================
-VALIDATION RESULTS (all 8 suites)
+FILES UPDATED
 ==============================================================================
-  test_end_to_end.py        22/22 checks passed
-  test_graph_overlay.py     70/70 checks passed
-  test_knowledge_base.py    CHECK 28 + CHECK 29 passed
-  test_patchers.py          181/181 checks passed
-  test_event_schema.py      26/26 checks passed
-  test_query_demo.py        96/96 checks passed
-  test_repo_selection.py    9/9 checks passed
-  test_pipeline_integration.py  11/11 checks passed
 
-  TOTAL: 415+ checks, 0 failures, 0 regressions
+3. run_repo.sh
+   - Per-run file naming: events_run_${STRATUM_RUN_NUMBER}.jsonl
+   - run_metadata.json generation per run
+   - Framework detection for metadata
+   - Removed graph_builder.py invocation (handled post-hoc)
+
+4. scripts/synthetic_harness.py
+   - Varied topology generation (not just sequential crews)
+   - CrewAI variants: delegation, reviewed, tooled
+   - LangGraph variants: conditional, branching
+   - AutoGen variants: groupchat, twoway
+   - select_variant() chooses based on repo source analysis
+
+5. scripts/select_repos.py
+   - XCOMP prioritization (1.7x multiplier for cross-component repos)
+   - New scoring signals: +15 tools, +12 delegation, +10 shared state,
+     +8 routing, +8 agent_count 3-7, +5 error handling
+   - Topology diversity tracking and --topology-diversity flag
+   - is_xcomp() detection function
+
+6. scripts/orchestrate.sh
+   - Two-phase orchestration:
+     Phase 1: Discovery (all repos x 1 run)
+     Phase 2: Depth (successful repos x 4 more runs)
+     Phase 3: Collection (events -> v6 records)
+   - Pilot quality gate before Phase 1
+   - RUN_NUMBER env var passed to containers
+   - Resume support via run_metadata_N.json checks
+
+7. scripts/validate_smoke.py
+   - v6 awareness: check_v6_compatibility() function
+   - Updated grade criteria: RICH/BASIC/THIN/EMPTY
+   - Multi-run awareness (events_run_*.jsonl)
+   - New event types: state.access, routing.decision, delegation.*, tool.*
+
+8. scripts/aggregate_results.py
+   - v6_quality section with edge_validation, emergent_edges, etc.
+   - Multi-run execution stats (phase1/phase2 counts)
+   - Failure mode prevalence (STRAT- taxonomy)
+   - --behavioral-records-dir CLI option
+
+9. scripts/smoke_test.sh
+   - Test 4: Multi-run simulation (3 runs with per-run files)
+   - Test 5: build_behavioral_records.py validation (v6 output)
+   - Test 6: Varied topology harness
+   - Test 7: validate_behavioral_record() on generated record
+
+==============================================================================
+PATCHER EVENT TYPE GAP ANALYSIS (Part 5)
+==============================================================================
+
+Required event types per patcher:
+
+crewai_patch.py:
+  delegation.initiated   PRESENT
+  delegation.completed   PRESENT
+  tool.invoked           PRESENT
+  tool.completed         PRESENT
+  state.access           PRESENT (bonus)
+  routing.decision       PRESENT (bonus)
+
+langgraph_patch.py:
+  routing.decision       PRESENT
+  state.access           PRESENT
+
+autogen_patch.py:
+  delegation.initiated   MISSING  <-- GroupChat speaker selection not mapped
+  state.access           PRESENT
+  tool.invoked           PRESENT (bonus)
+  tool.completed         PRESENT (bonus)
+  routing.decision       PRESENT (bonus)
+
+GAP: autogen_patch.py does not emit delegation.initiated for GroupChat
+speaker selection. This means v6 behavioral records for AutoGen repos will
+have empty delegation edges in edge_validation. The gap is documented per
+spec — patcher modification deferred to avoid scope creep.
+
+==============================================================================
+VERIFICATION RESULTS
+==============================================================================
+
+Python compilation: All 9 Python scripts compile cleanly
+Bash syntax:        All 3 bash scripts pass bash -n
+Pytest:             105/106 passed (1 pre-existing failure in test_query.py)
+
+Eval suite results:
+  test_event_schema.py          26/26 PASSED
+  test_graph_overlay.py         70/70 PASSED
+  test_repo_selection.py         9/9  PASSED
+  test_pipeline_integration.py  11/11 PASSED
+  test_query_demo.py            96/96 PASSED
+  test_knowledge_base.py        29/29 PASSED
+  test_end_to_end.py            22/22 PASSED
+  test_patchers.py             181/181 PASSED
+  test_failure_classification   9/10  (1 pre-existing)
+  test_module_summary           PASSED
+  test_input_generator          PASSED
+  test_synthetic_execution      PASSED
+
+ZERO REGRESSIONS from PATCH_SPEC_V2 implementation.

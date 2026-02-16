@@ -1,4 +1,4 @@
-Working directory: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_eval_rvfjue6n
+Working directory: C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_eval_sr_5d4fa
 
 ==============================================================================
 STEP 1: BUILD SYNTHETIC BEHAVIORAL RECORDS
@@ -35,7 +35,7 @@ STEP 1: BUILD SYNTHETIC BEHAVIORAL RECORDS
 ==============================================================================
 STEP 2: EXPORT FEEDBACK
 ==============================================================================
-  Output directory:    C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_eval_rvfjue6n\feedback
+  Output directory:    C:\Users\dpowe\AppData\Local\Temp\stratum_pipeline_eval_sr_5d4fa\feedback
   Files written:       5
     emergent_heuristics.json                  6,214 bytes
     edge_confidence_weights.json              1,293 bytes
@@ -63,9 +63,9 @@ CHECK 13: emergent_heuristics.json
 ==============================================================================
 CHECK 24: DISCOVERY TYPE TAXONOMY VALID
 ==============================================================================
-  by_discovery_type keys:  {'dynamic_delegation', 'implicit_data_sharing', 'error_triggered_fallback'}
-  Valid taxonomy set:       {'dynamic_delegation', 'framework_internal_routing', 'implicit_data_sharing', 
-'error_triggered_fallback'}
+  by_discovery_type keys:  {'implicit_data_sharing', 'dynamic_delegation', 'error_triggered_fallback'}
+  Valid taxonomy set:       {'implicit_data_sharing', 'dynamic_delegation', 'error_triggered_fallback', 
+'framework_internal_routing'}
   Is subset:                True
 
   CHECK 24: PASS

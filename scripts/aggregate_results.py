@@ -4,8 +4,11 @@
 Separates Tier 1 and Tier 2 results across ALL statistics: execution results,
 framework distributions, event counts, topology census, and successful repos.
 
+Optionally reads behavioral_records/ directory to compute v6 quality metrics,
+failure mode prevalence, and multi-run execution statistics.
+
 Usage:
-    python aggregate_results.py <results_dir> [-o scan_report.json]
+    python aggregate_results.py <results_dir> [-o scan_report.json] [--behavioral-records-dir DIR]
 """
 
 from __future__ import annotations
@@ -70,6 +73,198 @@ def _read_tier(repo_dir: Path, status_data: dict) -> int:
         except (ValueError, OSError):
             pass
     return 1
+
+
+# ---------------------------------------------------------------------------
+# v6 behavioral record analysis
+# ---------------------------------------------------------------------------
+
+def _is_populated(value) -> bool:
+    """Check if a section value is meaningfully populated (non-empty, non-null)."""
+    if value is None:
+        return False
+    if isinstance(value, dict):
+        return len(value) > 0
+    if isinstance(value, list):
+        return len(value) > 0
+    if isinstance(value, (int, float)):
+        return value > 0
+    if isinstance(value, str):
+        return len(value.strip()) > 0
+    return bool(value)
+
+
+def _compute_v6_quality(behavioral_records_dir: Path) -> dict:
+    """Scan behavioral_records/ for v6 JSON files and compute quality metrics."""
+    records_with_edge_validation = 0
+    records_with_emergent_edges = 0
+    records_with_error_propagation = 0
+    records_with_failure_modes_manifested = 0
+    records_with_monitoring_baselines = 0
+    match_rates: list[float] = []
+    total_records = 0
+
+    for record_file in sorted(behavioral_records_dir.iterdir()):
+        if not record_file.is_file() or record_file.suffix != ".json":
+            continue
+        record = _load_json(record_file)
+        if record is None:
+            continue
+        total_records += 1
+
+        # edge_validation: populated if dict has entries
+        ev = record.get("edge_validation")
+        if _is_populated(ev):
+            records_with_edge_validation += 1
+
+        # emergent_edges: populated if list is non-empty
+        ee = record.get("emergent_edges")
+        if _is_populated(ee):
+            records_with_emergent_edges += 1
+
+        # error_propagation: populated if list is non-empty
+        ep = record.get("error_propagation")
+        if _is_populated(ep):
+            records_with_error_propagation += 1
+            # Compute structural_prediction_match_rate for this record
+            if isinstance(ep, list) and ep:
+                matches = sum(
+                    1 for trace in ep
+                    if isinstance(trace, dict) and trace.get("structural_prediction_match")
+                )
+                match_rates.append(matches / len(ep))
+
+        # failure_modes: count records where at least one mode has manifestation_observed=true
+        fm = record.get("failure_modes")
+        if isinstance(fm, list) and fm:
+            has_manifested = any(
+                isinstance(mode, dict) and mode.get("manifestation_observed") is True
+                for mode in fm
+            )
+            if has_manifested:
+                records_with_failure_modes_manifested += 1
+
+        # monitoring_baselines: populated if list is non-empty
+        mb = record.get("monitoring_baselines")
+        if _is_populated(mb):
+            records_with_monitoring_baselines += 1
+
+    avg_match_rate = round(sum(match_rates) / len(match_rates), 2) if match_rates else 0.0
+
+    return {
+        "records_with_edge_validation": records_with_edge_validation,
+        "records_with_emergent_edges": records_with_emergent_edges,
+        "records_with_error_propagation": records_with_error_propagation,
+        "records_with_failure_modes_manifested": records_with_failure_modes_manifested,
+        "records_with_monitoring_baselines": records_with_monitoring_baselines,
+        "avg_structural_prediction_match_rate": avg_match_rate,
+    }
+
+
+def _compute_failure_mode_prevalence(behavioral_records_dir: Path) -> dict:
+    """Scan behavioral records for failure_modes with manifestation_observed=true.
+
+    Returns dict mapping failure mode IDs to repos_affected count and manifestation_rate.
+    """
+    failure_mode_repos: Counter[str] = Counter()
+    failure_mode_total: Counter[str] = Counter()
+    total_records = 0
+
+    for record_file in sorted(behavioral_records_dir.iterdir()):
+        if not record_file.is_file() or record_file.suffix != ".json":
+            continue
+        record = _load_json(record_file)
+        if record is None:
+            continue
+        total_records += 1
+
+        fm = record.get("failure_modes")
+        if not isinstance(fm, list):
+            continue
+
+        # Track which failure mode IDs are manifested in this record
+        manifested_in_record: set[str] = set()
+        seen_in_record: set[str] = set()
+        for mode in fm:
+            if not isinstance(mode, dict):
+                continue
+            mode_id = mode.get("failure_mode_id", mode.get("id", ""))
+            if not mode_id:
+                continue
+            seen_in_record.add(mode_id)
+            if mode.get("manifestation_observed") is True:
+                manifested_in_record.add(mode_id)
+
+        for mode_id in seen_in_record:
+            failure_mode_total[mode_id] += 1
+        for mode_id in manifested_in_record:
+            failure_mode_repos[mode_id] += 1
+
+    prevalence: dict[str, dict] = {}
+    for mode_id in sorted(failure_mode_repos.keys()):
+        repos_affected = failure_mode_repos[mode_id]
+        total_seen = failure_mode_total[mode_id]
+        manifestation_rate = round(repos_affected / total_seen, 2) if total_seen > 0 else 0.0
+        prevalence[mode_id] = {
+            "repos_affected": repos_affected,
+            "manifestation_rate": manifestation_rate,
+        }
+
+    return prevalence
+
+
+def _compute_multi_run_stats(behavioral_records_dir: Path) -> dict:
+    """Compute multi-run execution statistics from behavioral records.
+
+    Counts phase1 (run_number=1) and phase2 (run_number>1) info from
+    execution_metadata and run_metadata in behavioral record files.
+    """
+    phase1_repos: set[str] = set()
+    phase1_successful: set[str] = set()
+    phase2_repos: set[str] = set()
+    phase2_runs_total = 0
+    behavioral_records_produced = 0
+
+    for record_file in sorted(behavioral_records_dir.iterdir()):
+        if not record_file.is_file() or record_file.suffix != ".json":
+            continue
+        record = _load_json(record_file)
+        if record is None:
+            continue
+
+        behavioral_records_produced += 1
+        repo_id = record.get("repo_full_name", record_file.stem)
+
+        # Check execution_metadata for run_metadata entries
+        exec_meta = record.get("execution_metadata", {})
+        run_metadata = exec_meta.get("run_metadata", [])
+
+        if isinstance(run_metadata, list) and run_metadata:
+            for run in run_metadata:
+                if not isinstance(run, dict):
+                    continue
+                run_number = run.get("run_number", 1)
+                run_status = run.get("status", "")
+
+                if run_number == 1:
+                    phase1_repos.add(repo_id)
+                    if run_status in SUCCESS_STATUSES:
+                        phase1_successful.add(repo_id)
+                elif run_number > 1:
+                    phase2_repos.add(repo_id)
+                    phase2_runs_total += 1
+        else:
+            # No run_metadata -- treat as a single phase1 run
+            phase1_repos.add(repo_id)
+            phase1_successful.add(repo_id)
+
+    return {
+        "phase1_repos_attempted": len(phase1_repos),
+        "phase1_successful": len(phase1_successful),
+        "phase2_repos_scanned": len(phase2_repos),
+        "phase2_runs_total": phase2_runs_total,
+        "behavioral_records_produced": behavioral_records_produced,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -201,8 +396,15 @@ def _classify_topology(graph: dict) -> str | None:
 # Core aggregation
 # ---------------------------------------------------------------------------
 
-def aggregate(results_dir: Path) -> dict:
-    """Aggregate all per-repo results into a scan_report.json structure."""
+def aggregate(results_dir: Path, behavioral_records_dir: Path | None = None) -> dict:
+    """Aggregate all per-repo results into a scan_report.json structure.
+
+    Args:
+        results_dir: Directory containing per-repo result subdirectories.
+        behavioral_records_dir: Optional path to behavioral_records/ directory.
+            If provided, v6_quality, failure_mode_prevalence, and multi-run
+            execution stats are computed and included in the report.
+    """
 
     # ---- Execution result counters ----
     tier1_success = 0
@@ -502,6 +704,15 @@ def aggregate(results_dir: Path) -> dict:
         ),
     }
 
+    # ---- Behavioral records analysis (v6 quality, failure modes, multi-run stats) ----
+    if behavioral_records_dir is not None and behavioral_records_dir.is_dir():
+        report["v6_quality"] = _compute_v6_quality(behavioral_records_dir)
+        report["failure_mode_prevalence"] = _compute_failure_mode_prevalence(
+            behavioral_records_dir
+        )
+        multi_run_stats = _compute_multi_run_stats(behavioral_records_dir)
+        report["execution_results"].update(multi_run_stats)
+
     return report
 
 
@@ -542,6 +753,13 @@ def _print_summary(report: dict) -> None:
     w(f"  Server-based:         {er['server_based']:>5d}\n")
     w(f"  Tier 2 failed:        {er['tier2_failed']:>5d}\n")
     w(f"  Total with events:    {er['total_with_events']:>5d}\n")
+    if "phase1_repos_attempted" in er:
+        w("  --- Multi-run Stats ---\n")
+        w(f"  Phase 1 attempted:    {er['phase1_repos_attempted']:>5d}\n")
+        w(f"  Phase 1 successful:   {er['phase1_successful']:>5d}\n")
+        w(f"  Phase 2 repos:        {er['phase2_repos_scanned']:>5d}\n")
+        w(f"  Phase 2 runs total:   {er['phase2_runs_total']:>5d}\n")
+        w(f"  Behavioral records:   {er['behavioral_records_produced']:>5d}\n")
     w("\n")
 
     # Tier 1 breakdown
@@ -589,6 +807,26 @@ def _print_summary(report: dict) -> None:
             w(f"  {topo:<25s}  total={vals['count']:>4d}  T1={vals['tier1']:>4d}  T2={vals['tier2']:>4d}\n")
         w("\n")
 
+    # v6 quality (only present if --behavioral-records-dir was provided)
+    v6q = report.get("v6_quality")
+    if v6q:
+        w("--- v6 Quality ---\n")
+        w(f"  Edge validation:         {v6q['records_with_edge_validation']:>5d}\n")
+        w(f"  Emergent edges:          {v6q['records_with_emergent_edges']:>5d}\n")
+        w(f"  Error propagation:       {v6q['records_with_error_propagation']:>5d}\n")
+        w(f"  Failure modes manifested:{v6q['records_with_failure_modes_manifested']:>5d}\n")
+        w(f"  Monitoring baselines:    {v6q['records_with_monitoring_baselines']:>5d}\n")
+        w(f"  Avg prediction match:    {v6q['avg_structural_prediction_match_rate']:.2f}\n")
+        w("\n")
+
+    # Failure mode prevalence (only present if --behavioral-records-dir was provided)
+    fmp = report.get("failure_mode_prevalence")
+    if fmp:
+        w("--- Failure Mode Prevalence ---\n")
+        for mode_id, stats in fmp.items():
+            w(f"  {mode_id:<20s}  affected={stats['repos_affected']:>4d}  rate={stats['manifestation_rate']:.2f}\n")
+        w("\n")
+
     # Top successful repos
     top_n = 10
     repos = report["successful_repos"][:top_n]
@@ -617,6 +855,12 @@ def main() -> None:
         default=None,
         help="Output path for scan_report.json (default: <results_dir>/scan_report.json)",
     )
+    parser.add_argument(
+        "--behavioral-records-dir",
+        default=None,
+        help="Path to behavioral_records/ directory. If provided, compute v6 quality "
+             "metrics, failure mode prevalence, and multi-run execution statistics.",
+    )
     args = parser.parse_args()
 
     results_dir = Path(args.results_dir)
@@ -624,7 +868,18 @@ def main() -> None:
         print(f"Error: {results_dir} is not a directory", file=sys.stderr)
         sys.exit(1)
 
-    report = aggregate(results_dir)
+    behavioral_records_dir = None
+    if args.behavioral_records_dir:
+        behavioral_records_dir = Path(args.behavioral_records_dir)
+        if not behavioral_records_dir.is_dir():
+            print(
+                f"Warning: {behavioral_records_dir} is not a directory, "
+                "skipping behavioral records analysis",
+                file=sys.stderr,
+            )
+            behavioral_records_dir = None
+
+    report = aggregate(results_dir, behavioral_records_dir=behavioral_records_dir)
 
     # Determine output path
     output_path = Path(args.output) if args.output else results_dir / "scan_report.json"

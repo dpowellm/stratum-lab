@@ -2,9 +2,11 @@
 FAILURE CLASSIFICATION TEST RESULTS
 ================================================================================
 
-  [PASS] SUCCESS
+  [FAIL] SUCCESS
     expected : SUCCESS
-    actual   : SUCCESS
+    actual   : PARTIAL_SUCCESS
+    stderr   : INFO: application started
+INFO: done
 
   [PASS] PARTIAL_SUCCESS
     expected : PARTIAL_SUCCESS
@@ -35,7 +37,7 @@ FAILURE CLASSIFICATION TEST RESULTS
     actual   : INSTRUMENTATION_FAILURE
 
 --------------------------------------------------------------------------------
-  Results: 8 passed, 0 failed, 8 total
+  Results: 7 passed, 1 failed, 8 total
 
 ================================================================================
 EDGE CASE TESTS
@@ -50,6 +52,6 @@ EDGE CASE TESTS
     actual  : DEPENDENCY_FAILURE
 
 --------------------------------------------------------------------------------
-  Final: 10 passed, 0 failed, 10 total
+  Final: 9 passed, 1 failed, 10 total
 
 Done.
