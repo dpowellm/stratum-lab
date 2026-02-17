@@ -72,6 +72,12 @@ def make_agent_events(
     task_desc_hash: str = "hash_td_123",
     agent_goal_hash: str = "hash_ag_456",
     output_hash: str = "hash_out_789",
+    system_prompt_preview: str = "You are a helpful assistant.",
+    system_prompt_hash: str = "sp_hash_abc",
+    last_user_message_preview: str = "Please complete the task.",
+    last_user_message_hash: str = "um_hash_def",
+    message_count: int = 3,
+    has_tools: bool = False,
 ) -> list[dict]:
     """Generate a full agent span: task_start, llm_start, llm_end, task_end."""
     sn = {"node_type": "agent", "node_id": node_id, "node_name": agent_name}
@@ -99,7 +105,15 @@ def make_agent_events(
     events.append(make_event(
         "llm.call_start",
         source_node=sn,
-        payload={"model_requested": model},
+        payload={
+            "model_requested": model,
+            "system_prompt_preview": system_prompt_preview,
+            "system_prompt_hash": system_prompt_hash,
+            "last_user_message_preview": last_user_message_preview,
+            "last_user_message_hash": last_user_message_hash,
+            "message_count": message_count,
+            "has_tools": has_tools,
+        },
     ))
 
     events.append(make_event(
@@ -843,3 +857,182 @@ class TestValidateExport:
         assert result.agents_per_repo[0] == 1
         assert len(result.output_lengths) == 1
         assert result.frameworks["crewai"] == 1
+
+
+# ===========================================================================
+# TestLLMInputFields
+# ===========================================================================
+
+class TestLLMInputFields:
+    """Tests for input-side fields from llm.call_start paired with llm.call_end."""
+
+    def test_input_fields_present(self, tmp_path):
+        """LLM call records include input-side fields from llm.call_start."""
+        events = make_two_agent_crew()
+        repo_dir = write_repo(tmp_path, events)
+        summary = build_repo_summary(repo_dir)
+        llm = summary["runs"][0]["agents"][0]["tasks"][0]["llm_calls"][0]
+        assert "system_prompt_preview" in llm
+        assert "system_prompt_hash" in llm
+        assert "last_user_message_preview" in llm
+        assert "last_user_message_hash" in llm
+        assert "message_count" in llm
+        assert "has_tools" in llm
+
+    def test_input_fields_values(self, tmp_path):
+        """Input-side fields carry correct values from llm.call_start payload."""
+        global _TS_COUNTER
+        _TS_COUNTER = 1_000_000_000
+
+        events = [make_event("execution.start", source_node={}, payload={})]
+        events += make_agent_events(
+            agent_name="TestAgent",
+            node_id="crewai:TestAgent:t.py:0",
+            system_prompt_preview="You are an expert researcher.",
+            system_prompt_hash="sp_hash_research",
+            last_user_message_preview="Find the latest AI papers.",
+            last_user_message_hash="um_hash_papers",
+            message_count=5,
+            has_tools=True,
+            tools=["search_tool"],
+        )
+        events.append(make_event("execution.end", source_node={}, payload={}))
+
+        repo_dir = write_repo(tmp_path, events)
+        summary = build_repo_summary(repo_dir)
+        llm = summary["runs"][0]["agents"][0]["tasks"][0]["llm_calls"][0]
+        assert llm["system_prompt_preview"] == "You are an expert researcher."
+        assert llm["system_prompt_hash"] == "sp_hash_research"
+        assert llm["last_user_message_preview"] == "Find the latest AI papers."
+        assert llm["last_user_message_hash"] == "um_hash_papers"
+        assert llm["message_count"] == 5
+        assert llm["has_tools"] is True
+
+    def test_input_fields_defaults_without_start(self, tmp_path):
+        """LLM call without matching llm.call_start gets empty defaults."""
+        global _TS_COUNTER
+        _TS_COUNTER = 1_000_000_000
+
+        sn = {"node_type": "agent", "node_id": "crewai:NoStart:n.py:0", "node_name": "NoStart"}
+        events = [
+            make_event("execution.start", source_node={}, payload={}),
+            make_event("agent.task_start", source_node=sn, payload={
+                "agent_role": "NoStart",
+                "task_description": "task without llm start",
+                "task_description_hash": "h_ns",
+            }),
+            # No llm.call_start — only llm.call_end
+            make_event("llm.call_end", source_node=sn, payload={
+                "model_requested": "gpt-4",
+                "model_actual": "gpt-4",
+                "input_tokens": 100,
+                "output_tokens": 200,
+                "latency_ms": 500.0,
+                "finish_reason": "stop",
+                "output_hash": "oh_ns",
+                "output_preview": "response",
+            }),
+            make_event("agent.task_end", source_node=sn, payload={
+                "status": "success",
+                "output_preview": "response",
+                "output_hash": "oh_ns",
+            }),
+            make_event("execution.end", source_node={}, payload={}),
+        ]
+
+        repo_dir = write_repo(tmp_path, events)
+        summary = build_repo_summary(repo_dir)
+        llm = summary["runs"][0]["agents"][0]["tasks"][0]["llm_calls"][0]
+        assert llm["system_prompt_preview"] == ""
+        assert llm["system_prompt_hash"] == ""
+        assert llm["last_user_message_preview"] == ""
+        assert llm["last_user_message_hash"] == ""
+        assert llm["message_count"] == 0
+        assert llm["has_tools"] is False
+
+    def test_input_fields_per_agent_pairing(self, tmp_path):
+        """Each agent's llm.call_start pairs with its own llm.call_end."""
+        events = make_two_agent_crew()
+        repo_dir = write_repo(tmp_path, events)
+        summary = build_repo_summary(repo_dir)
+
+        planner_llm = summary["runs"][0]["agents"][0]["tasks"][0]["llm_calls"][0]
+        writer_llm = summary["runs"][0]["agents"][1]["tasks"][0]["llm_calls"][0]
+
+        # Both agents should have their own input fields (defaults from make_agent_events)
+        assert planner_llm["system_prompt_preview"] == "You are a helpful assistant."
+        assert writer_llm["system_prompt_preview"] == "You are a helpful assistant."
+        assert planner_llm["message_count"] == 3
+        assert writer_llm["message_count"] == 3
+
+    def test_has_tools_false_by_default(self, tmp_path):
+        """has_tools defaults to False when not set in llm.call_start."""
+        global _TS_COUNTER
+        _TS_COUNTER = 1_000_000_000
+
+        events = [make_event("execution.start", source_node={}, payload={})]
+        events += make_agent_events(
+            agent_name="NoTools",
+            node_id="crewai:NoTools:nt.py:0",
+            has_tools=False,
+        )
+        events.append(make_event("execution.end", source_node={}, payload={}))
+
+        repo_dir = write_repo(tmp_path, events)
+        summary = build_repo_summary(repo_dir)
+        llm = summary["runs"][0]["agents"][0]["tasks"][0]["llm_calls"][0]
+        assert llm["has_tools"] is False
+
+    def test_has_tools_true(self, tmp_path):
+        """has_tools=True when tools are present."""
+        global _TS_COUNTER
+        _TS_COUNTER = 1_000_000_000
+
+        events = [make_event("execution.start", source_node={}, payload={})]
+        events += make_agent_events(
+            agent_name="WithTools",
+            node_id="crewai:WithTools:wt.py:0",
+            has_tools=True,
+            tools=["calculator", "web_search"],
+        )
+        events.append(make_event("execution.end", source_node={}, payload={}))
+
+        repo_dir = write_repo(tmp_path, events)
+        summary = build_repo_summary(repo_dir)
+        llm = summary["runs"][0]["agents"][0]["tasks"][0]["llm_calls"][0]
+        assert llm["has_tools"] is True
+
+    def test_empty_system_prompt(self, tmp_path):
+        """Empty system prompt captured as empty string."""
+        global _TS_COUNTER
+        _TS_COUNTER = 1_000_000_000
+
+        events = [make_event("execution.start", source_node={}, payload={})]
+        events += make_agent_events(
+            agent_name="EmptySP",
+            node_id="crewai:EmptySP:esp.py:0",
+            system_prompt_preview="",
+            system_prompt_hash="",
+        )
+        events.append(make_event("execution.end", source_node={}, payload={}))
+
+        repo_dir = write_repo(tmp_path, events)
+        summary = build_repo_summary(repo_dir)
+        llm = summary["runs"][0]["agents"][0]["tasks"][0]["llm_calls"][0]
+        assert llm["system_prompt_preview"] == ""
+        assert llm["system_prompt_hash"] == ""
+
+    def test_output_fields_preserved(self, tmp_path):
+        """Existing output-side fields still correct after adding input fields."""
+        events = make_two_agent_crew()
+        repo_dir = write_repo(tmp_path, events)
+        summary = build_repo_summary(repo_dir)
+        llm = summary["runs"][0]["agents"][0]["tasks"][0]["llm_calls"][0]
+        # Output-side fields unchanged
+        assert llm["model_requested"] == "mistralai/Mistral-7B-Instruct-v0.3"
+        assert llm["model_actual"] == "mistralai/Mistral-7B-Instruct-v0.3"
+        assert llm["input_tokens"] == 209
+        assert llm["output_tokens"] == 810
+        assert llm["latency_ms"] == 22150.33
+        assert llm["finish_reason"] == "stop"
+        assert llm["output_hash"] == "e2e97aa_planner"

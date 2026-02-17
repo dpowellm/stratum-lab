@@ -99,6 +99,8 @@ def _build_run(events: list[dict], run_number: int) -> dict[str, Any]:
     errors: list[str] = []
     exec_start_ms = 0.0
     exec_end_ms = 0.0
+    # Track most recent llm.call_start per agent key for pairing with llm.call_end
+    pending_llm_starts: dict[str, dict] = {}
 
     for evt in events:
         etype = evt.get("event_type", "")
@@ -158,6 +160,17 @@ def _build_run(events: list[dict], run_number: int) -> dict[str, Any]:
                 task["output_type"] = p.get("output_type", "")
                 task["output_size_bytes"] = p.get("output_size_bytes", 0) or 0
 
+        elif etype == "llm.call_start":
+            key = nid or _agent_name(evt)
+            pending_llm_starts[key] = {
+                "system_prompt_preview": p.get("system_prompt_preview", ""),
+                "system_prompt_hash": p.get("system_prompt_hash", ""),
+                "last_user_message_preview": p.get("last_user_message_preview", ""),
+                "last_user_message_hash": p.get("last_user_message_hash", ""),
+                "message_count": p.get("message_count", 0) or 0,
+                "has_tools": bool(p.get("has_tools", False)),
+            }
+
         elif etype == "llm.call_end":
             key = nid or _agent_name(evt)
             span = agent_spans.get(key)
@@ -171,6 +184,14 @@ def _build_run(events: list[dict], run_number: int) -> dict[str, Any]:
                 "output_hash": p.get("output_hash", ""),
                 "output_preview": p.get("output_preview", ""),
             }
+            # Merge input-side fields from paired llm.call_start
+            start_data = pending_llm_starts.pop(key, {})
+            llm_rec["system_prompt_preview"] = start_data.get("system_prompt_preview", "")
+            llm_rec["system_prompt_hash"] = start_data.get("system_prompt_hash", "")
+            llm_rec["last_user_message_preview"] = start_data.get("last_user_message_preview", "")
+            llm_rec["last_user_message_hash"] = start_data.get("last_user_message_hash", "")
+            llm_rec["message_count"] = start_data.get("message_count", 0)
+            llm_rec["has_tools"] = start_data.get("has_tools", False)
             if span and span["tasks"]:
                 span["tasks"][-1]["llm_calls"].append(llm_rec)
 
