@@ -176,6 +176,11 @@ def _wrap_sync_create(original: Any) -> Any:
     @functools.wraps(original)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         logger = EventLogger.get()
+        # Skip if called from within LiteLLM (avoid double-intercept)
+        import traceback as _tb
+        _stack = "".join(_tb.format_stack())
+        if "litellm" in _stack:
+            return original(*args, **kwargs)
         caller_file, caller_line, _ = get_caller_info(skip_frames=3)
         node_id = generate_node_id("openai", "ChatCompletion", caller_file, caller_line)
         source = make_node("capability", node_id, "openai.chat.completions.create")
@@ -317,6 +322,11 @@ def _wrap_async_create(original: Any) -> Any:
     @functools.wraps(original)
     async def wrapper(*args: Any, **kwargs: Any) -> Any:
         logger = EventLogger.get()
+        # Skip if called from within LiteLLM (avoid double-intercept)
+        import traceback as _tb
+        _stack = "".join(_tb.format_stack())
+        if "litellm" in _stack:
+            return await original(*args, **kwargs)
         caller_file, caller_line, _ = get_caller_info(skip_frames=3)
         node_id = generate_node_id("openai", "AsyncChatCompletion", caller_file, caller_line)
         source = make_node("capability", node_id, "openai.async.chat.completions.create")
