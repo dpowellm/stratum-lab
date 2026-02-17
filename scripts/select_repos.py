@@ -372,6 +372,7 @@ def load_scan_results(path: Path, *, include_forks: bool = False,
             if r.get("fork", False) and not include_forks:
                 continue
             url = (r.get("repo_url", "") or r.get("metadata", {}).get("repo_url", "")
+                   or (f"https://github.com/{r["repo_full_name"]}" if r.get("repo_full_name") else "")
                    or r.get("url", ""))
             if url:
                 raw_entries.append((score_repo(r), url, r))
