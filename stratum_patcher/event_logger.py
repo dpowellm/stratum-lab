@@ -122,7 +122,7 @@ def capture_output_signature(content: Any) -> Dict[str, Any]:
         "type": _classify_content_type(content),
         "hash": hash_content(content_str),
         "size_bytes": len(content_str.encode("utf-8", errors="replace")),
-        "preview": content_str[:200],
+        "preview": content_str,
         "structure": _extract_structure(content),
         "classification_fields": _extract_classification_fields(content),
     }
