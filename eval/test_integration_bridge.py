@@ -244,6 +244,131 @@ class TestAdaptScanResult:
 
 
 # ===========================================================================
+# TELEMETRY PROFILE TESTS (anonymized schema without graph/agent_definitions)
+# ===========================================================================
+
+TELEMETRY_PROFILE = {
+    "repo_full_name": "example-org/crew-project",
+    "crew_size_distribution": [2, 1],  # 3 agents total (crew of 2 + crew of 1)
+    "graph_topology_metrics": {
+        "diameter": 3,
+        "avg_degree": 2.1,
+        "max_degree": 4,
+        "clustering_coefficient": 0.45,
+    },
+    "total_capabilities": 7,
+    "archetype_class": "supervisor_worker",
+    "selection_stratum": "crewai",
+    "deployment_signals": {
+        "has_dockerfile": False,
+        "has_ci_config": True,
+        "has_tests": True,
+        "has_lockfile": True,
+    },
+    "framework_versions": {"crewai": "0.86.0", "openai": "1.50.0"},
+    "llm_providers": ["openai"],
+    "repo_metadata": {
+        "python_file_count": 12,
+        "primary_framework": "crewai",
+        "total_loc": 1500,
+    },
+}
+
+
+class TestTelemetryProfileBridge:
+    def test_agent_defs_from_crew_size_distribution(self):
+        """crew_size_distribution creates synthetic agent defs."""
+        adapted = adapt_scan_result(TELEMETRY_PROFILE)
+        assert adapted["agent_count"] == 3
+        assert len(adapted["agent_definitions"]) == 3
+
+    def test_capabilities_distributed_to_agents(self):
+        """total_capabilities are distributed as synthetic tool_names."""
+        adapted = adapt_scan_result(TELEMETRY_PROFILE)
+        total_tools = sum(
+            len(a["tool_names"]) for a in adapted["agent_definitions"]
+        )
+        assert total_tools == 7  # matches total_capabilities
+
+    def test_frameworks_from_framework_versions(self):
+        """detected_frameworks reads framework_versions keys."""
+        adapted = adapt_scan_result(TELEMETRY_PROFILE)
+        assert "crewai" in adapted["detected_frameworks"]
+        assert adapted["framework"] == "crewai"
+
+    def test_frameworks_from_repo_metadata_primary(self):
+        """Falls back to repo_metadata.primary_framework."""
+        profile = {
+            "repo_full_name": "org/repo",
+            "repo_metadata": {"primary_framework": "langgraph"},
+        }
+        adapted = adapt_scan_result(profile)
+        assert adapted["detected_frameworks"] == ["langgraph"]
+        assert adapted["framework"] == "langgraph"
+
+    def test_entry_point_from_deployment_signals(self):
+        """deployment_signals.has_lockfile → detected_entry_point."""
+        adapted = adapt_scan_result(TELEMETRY_PROFILE)
+        assert adapted["detected_entry_point"] == "inferred"
+
+    def test_requirements_from_deployment_signals(self):
+        """deployment_signals.has_lockfile → detected_requirements."""
+        adapted = adapt_scan_result(TELEMETRY_PROFILE)
+        assert adapted["detected_requirements"] == "lockfile"
+
+    def test_risk_surface_from_topology_metrics(self):
+        """graph_topology_metrics feeds into risk_surface."""
+        edges = _extract_graph_edges(TELEMETRY_PROFILE)
+        assert edges == []  # no graph data
+        risk = _compute_risk_surface(TELEMETRY_PROFILE, edges)
+        assert risk["max_delegation_depth"] == 4  # max_degree
+        assert risk["feedback_loop_count"] == 1  # clustering_coefficient > 0.3
+
+    def test_archetype_from_archetype_class(self):
+        """archetype_class maps directly to archetype_id."""
+        aid = _resolve_archetype_id(TELEMETRY_PROFILE)
+        assert aid == 4  # supervisor_worker
+
+    def test_repo_url_constructed_from_full_name(self):
+        """repo_url is built from repo_full_name when missing."""
+        adapted = adapt_scan_result(TELEMETRY_PROFILE)
+        assert adapted["repo_url"] == "https://github.com/example-org/crew-project"
+
+    def test_total_capabilities_passed_through(self):
+        """total_capabilities is available in adapted output."""
+        adapted = adapt_scan_result(TELEMETRY_PROFILE)
+        assert adapted["total_capabilities"] == 7
+
+    def test_selection_stratum_passed_through(self):
+        """selection_stratum is available in adapted output."""
+        adapted = adapt_scan_result(TELEMETRY_PROFILE)
+        assert adapted["selection_stratum"] == "crewai"
+
+    def test_scorer_accepts_telemetry_profile(self):
+        """Full scoring pipeline works with TelemetryProfile input."""
+        adapted = adapt_scan_result(TELEMETRY_PROFILE)
+        result = score_repo(adapted, archetype_counts={}, selection_target=4000)
+        assert result["selection_score"] > 0
+        assert result["agent_count"] == 3
+        assert result["framework"] == "crewai"
+
+    def test_schema_validation_telemetry_profile(self):
+        """TelemetryProfile passes selection schema validation."""
+        adapted = adapt_scan_result(TELEMETRY_PROFILE)
+        valid, missing = validate_selection_input(adapted)
+        assert valid, f"Missing fields: {missing}"
+
+    def test_requires_docker_from_deployment_signals(self):
+        """deployment_signals.has_dockerfile sets requires_docker."""
+        profile = {**TELEMETRY_PROFILE, "deployment_signals": {
+            "has_dockerfile": True, "has_lockfile": True,
+            "has_ci_config": False, "has_tests": False,
+        }}
+        adapted = adapt_scan_result(profile)
+        assert adapted["requires_docker"] is True
+
+
+# ===========================================================================
 # PATCHER-FORMAT EVENT TESTS (cost_risk reads correct fields)
 # ===========================================================================
 

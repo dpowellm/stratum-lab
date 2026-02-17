@@ -5,7 +5,14 @@ stratum-lab's selection/scorer.py expects a dict with specific fields:
   - agent_definitions, graph_edges, taxonomy_preconditions, risk_surface
   - archetype_id, detected_entry_point, detected_requirements, etc.
 
-This module bridges the gap by extracting and reshaping fields.
+TelemetryProfile is the anonymized telemetry schema — it has NO
+agent_definitions, NO graph.nodes, NO repo_url, NO files list.  Instead
+it carries: crew_size_distribution, graph_topology_metrics,
+total_capabilities, archetype_class, selection_stratum,
+deployment_signals, framework_versions, llm_providers, repo_metadata.
+
+This module bridges the gap by extracting and reshaping fields from
+whichever schema variant is present.
 """
 from __future__ import annotations
 
@@ -40,6 +47,8 @@ def _extract_graph_edges(scan: dict[str, Any]) -> list[dict[str, str]]:
     Tries multiple sources in order:
     1. graph.edges (dict or list from stratum-cli graph output)
     2. agent_relationships (list of relationship dicts)
+
+    Returns empty list for TelemetryProfile records (no graph data).
     """
     edges: list[dict[str, str]] = []
 
@@ -112,10 +121,28 @@ def _extract_taxonomy_preconditions(scan: dict[str, Any]) -> list[str]:
 def _compute_risk_surface(scan: dict[str, Any], edges: list[dict]) -> dict[str, int]:
     """Compute risk_surface metrics from graph structure.
 
-    Analyzes edges to estimate delegation depth, shared state conflicts,
-    feedback loops, and trust boundary crossings.
+    When full graph edges are available, analyzes them to compute
+    delegation depth, shared state conflicts, feedback loops, and trust
+    boundary crossings.
+
+    When edges are absent (TelemetryProfile), falls back to
+    graph_topology_metrics: max_degree → delegation depth proxy,
+    clustering_coefficient → feedback loop proxy.
     """
-    # Build adjacency for delegation edges
+    # ── TelemetryProfile fallback: use graph_topology_metrics ──
+    if not edges:
+        topo = scan.get("graph_topology_metrics", {})
+        if topo:
+            # clustering_coefficient > 0.3 suggests cycles / feedback
+            cc = topo.get("clustering_coefficient", 0) or 0
+            return {
+                "max_delegation_depth": topo.get("max_degree", 0),
+                "shared_state_conflict_count": 0,
+                "feedback_loop_count": 1 if cc > 0.3 else 0,
+                "trust_boundary_crossing_count": 0,
+            }
+
+    # ── Full graph path: analyze edges ──
     delegation_adj: dict[str, list[str]] = {}
     shared_state_nodes: set[str] = set()
     trust_crossings = 0
@@ -184,13 +211,17 @@ def _compute_risk_surface(scan: dict[str, Any], edges: list[dict]) -> dict[str, 
 
 
 def _resolve_archetype_id(scan: dict[str, Any]) -> int:
-    """Map archetype string to integer ID."""
+    """Map archetype string to integer ID.
+
+    For TelemetryProfile, reads archetype_class directly.
+    Falls back to graph heuristics or crew_size_distribution.
+    """
     # Try archetype_id directly
     aid = scan.get("archetype_id")
     if isinstance(aid, int) and aid > 0:
         return aid
 
-    # Try archetype string fields
+    # Try archetype string fields (archetype_class from TelemetryProfile)
     for key in ("archetype", "archetype_class"):
         name = scan.get(key, "")
         if isinstance(name, str) and name in _ARCHETYPE_NAME_TO_ID:
@@ -202,13 +233,28 @@ def _resolve_archetype_id(scan: dict[str, Any]) -> int:
     agents = [n for n in (nodes.values() if isinstance(nodes, dict) else nodes)
               if isinstance(n, dict) and n.get("node_type") in ("agent", "Agent")]
 
-    if len(agents) <= 1:
-        return 1  # single_agent_tool_use
-    return 2  # sequential_pipeline (safe default for multi-agent)
+    if agents:
+        if len(agents) <= 1:
+            return 1  # single_agent_tool_use
+        return 2  # sequential_pipeline (safe default for multi-agent)
+
+    # Heuristic from crew_size_distribution (TelemetryProfile)
+    crew_sizes = scan.get("crew_size_distribution", [])
+    if crew_sizes:
+        total_agents = sum(crew_sizes)
+        if total_agents <= 1:
+            return 1  # single_agent_tool_use
+        return 2  # sequential_pipeline
+
+    return 1  # single_agent_tool_use (default)
 
 
 def adapt_scan_result(scan: dict[str, Any]) -> dict[str, Any]:
     """Transform a stratum-cli scan result dict into scorer-expected format.
+
+    Handles both full ScanResult (with graph, agent_definitions, files) and
+    TelemetryProfile (anonymized: crew_size_distribution,
+    graph_topology_metrics, deployment_signals, framework_versions, etc.).
 
     The returned dict can be passed directly to selection/scorer.py functions.
     """
@@ -217,8 +263,11 @@ def adapt_scan_result(scan: dict[str, Any]) -> dict[str, Any]:
     risk_surface = _compute_risk_surface(scan, edges)
     archetype_id = _resolve_archetype_id(scan)
 
-    # Agent definitions — pass through if present, else build from graph
+    # ── Agent definitions ──
+    # Priority: agent_definitions → graph.nodes → crew_size_distribution
     agent_defs = scan.get("agent_definitions", [])
+    total_capabilities = scan.get("total_capabilities", 0)
+
     if not agent_defs:
         graph = scan.get("graph", {})
         nodes = graph.get("nodes", {}) if isinstance(graph, dict) else {}
@@ -229,18 +278,54 @@ def adapt_scan_result(scan: dict[str, Any]) -> dict[str, Any]:
                     "tool_names": ndata.get("tool_names", []),
                 })
 
-    # Frameworks
+    if not agent_defs:
+        # TelemetryProfile: crew_size_distribution → synthetic agent defs
+        crew_sizes = scan.get("crew_size_distribution", [])
+        if crew_sizes:
+            total_agents = sum(crew_sizes)
+            # Distribute total_capabilities across agents as synthetic tools
+            caps_per_agent = (
+                total_capabilities // total_agents if total_agents > 0 else 0
+            )
+            remainder = (
+                total_capabilities % total_agents if total_agents > 0 else 0
+            )
+            idx = 0
+            for crew_idx, crew_size in enumerate(crew_sizes):
+                for agent_i in range(crew_size):
+                    n_tools = caps_per_agent + (1 if idx < remainder else 0)
+                    tool_names = [f"cap_{j}" for j in range(idx, idx + n_tools)]
+                    agent_defs.append({
+                        "name": f"agent_{idx}",
+                        "tool_names": tool_names,
+                    })
+                    idx += 1
+
+    # ── Frameworks ──
+    # Priority: detected_frameworks → frameworks → framework_versions keys
+    #         → repo_metadata.primary_framework → primary_framework
     detected_frameworks = scan.get("detected_frameworks", [])
     if not detected_frameworks:
         detected_frameworks = scan.get("frameworks", [])
+    if not detected_frameworks:
+        fw_versions = scan.get("framework_versions", {})
+        if isinstance(fw_versions, dict) and fw_versions:
+            detected_frameworks = list(fw_versions.keys())
+    if not detected_frameworks:
+        repo_meta = scan.get("repo_metadata", {})
+        if isinstance(repo_meta, dict):
+            primary = repo_meta.get("primary_framework", "")
+            if primary:
+                detected_frameworks = [primary]
     if not detected_frameworks:
         primary = scan.get("primary_framework", "")
         if primary:
             detected_frameworks = [primary]
 
-    # Entry point and requirements
+    # ── Entry point detection ──
     metadata = scan.get("metadata", {})
     files = scan.get("files", [])
+    deploy = scan.get("deployment_signals", {}) or {}
 
     detected_entry_point = scan.get("detected_entry_point", "")
     if not detected_entry_point and metadata.get("has_entry_point"):
@@ -250,7 +335,11 @@ def adapt_scan_result(scan: dict[str, Any]) -> dict[str, Any]:
             if isinstance(f, str) and f.endswith(("main.py", "app.py", "__main__.py")):
                 detected_entry_point = f
                 break
+    # TelemetryProfile: deployment_signals.has_lockfile as runnability proxy
+    if not detected_entry_point and deploy.get("has_lockfile"):
+        detected_entry_point = "inferred"
 
+    # ── Requirements detection ──
     detected_requirements = scan.get("detected_requirements", "")
     if not detected_requirements and metadata.get("has_requirements"):
         detected_requirements = "requirements.txt"
@@ -259,11 +348,26 @@ def adapt_scan_result(scan: dict[str, Any]) -> dict[str, Any]:
             if isinstance(f, str) and f.endswith(("requirements.txt", "pyproject.toml")):
                 detected_requirements = f
                 break
+    # TelemetryProfile: deployment_signals.has_lockfile
+    if not detected_requirements and deploy.get("has_lockfile"):
+        detected_requirements = "lockfile"
+
+    # ── repo_url: construct from repo_full_name if missing ──
+    repo_url = scan.get("repo_url", scan.get("url", ""))
+    if not repo_url:
+        rfn = scan.get("repo_full_name", "")
+        if rfn:
+            repo_url = f"https://github.com/{rfn}"
+
+    # ── Runnability signals from deployment_signals ──
+    requires_docker = scan.get("requires_docker", False)
+    if not requires_docker and deploy.get("has_dockerfile"):
+        requires_docker = True
 
     return {
         # Pass-through fields
         "repo_id": scan.get("repo_id", scan.get("repo_full_name", "")),
-        "repo_url": scan.get("repo_url", scan.get("url", "")),
+        "repo_url": repo_url,
 
         # Reshaped fields
         "agent_definitions": agent_defs,
@@ -277,7 +381,7 @@ def adapt_scan_result(scan: dict[str, Any]) -> dict[str, Any]:
 
         # Runnability signals — pass through or derive
         "has_readme_with_usage": scan.get("has_readme_with_usage", False),
-        "requires_docker": scan.get("requires_docker", False),
+        "requires_docker": requires_docker,
         "requires_database": scan.get("requires_database", False),
         "recent_commit": scan.get("recent_commit", False),
 
@@ -293,4 +397,8 @@ def adapt_scan_result(scan: dict[str, Any]) -> dict[str, Any]:
                       else scan.get("primary_framework", "custom")),
         "agent_count": len(agent_defs),
         "edge_count": len(edges),
+
+        # TelemetryProfile pass-through fields
+        "total_capabilities": total_capabilities,
+        "selection_stratum": scan.get("selection_stratum", ""),
     }
