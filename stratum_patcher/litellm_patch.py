@@ -8,6 +8,7 @@ Wraps ``litellm.completion`` and ``litellm.acompletion`` so that:
 from __future__ import annotations
 
 import functools
+import os
 import time
 from typing import Any
 
@@ -76,7 +77,7 @@ def _wrap_litellm_sync(original: Any) -> Any:
 
         original_model = kwargs.get("model", "")
         mapped_model = remap_model(original_model)
-        kwargs["model"] = mapped_model
+        kwargs["model"] = f"openai/{mapped_model}" if os.environ.get("STRATUM_VLLM_MODEL") and not mapped_model.startswith("openai/") else mapped_model
 
         start_id = logger.log_event(
             "llm.call_start",
@@ -132,7 +133,7 @@ def _wrap_litellm_async(original: Any) -> Any:
 
         original_model = kwargs.get("model", "")
         mapped_model = remap_model(original_model)
-        kwargs["model"] = mapped_model
+        kwargs["model"] = f"openai/{mapped_model}" if os.environ.get("STRATUM_VLLM_MODEL") and not mapped_model.startswith("openai/") else mapped_model
 
         start_id = logger.log_event(
             "llm.call_start",
