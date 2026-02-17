@@ -202,6 +202,23 @@ fi
 
 
 # ============================================================================
+# STEP 1.5: PHASE 0 — STATIC DEFENSIVE PATTERN SCAN + SOURCE SNAPSHOT
+# ============================================================================
+
+log "Phase 0: Scanning defensive patterns..."
+python3 /app/scripts/scan_defensive_patterns.py /tmp/repo "$OUTPUT_DIR/defensive_patterns.json" 2>/dev/null || {
+    echo '{"error": "defensive pattern scan failed", "patterns": [], "summary": {}}' > "$OUTPUT_DIR/defensive_patterns.json"
+}
+
+# Phase 0: Source snapshot (cap at 200 py files, exclude .git/venv/__pycache__/node_modules)
+find /tmp/repo -name "*.py" -not -path "*/.git/*" -not -path "*/venv/*" \
+    -not -path "*/__pycache__/*" -not -path "*/node_modules/*" | \
+    head -200 | tar czf "$OUTPUT_DIR/source_snapshot.tar.gz" -T - 2>/dev/null || true
+
+log "Phase 0: Complete"
+
+
+# ============================================================================
 # STEP 2: ENVIRONMENT SETUP
 # ============================================================================
 
@@ -425,20 +442,53 @@ done < "$ALL_PY_FILES"
 rm -f "$ALL_PY_FILES"
 
 # Pick the best candidate (highest score)
+# For monorepo tie-breaking: among tied candidates, prefer fewest imports
 ENTRY=""
 BEST_SCORE=-999
+RUNNER_UP=""
+RUNNER_UP_SCORE=-999
+TOTAL_CANDIDATES=0
 
 if [ -s "$CANDIDATES_FILE" ]; then
+    # Sort by score descending, then for tie-breaking by import count ascending
     while IFS=$'\t' read -r cand_score cand_path; do
         [ -z "$cand_score" ] && continue
+        TOTAL_CANDIDATES=$((TOTAL_CANDIDATES + 1))
         if [ "$cand_score" -gt "$BEST_SCORE" ]; then
+            # Demote current best to runner-up
+            RUNNER_UP_SCORE=$BEST_SCORE
+            RUNNER_UP="$ENTRY"
             BEST_SCORE=$cand_score
             ENTRY="$cand_path"
+        elif [ "$cand_score" -eq "$BEST_SCORE" ] && [ -n "$ENTRY" ]; then
+            # Tie-breaking: prefer candidate with fewer import lines (simpler)
+            imports_current=$(grep -cE '^(import |from .* import )' "$ENTRY" 2>/dev/null || echo 999)
+            imports_new=$(grep -cE '^(import |from .* import )' "$cand_path" 2>/dev/null || echo 999)
+            if [ "$imports_new" -lt "$imports_current" ]; then
+                RUNNER_UP_SCORE=$BEST_SCORE
+                RUNNER_UP="$ENTRY"
+                ENTRY="$cand_path"
+            elif [ -z "$RUNNER_UP" ]; then
+                RUNNER_UP_SCORE=$cand_score
+                RUNNER_UP="$cand_path"
+            fi
+        elif [ "$cand_score" -gt "$RUNNER_UP_SCORE" ]; then
+            RUNNER_UP_SCORE=$cand_score
+            RUNNER_UP="$cand_path"
         fi
     done < "$CANDIDATES_FILE"
 fi
 
 rm -f "$CANDIDATES_FILE"
+
+# Log detection reasoning
+log "  Detection reasoning: $TOTAL_CANDIDATES candidate(s) evaluated"
+if [ -n "$ENTRY" ]; then
+    log "  Winner: ${ENTRY#/tmp/repo/} (score=$BEST_SCORE)"
+fi
+if [ -n "$RUNNER_UP" ]; then
+    log "  Runner-up: ${RUNNER_UP#/tmp/repo/} (score=$RUNNER_UP_SCORE)"
+fi
 
 # Report detection result
 TIER1_SKIP=""
@@ -510,6 +560,9 @@ else
             > "$OUTPUT_DIR/stdout.log" \
             2> "$OUTPUT_DIR/stderr.log"
         EXIT_CODE=$?
+
+        # Separate stderr capture per run
+        cp "$OUTPUT_DIR/stderr.log" "$OUTPUT_DIR/stderr_run_${STRATUM_RUN_NUMBER}.log" 2>/dev/null || true
 
         # ── Check for events regardless of exit code ──
         HAS_EVENTS=false

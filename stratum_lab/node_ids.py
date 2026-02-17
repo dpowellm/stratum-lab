@@ -16,7 +16,10 @@ This module provides utilities to map between the two formats.
 
 from __future__ import annotations
 
+import logging
 import re
+
+logger = logging.getLogger(__name__)
 
 
 def normalize_name(name: str) -> str:
@@ -79,6 +82,7 @@ def match_runtime_to_structural(
     normalized = normalize_name(class_name)
     agent_id = f"agent_{normalized}"
     if agent_id in structural_nodes:
+        logger.debug("node_id match: strategy=exact_name runtime=%s -> %s", runtime_id, agent_id)
         return agent_id
 
     # Strategy 2: Try without common suffixes
@@ -86,6 +90,7 @@ def match_runtime_to_structural(
         if not normalized.endswith(suffix):
             candidate = f"agent_{normalized}{suffix}"
             if candidate in structural_nodes:
+                logger.debug("node_id match: strategy=suffix_append runtime=%s -> %s", runtime_id, candidate)
                 return candidate
 
     # Strategy 3: Match by source file and line number
@@ -98,11 +103,14 @@ def match_runtime_to_structural(
         node_file = node_data.get("source_file", "")
         node_line = node_data.get("line_number")
         if node_file and source_file.endswith(node_file) and node_line == line:
+            logger.debug("node_id match: strategy=source_file_line runtime=%s -> %s", runtime_id, node_id)
             return node_id
 
     # Strategy 4: Fuzzy match on name contained in node ID
     for node_id in structural_nodes:
         if normalized in node_id:
+            logger.debug("node_id match: strategy=fuzzy_contains runtime=%s -> %s", runtime_id, node_id)
             return node_id
 
+    logger.debug("node_id match: strategy=none runtime=%s -> unmatched", runtime_id)
     return None

@@ -40,7 +40,16 @@ def remap_model(model: str) -> str:
     """Remap any model name to the vLLM-served model when STRATUM_VLLM_MODEL is set."""
     if not VLLM_MODEL:
         return model  # No remapping if env var not set (local dev, tests)
-    if model and model.startswith(("gpt-", "claude-", "o1-", "o3-", "chatgpt-")):
+    if not model:
+        return model
+    _lower = model.lower()
+    _KNOWN_PREFIXES = (
+        "gpt-", "claude-", "o1-", "o3-", "chatgpt-",
+        "mistral", "llama", "gemini", "command",
+        "anthropic/", "openai/", "together_ai/",
+        "deepseek", "qwen", "yi-", "mixtral",
+    )
+    if any(_lower.startswith(p) for p in _KNOWN_PREFIXES):
         return VLLM_MODEL
     return model
 

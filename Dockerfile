@@ -1,11 +1,10 @@
 FROM python:3.11-slim
 
-# Base dependencies that most agent frameworks need
+# Framework dependencies with pinned versions
+COPY requirements-docker.txt /tmp/requirements-docker.txt
 RUN pip install --no-cache-dir --break-system-packages \
-    openai anthropic langchain-core crewai \
-    autogen-agentchat pyautogen \
-    requests httpx pydantic aiohttp \
-    python-dotenv pyyaml
+    -r /tmp/requirements-docker.txt && \
+    rm /tmp/requirements-docker.txt
 
 # Stratum instrumentation (injected, not part of the repo)
 COPY stratum_patcher/ /opt/stratum/stratum_patcher/

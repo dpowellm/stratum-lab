@@ -1,0 +1,233 @@
+"""Monkey-patch for LiteLLM (used by CrewAI under the hood).
+
+Wraps ``litellm.completion`` and ``litellm.acompletion`` so that:
+1. Model names are rewritten to the vLLM-served model
+2. LLM calls are logged to the stratum event stream
+"""
+
+from __future__ import annotations
+
+import functools
+import time
+from typing import Any
+
+from stratum_patcher.event_logger import (
+    EventLogger,
+    capture_output_signature,
+    classify_error,
+    get_caller_info,
+    make_node,
+    generate_node_id,
+)
+from stratum_patcher.openai_patch import remap_model
+
+_PATCHED = False
+
+
+def _build_litellm_payload(
+    kwargs: dict[str, Any],
+    result: Any,
+    latency_ms: float,
+    error: Exception | None = None,
+) -> dict[str, Any]:
+    """Build event payload from litellm call kwargs and response."""
+    payload: dict[str, Any] = {
+        "model_requested": kwargs.get("model", "unknown"),
+        "latency_ms": round(latency_ms, 2),
+    }
+    if error is not None:
+        payload["error"] = str(error)[:500]
+        return payload
+
+    try:
+        model_actual = getattr(result, "model", None) or (
+            result.get("model") if isinstance(result, dict) else None
+        )
+        payload["model_actual"] = model_actual or kwargs.get("model", "unknown")
+    except Exception:
+        payload["model_actual"] = kwargs.get("model", "unknown")
+
+    try:
+        usage = getattr(result, "usage", None) or (
+            result.get("usage") if isinstance(result, dict) else None
+        )
+        if usage is not None:
+            payload["input_tokens"] = getattr(usage, "prompt_tokens", None) or (
+                usage.get("prompt_tokens") if isinstance(usage, dict) else None
+            )
+            payload["output_tokens"] = getattr(usage, "completion_tokens", None) or (
+                usage.get("completion_tokens") if isinstance(usage, dict) else None
+            )
+    except Exception:
+        pass
+
+    return payload
+
+
+def _wrap_litellm_sync(original: Any) -> Any:
+    """Wrap litellm.completion (sync)."""
+
+    @functools.wraps(original)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        logger = EventLogger.get()
+        caller_file, caller_line, _ = get_caller_info(skip_frames=3)
+        node_id = generate_node_id("litellm", "Completion", caller_file, caller_line)
+        source = make_node("capability", node_id, "litellm.completion")
+
+        original_model = kwargs.get("model", "")
+        mapped_model = remap_model(original_model)
+        kwargs["model"] = mapped_model
+
+        start_id = logger.log_event(
+            "llm.call_start",
+            source_node=source,
+            payload={
+                "model_requested": original_model,
+                "model_actual": mapped_model,
+                "model_mapped": original_model != mapped_model,
+                "message_count": len(kwargs.get("messages", [])),
+            },
+        )
+
+        t0 = time.perf_counter()
+        error: Exception | None = None
+        result: Any = None
+        try:
+            result = original(*args, **kwargs)
+            return result
+        except Exception as exc:
+            error = exc
+            raise
+        finally:
+            latency_ms = (time.perf_counter() - t0) * 1000.0
+            payload = _build_litellm_payload(kwargs, result, latency_ms, error)
+            payload["error_type"] = classify_error(error) if error else None
+            if error is None and result is not None:
+                try:
+                    _content = _extract_litellm_content(result)
+                    _sig = capture_output_signature(_content)
+                    payload["output_hash"] = _sig["hash"]
+                    payload["output_type"] = _sig["type"]
+                except Exception:
+                    pass
+            logger.log_event(
+                "llm.call_end",
+                source_node=source,
+                payload=payload,
+                parent_event_id=start_id,
+            )
+
+    return wrapper
+
+
+def _wrap_litellm_async(original: Any) -> Any:
+    """Wrap litellm.acompletion (async)."""
+
+    @functools.wraps(original)
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
+        logger = EventLogger.get()
+        caller_file, caller_line, _ = get_caller_info(skip_frames=3)
+        node_id = generate_node_id("litellm", "AsyncCompletion", caller_file, caller_line)
+        source = make_node("capability", node_id, "litellm.acompletion")
+
+        original_model = kwargs.get("model", "")
+        mapped_model = remap_model(original_model)
+        kwargs["model"] = mapped_model
+
+        start_id = logger.log_event(
+            "llm.call_start",
+            source_node=source,
+            payload={
+                "model_requested": original_model,
+                "model_actual": mapped_model,
+                "model_mapped": original_model != mapped_model,
+                "message_count": len(kwargs.get("messages", [])),
+            },
+        )
+
+        t0 = time.perf_counter()
+        error: Exception | None = None
+        result: Any = None
+        try:
+            result = await original(*args, **kwargs)
+            return result
+        except Exception as exc:
+            error = exc
+            raise
+        finally:
+            latency_ms = (time.perf_counter() - t0) * 1000.0
+            payload = _build_litellm_payload(kwargs, result, latency_ms, error)
+            payload["error_type"] = classify_error(error) if error else None
+            if error is None and result is not None:
+                try:
+                    _content = _extract_litellm_content(result)
+                    _sig = capture_output_signature(_content)
+                    payload["output_hash"] = _sig["hash"]
+                    payload["output_type"] = _sig["type"]
+                except Exception:
+                    pass
+            logger.log_event(
+                "llm.call_end",
+                source_node=source,
+                payload=payload,
+                parent_event_id=start_id,
+            )
+
+    return wrapper
+
+
+def _extract_litellm_content(result: Any) -> Any:
+    """Extract text content from a litellm response."""
+    try:
+        choices = getattr(result, "choices", None) or (
+            result.get("choices") if isinstance(result, dict) else None
+        )
+        if choices and len(choices) > 0:
+            first = choices[0]
+            message = getattr(first, "message", None) or (
+                first.get("message") if isinstance(first, dict) else None
+            )
+            if message is not None:
+                return getattr(message, "content", None) or (
+                    message.get("content") if isinstance(message, dict) else None
+                )
+    except Exception:
+        pass
+    return None
+
+
+def patch() -> None:
+    """Apply monkey-patches to litellm. Idempotent."""
+    global _PATCHED
+    if _PATCHED:
+        return
+    _PATCHED = True
+
+    try:
+        import litellm
+    except ImportError:
+        return
+
+    # Patch sync completion
+    try:
+        orig = litellm.completion
+        if not getattr(orig, "_stratum_patched", False):
+            wrapped = _wrap_litellm_sync(orig)
+            wrapped._stratum_patched = True  # type: ignore[attr-defined]
+            litellm.completion = wrapped  # type: ignore[attr-defined]
+    except Exception:
+        pass
+
+    # Patch async completion
+    try:
+        orig = litellm.acompletion
+        if not getattr(orig, "_stratum_patched", False):
+            wrapped = _wrap_litellm_async(orig)
+            wrapped._stratum_patched = True  # type: ignore[attr-defined]
+            litellm.acompletion = wrapped  # type: ignore[attr-defined]
+    except Exception:
+        pass
+
+
+# Auto-patch on import
+patch()
