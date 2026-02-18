@@ -1312,7 +1312,7 @@ def main() -> int:
             )
             script = preamble + body
 
-        script_path = Path("/tmp/synthetic_run.py")
+    script_path = Path("/tmp/synthetic_run.py")
     try:
         script_path.write_text(script, encoding="utf-8")
     except OSError as exc:
