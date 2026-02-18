@@ -428,6 +428,10 @@ while IFS= read -r pyfile; do
     case "$relpath" in
         test/*|tests/*|*/test/*|*/tests/*) score=$((score - 10)) ;;
     esac
+    # -10: filename is a test file
+    case "$(basename "$pyfile")" in
+        test_*|*_test.py|conftest.py) score=$((score - 10)) ;;
+    esac
 
     # -5: deeply nested (>3 dirs deep from repo root)
     depth=$(dir_depth "$pyfile")
@@ -623,6 +627,16 @@ else
         fi
         ATTEMPTED_MODULES="$ATTEMPTED_MODULES $MISSING_MODULE"
 
+        # Skip if module is a local directory in the repo
+        if [ -d "/tmp/repo/$MISSING_MODULE" ] || [ -d "/tmp/repo/src/$MISSING_MODULE" ]; then
+            log "  Module '$MISSING_MODULE' is a local package -- adding to PYTHONPATH"
+            if [ -d "/tmp/repo/$MISSING_MODULE" ]; then
+                export PYTHONPATH="/tmp/repo:$PYTHONPATH"
+            else
+                export PYTHONPATH="/tmp/repo/src:$PYTHONPATH"
+            fi
+            continue
+        fi
         # Resolve pip package name and install
         PIP_NAME=$(resolve_pip_name "$MISSING_MODULE")
         log "  Auto-installing: $MISSING_MODULE -> pip install $PIP_NAME"
