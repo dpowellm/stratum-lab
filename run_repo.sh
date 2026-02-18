@@ -46,6 +46,13 @@ START_EPOCH=$(date +%s)
 
 log() { echo "[stratum] $(date +%H:%M:%S) $*" >&2; }
 
+# Check for REAL behavioral events (not patcher lifecycle noise)
+has_behavioral_events() {
+    local efile="$1"
+    [ -f "$efile" ] || return 1
+    grep -qE '"event_type"[[:space:]]*:[[:space:]]*"(llm\.call_start|llm\.call_end|agent\.task_start|agent\.task_end|execution\.start|execution\.end|tool\.call_start|tool\.call_end|crew\.kickoff_start|crew\.kickoff_end)"' "$efile"
+}
+
 
 # ============================================================================
 # OUTPUT WRITERS
@@ -566,7 +573,7 @@ else
 
         # ── Check for events regardless of exit code ──
         HAS_EVENTS=false
-        if [ -f "$EVENTS_FILE" ] && [ -s "$EVENTS_FILE" ]; then
+        if has_behavioral_events "$EVENTS_FILE"; then
             HAS_EVENTS=true
         fi
 
@@ -674,7 +681,14 @@ if [ "$TIER1_SUCCESS" = false ] && [ -f /app/synthetic_harness.py ]; then
     T2_EXIT=$?
 
     T2_HAS_EVENTS=false
-    if [ -f "$EVENTS_FILE" ] && [ -s "$EVENTS_FILE" ]; then
+    # Harness writes to stratum_events.jsonl; merge if found
+    T2_EVENTS="$OUTPUT_DIR/stratum_events.jsonl"
+    if [ -f "$T2_EVENTS" ] && [ ! -f "$EVENTS_FILE" ]; then
+        cp "$T2_EVENTS" "$EVENTS_FILE"
+    elif [ -f "$T2_EVENTS" ] && [ -f "$EVENTS_FILE" ]; then
+        cat "$T2_EVENTS" >> "$EVENTS_FILE"
+    fi
+    if has_behavioral_events "$EVENTS_FILE"; then
         T2_HAS_EVENTS=true
     fi
 
