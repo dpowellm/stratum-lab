@@ -616,13 +616,19 @@ def patch() -> None:
     # ------------------------------------------------------------------
     CompiledGraph = None
     try:
-        from langgraph.graph.graph import CompiledGraph
+        from langgraph.graph.state import CompiledStateGraph as CompiledGraph
     except ImportError:
         try:
-            from langgraph.graph import CompiledGraph
+            from langgraph.graph.graph import CompiledGraph
         except ImportError:
-            _stderr("langgraph_patch SKIP: langgraph not installed")
-            return
+            try:
+                from langgraph.graph import CompiledGraph
+            except ImportError:
+                try:
+                    from langgraph.pregel.main import Pregel as CompiledGraph
+                except ImportError:
+                    _stderr("langgraph_patch SKIP: langgraph not installed")
+                    return
 
     _stderr("langgraph_patch activating")
 

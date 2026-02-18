@@ -446,6 +446,9 @@ def patch() -> None:
 
     # Try multiple import paths (pyautogen vs autogen-agentchat vs autogen)
     ConversableAgent = None
+    _new_api = False
+
+    # 1) Try old-style API (pyautogen / autogen <0.4)
     for mod_path in (
         "autogen.agentchat.conversable_agent",
         "autogen.agentchat",
@@ -457,9 +460,20 @@ def patch() -> None:
             mod = __import__(mod_path, fromlist=["ConversableAgent"])
             ConversableAgent = getattr(mod, "ConversableAgent", None)
             if ConversableAgent is not None:
+                _stderr(f"autogen_patch: found old API at {mod_path}")
                 break
         except ImportError:
             continue
+
+    # 2) If old API not found, try new API (autogen-agentchat >=0.4)
+    if ConversableAgent is None:
+        try:
+            from autogen_agentchat.agents._base_chat_agent import BaseChatAgent
+            ConversableAgent = BaseChatAgent
+            _new_api = True
+            _stderr("autogen_patch: found new API (BaseChatAgent)")
+        except ImportError:
+            pass
 
     if ConversableAgent is None:
         _stderr("autogen_patch SKIP: autogen not installed")
@@ -572,6 +586,255 @@ def patch() -> None:
                 _stderr("autogen_patch: _execute_tool_call patched")
     except Exception as e:
         _stderr(f"autogen_patch: _execute_tool_call FAILED: {e}")
+
+
+    # ------------------------------------------------------------------
+    # NEW API: BaseChatAgent.on_messages -> agent.task_start / agent.task_end
+    # ------------------------------------------------------------------
+    if _new_api:
+        try:
+            if hasattr(ConversableAgent, "on_messages"):
+                orig = ConversableAgent.on_messages
+                if not getattr(orig, "_stratum_patched", False):
+                    @functools.wraps(orig)
+                    async def _wrapped_on_messages(self, messages, cancellation_token=None, **kw):
+                        logger = EventLogger.get()
+                        agent_name = getattr(self, "name", type(self).__name__)
+                        node_id = generate_node_id(_FRAMEWORK, agent_name, __file__, 0)
+                        source = make_node("agent", node_id, agent_name)
+                        start_id = logger.log_event(
+                            "agent.task_start",
+                            source_node=source,
+                            payload={
+                                "agent_name": agent_name,
+                                "agent_type": type(self).__name__,
+                                "message_count": len(messages) if messages else 0,
+                                "api_version": "new",
+                            },
+                        )
+                        t0 = time.perf_counter()
+                        error = None
+                        result = None
+                        try:
+                            if cancellation_token is not None:
+                                result = await orig(self, messages, cancellation_token, **kw)
+                            else:
+                                result = await orig(self, messages, **kw)
+                            return result
+                        except Exception as exc:
+                            error = exc
+                            raise
+                        finally:
+                            latency_ms = (time.perf_counter() - t0) * 1000.0
+                            payload = {
+                                "agent_name": agent_name,
+                                "latency_ms": round(latency_ms, 2),
+                                "status": "error" if error else "success",
+                            }
+                            if error:
+                                payload["error"] = str(error)[:500]
+                                payload["error_type"] = type(error).__name__
+                            if result is not None:
+                                payload["result_shape"] = get_data_shape(result)
+                                _sig = capture_output_signature(str(result)[:2000])
+                                payload["output_hash"] = _sig["hash"]
+                                payload["output_type"] = _sig["type"]
+                                payload["output_size_bytes"] = _sig["size_bytes"]
+                                payload["output_preview"] = _sig["preview"][:500]
+                            logger.log_event(
+                                "agent.task_end",
+                                source_node=source,
+                                payload=payload,
+                                parent_event_id=start_id,
+                            )
+                    _wrapped_on_messages._stratum_patched = True
+                    ConversableAgent.on_messages = _wrapped_on_messages
+                    _stderr("autogen_patch: BaseChatAgent.on_messages patched (new API)")
+        except Exception as e:
+            _stderr(f"autogen_patch: on_messages FAILED: {e}")
+
+        try:
+            if hasattr(ConversableAgent, "on_messages_stream"):
+                orig_stream = ConversableAgent.on_messages_stream
+                if not getattr(orig_stream, "_stratum_patched", False):
+                    @functools.wraps(orig_stream)
+                    async def _wrapped_on_messages_stream(self, messages, cancellation_token=None, **kw):
+                        logger = EventLogger.get()
+                        agent_name = getattr(self, "name", type(self).__name__)
+                        node_id = generate_node_id(_FRAMEWORK, agent_name, __file__, 0)
+                        source = make_node("agent", node_id, agent_name)
+                        start_id = logger.log_event(
+                            "agent.task_start",
+                            source_node=source,
+                            payload={
+                                "agent_name": agent_name,
+                                "agent_type": type(self).__name__,
+                                "message_count": len(messages) if messages else 0,
+                                "api_version": "new",
+                            },
+                        )
+                        t0 = time.perf_counter()
+                        error = None
+                        last_item = None
+                        try:
+                            if cancellation_token is not None:
+                                async for item in orig_stream(self, messages, cancellation_token, **kw):
+                                    last_item = item
+                                    yield item
+                            else:
+                                async for item in orig_stream(self, messages, **kw):
+                                    last_item = item
+                                    yield item
+                        except Exception as exc:
+                            error = exc
+                            raise
+                        finally:
+                            latency_ms = (time.perf_counter() - t0) * 1000.0
+                            payload = {
+                                "agent_name": agent_name,
+                                "latency_ms": round(latency_ms, 2),
+                                "status": "error" if error else "success",
+                            }
+                            if error:
+                                payload["error"] = str(error)[:500]
+                                payload["error_type"] = type(error).__name__
+                            if last_item is not None:
+                                payload["result_shape"] = get_data_shape(last_item)
+                                _sig = capture_output_signature(str(last_item)[:2000])
+                                payload["output_hash"] = _sig["hash"]
+                                payload["output_type"] = _sig["type"]
+                                payload["output_size_bytes"] = _sig["size_bytes"]
+                                payload["output_preview"] = _sig["preview"][:500]
+                            logger.log_event(
+                                "agent.task_end",
+                                source_node=source,
+                                payload=payload,
+                                parent_event_id=start_id,
+                            )
+                    _wrapped_on_messages_stream._stratum_patched = True
+                    ConversableAgent.on_messages_stream = _wrapped_on_messages_stream
+                    _stderr("autogen_patch: BaseChatAgent.on_messages_stream patched (new API)")
+        except Exception as e:
+            _stderr(f"autogen_patch: on_messages_stream FAILED: {e}")
+
+        # Also patch AssistantAgent directly since it overrides on_messages_stream
+        try:
+            from autogen_agentchat.agents import AssistantAgent as _AA
+            if hasattr(_AA, "on_messages_stream"):
+                orig_aa_stream = _AA.on_messages_stream
+                if not getattr(orig_aa_stream, "_stratum_patched", False):
+                    @functools.wraps(orig_aa_stream)
+                    async def _wrapped_aa_stream(self, messages, cancellation_token=None, **kw):
+                        logger = EventLogger.get()
+                        agent_name = getattr(self, "name", type(self).__name__)
+                        node_id = generate_node_id(_FRAMEWORK, agent_name, __file__, 0)
+                        source = make_node("agent", node_id, agent_name)
+                        start_id = logger.log_event(
+                            "agent.task_start",
+                            source_node=source,
+                            payload={
+                                "agent_name": agent_name,
+                                "agent_type": type(self).__name__,
+                                "message_count": len(messages) if messages else 0,
+                                "api_version": "new",
+                            },
+                        )
+                        t0 = time.perf_counter()
+                        error = None
+                        last_item = None
+                        try:
+                            if cancellation_token is not None:
+                                async for item in orig_aa_stream(self, messages, cancellation_token, **kw):
+                                    last_item = item
+                                    yield item
+                            else:
+                                async for item in orig_aa_stream(self, messages, **kw):
+                                    last_item = item
+                                    yield item
+                        except Exception as exc:
+                            error = exc
+                            raise
+                        finally:
+                            latency_ms = (time.perf_counter() - t0) * 1000.0
+                            payload = {
+                                "agent_name": agent_name,
+                                "latency_ms": round(latency_ms, 2),
+                                "status": "error" if error else "success",
+                            }
+                            if error:
+                                payload["error"] = str(error)[:500]
+                                payload["error_type"] = type(error).__name__
+                            if last_item is not None:
+                                payload["result_shape"] = get_data_shape(last_item)
+                                _sig = capture_output_signature(str(last_item)[:2000])
+                                payload["output_hash"] = _sig["hash"]
+                                payload["output_type"] = _sig["type"]
+                                payload["output_size_bytes"] = _sig["size_bytes"]
+                                payload["output_preview"] = _sig["preview"][:500]
+                            logger.log_event(
+                                "agent.task_end",
+                                source_node=source,
+                                payload=payload,
+                                parent_event_id=start_id,
+                            )
+                    _wrapped_aa_stream._stratum_patched = True
+                    _AA.on_messages_stream = _wrapped_aa_stream
+                    _stderr("autogen_patch: AssistantAgent.on_messages_stream patched (new API)")
+        except Exception as e:
+            _stderr(f"autogen_patch: AssistantAgent patch FAILED: {e}")
+
+        # Patch run() for execution.start/end
+        try:
+            if hasattr(ConversableAgent, "run"):
+                orig_run = ConversableAgent.run
+                if not getattr(orig_run, "_stratum_patched", False):
+                    @functools.wraps(orig_run)
+                    async def _wrapped_run(self, task=None, **kw):
+                        logger = EventLogger.get()
+                        agent_name = getattr(self, "name", type(self).__name__)
+                        node_id = generate_node_id(_FRAMEWORK, agent_name, __file__, 0)
+                        source = make_node("agent", node_id, agent_name)
+                        start_id = logger.log_event(
+                            "execution.start",
+                            source_node=source,
+                            payload={
+                                "agent_name": agent_name,
+                                "agent_type": type(self).__name__,
+                                "task_type": type(task).__name__ if task else "None",
+                                "api_version": "new",
+                            },
+                        )
+                        t0 = time.perf_counter()
+                        error = None
+                        result = None
+                        try:
+                            result = await orig_run(self, task=task, **kw)
+                            return result
+                        except Exception as exc:
+                            error = exc
+                            raise
+                        finally:
+                            latency_ms = (time.perf_counter() - t0) * 1000.0
+                            payload = {
+                                "agent_name": agent_name,
+                                "latency_ms": round(latency_ms, 2),
+                                "status": "error" if error else "success",
+                            }
+                            if error:
+                                payload["error"] = str(error)[:500]
+                            if result is not None:
+                                payload["result_shape"] = get_data_shape(result)
+                            logger.log_event(
+                                "execution.end",
+                                source_node=source,
+                                payload=payload,
+                                parent_event_id=start_id,
+                            )
+                    _wrapped_run._stratum_patched = True
+                    ConversableAgent.run = _wrapped_run
+                    _stderr("autogen_patch: BaseChatAgent.run patched (new API)")
+        except Exception as e:
+            _stderr(f"autogen_patch: run FAILED: {e}")
 
     _stderr("autogen_patch activated")
 

@@ -123,6 +123,12 @@ def _build_payload(
         payload["error"] = str(error)[:500]
         return payload
 
+    # Unwrap LegacyAPIResponse (LangChain) before extracting fields
+    if hasattr(result, 'parse') and not hasattr(result, 'choices'):
+        try:
+            result = result.parse()
+        except Exception:
+            pass
     # Extract from response object (may be pydantic model or dict)
     try:
         model_actual = getattr(result, "model", None) or (
@@ -291,6 +297,9 @@ def _wrap_sync_create(original: Any) -> Any:
 def _extract_response_content(result: Any) -> Any:
     """Extract the text content from an OpenAI response object."""
     try:
+        # LangChain wraps responses in LegacyAPIResponse — unwrap via .parse()
+        if hasattr(result, 'parse') and not hasattr(result, 'choices'):
+            result = result.parse()
         choices = getattr(result, "choices", None) or (
             result.get("choices") if isinstance(result, dict) else None
         )
