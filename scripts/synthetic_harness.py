@@ -1259,7 +1259,60 @@ def main() -> int:
         return 1
 
     # -- Write and execute the generated script ----------------------------
-    script_path = Path("/tmp/synthetic_run.py")
+    # Post-process: compile-check the generated script. If it has
+    # IndentationError from template interpolation, fall back to a
+    # minimal working script for the framework.
+    try:
+        compile(script, '<synthetic>', 'exec')
+    except SyntaxError as e:
+        print(f'[synthetic] Generated script has syntax error: {e}', file=sys.stderr)
+        print('[synthetic] Falling back to minimal script', file=sys.stderr)
+        vllm_url, vllm_model, api_key, repo_root = _env_config()
+        preamble = _env_preamble(vllm_url, api_key, repo_root)
+        if best_framework == 'langgraph':
+            body = (
+                "from langgraph.graph import StateGraph, START, END\n"
+                "from langchain_openai import ChatOpenAI\n"
+                "from langchain_core.messages import HumanMessage, SystemMessage\n"
+                f"llm = ChatOpenAI(model={vllm_model!r}, base_url={vllm_url!r}, api_key={api_key!r})\n"
+                "def node_a(state):\n"
+                "    r = llm.invoke([SystemMessage(content='Research node.'), HumanMessage(content=state.get('input','analyze AI'))])\n"
+                "    state['a_out'] = r.content\n"
+                "    return state\n"
+                "def node_b(state):\n"
+                "    r = llm.invoke([SystemMessage(content='Writer node.'), HumanMessage(content=state.get('a_out','summarize'))])\n"
+                "    state['b_out'] = r.content\n"
+                "    return state\n"
+                "g = StateGraph(dict)\n"
+                "g.add_node('node_a', node_a)\n"
+                "g.add_node('node_b', node_b)\n"
+                "g.add_edge(START, 'node_a')\n"
+                "g.add_edge('node_a', 'node_b')\n"
+                "g.add_edge('node_b', END)\n"
+                "app = g.compile()\n"
+                "result = app.invoke({'input': 'Analyze AI agent frameworks'})\n"
+                "print('Graph completed (fallback):', list(result.keys()))\n"
+            )
+            script = preamble + body
+        elif best_framework == 'autogen':
+            body = (
+                "import autogen\n"
+                f"config_list = [{{'model': {vllm_model!r}, 'base_url': {vllm_url!r}, 'api_key': {api_key!r}}}]\n"
+                "a = autogen.AssistantAgent(name='assistant', system_message='You are helpful.', llm_config={'config_list': config_list})\n"
+                "u = autogen.UserProxyAgent(name='user', human_input_mode='NEVER', max_consecutive_auto_reply=2, code_execution_config=False)\n"
+                "u.initiate_chat(a, message='Summarize key trends in AI agents.')\n"
+            )
+            script = preamble + body
+        else:
+            body = (
+                "from openai import OpenAI\n"
+                f"c = OpenAI(base_url={vllm_url!r}, api_key={api_key!r})\n"
+                f"r = c.chat.completions.create(model={vllm_model!r}, messages=[{{'role':'user','content':'Analyze AI agents'}}], max_tokens=200)\n"
+                "print(r.choices[0].message.content[:100])\n"
+            )
+            script = preamble + body
+
+        script_path = Path("/tmp/synthetic_run.py")
     try:
         script_path.write_text(script, encoding="utf-8")
     except OSError as exc:
