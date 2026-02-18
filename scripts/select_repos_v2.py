@@ -1,478 +1,418 @@
 #!/usr/bin/env python3
-"""Intelligent repo selection for stratum-lab behavioral scan v2.
+"""Intelligent repo selection for stratum-lab behavioral scan.
 
-Reads scan_results.jsonl (stratum-cli output for ~28k repos) and produces
-a ranked list optimized for behavioral dataset value.
-
-Usage:
-    python select_repos_v2.py scan_results.jsonl [--output-dir DIR]
+Selects repos that maximize value for the statistical reference model:
+- Multi-agent systems (not single-agent chatbots)
+- Framework diversity (CrewAI, LangGraph, AutoGen, LangChain)
+- Finding coverage (need WITH and WITHOUT each finding for correlations)
+- Architectural diversity (different topologies and complexity levels)
+- Runnability (repos that will actually execute)
 """
 
-from __future__ import annotations
-
-import argparse
 import json
-import math
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Any
 
-
-# ── PHASE 1: HARD FILTERS ─────────────────────────────────────────────────────
-
+# ── CONFIG ───────────────────────────────────────────────────────────────────
+TARGET_TOTAL = 4000
 SUPPORTED_FRAMEWORKS = {"CrewAI", "LangGraph", "AutoGen", "LangChain"}
 
-# Finding category prefixes
-FINDING_CATEGORIES = {"DC", "OC", "SI", "EA", "AB"}
+# Target framework distribution (percentages of final selection)
+FRAMEWORK_TARGETS = {
+    "CrewAI": 0.45,      # Best patcher, richest data
+    "LangChain": 0.25,   # Largest pool
+    "LangGraph": 0.15,   # Important for product claims
+    "AutoGen": 0.15,     # Important for product claims
+}
+
+# Minimum coverage guarantees
+MIN_PER_FRAMEWORK = 80
+MIN_PER_FINDING_PREFIX = 10
+MIN_WITH_GUARDRAILS = 20
+MIN_COMPLEX = 50  # agent_count >= 4
 
 
-def extract_finding_category(finding_id: str) -> str:
-    """Extract category from a STRAT finding ID like STRAT-DC-001."""
-    parts = finding_id.split("-")
-    if len(parts) >= 2:
-        return parts[1]  # DC, OC, SI, EA, AB
-    return "UNKNOWN"
+def get_agent_count(repo):
+    """Get effective agent count, falling back to crew_size_distribution."""
+    ac = repo.get("agent_count", 0)
+    if ac < 2:
+        csd = repo.get("crew_size_distribution", [])
+        if csd:
+            ac = max(csd)
+    return ac
 
 
-def structural_fingerprint(repo: dict) -> str:
-    """Create a dedup fingerprint from structural features."""
-    agent_count = repo.get("agent_count", 0)
-    framework = repo.get("primary_framework", "")
+def get_framework(repo):
+    """Get primary framework from frameworks list."""
+    frameworks = repo.get("frameworks", [])
+    if not frameworks:
+        return "none"
+    # Prefer supported frameworks
+    for fw in frameworks:
+        if fw in SUPPORTED_FRAMEWORKS:
+            return fw
+    return frameworks[0]
+
+
+def get_finding_prefixes(repo):
+    """Extract unique finding prefixes (e.g., STRATUM, CONTEXT, TELEMETRY)."""
+    rules = repo.get("finding_rules", [])
+    prefixes = set()
+    for r in rules:
+        # Split on hyphen or dash — prefix is everything before the last segment
+        parts = r.rsplit("-", 1)
+        if len(parts) >= 1:
+            prefixes.add(parts[0])
+    return prefixes
+
+
+def structural_fingerprint(repo):
+    """Dedup key: framework + agent_count + sorted findings."""
+    fw = get_framework(repo)
+    ac = get_agent_count(repo)
     rules = sorted(repo.get("finding_rules", []))
-    return f"{framework}:{agent_count}:{','.join(rules)}"
+    return f"{fw}:{ac}:{','.join(rules)}"
 
 
-def apply_hard_filters(repos: list[dict]) -> list[dict]:
-    """Phase 1: eliminate repos that can't produce useful data."""
-    filtered = []
-    for r in repos:
-        agent_count = r.get("agent_count", 0)
-        framework = r.get("primary_framework", "")
+# ── PHASE 1: LOAD AND FILTER ────────────────────────────────────────────────
+def phase1_filter(input_path):
+    """Hard filters: must be multi-agent with supported framework."""
+    raw = []
+    with open(input_path) as f:
+        for line in f:
+            try:
+                raw.append(json.loads(line.strip()))
+            except json.JSONDecodeError:
+                continue
+
+    print(f"Loaded {len(raw)} repos")
+
+    # Filter
+    passed = []
+    filtered_reasons = Counter()
+
+    for r in raw:
+        ac = get_agent_count(r)
+        fw = get_framework(r)
         tool_count = r.get("total_tool_count", 0)
 
         # Must be multi-agent
-        if agent_count < 2:
+        if ac < 2:
+            filtered_reasons["agent_count < 2"] += 1
             continue
 
-        # Must have a working patcher
-        if framework not in SUPPORTED_FRAMEWORKS:
+        # Must have a supported framework
+        if fw not in SUPPORTED_FRAMEWORKS:
+            filtered_reasons[f"unsupported framework: {fw}"] += 1
             continue
 
         # Must have some complexity
-        if tool_count < 1 and agent_count < 3:
+        if tool_count < 1 and ac < 3:
+            filtered_reasons["too simple (< 1 tool and < 3 agents)"] += 1
             continue
 
-        filtered.append(r)
+        passed.append(r)
 
-    # Deduplicate by structural fingerprint — keep highest deployment_score
-    by_fingerprint: dict[str, dict] = {}
-    for r in filtered:
+    print(f"\nPhase 1 filters: {len(raw)} -> {len(passed)}")
+    for reason, count in filtered_reasons.most_common():
+        print(f"  Filtered {count}: {reason}")
+
+    # Dedup by structural fingerprint (keep highest deployment_score)
+    groups = defaultdict(list)
+    for r in passed:
         fp = structural_fingerprint(r)
-        existing = by_fingerprint.get(fp)
-        if existing is None:
-            by_fingerprint[fp] = r
-        else:
-            dep = r.get("deployment_signals", {})
-            dep_score = dep.get("deployment_score", 0) if isinstance(dep, dict) else 0
-            existing_dep = existing.get("deployment_signals", {})
-            existing_score = existing_dep.get("deployment_score", 0) if isinstance(existing_dep, dict) else 0
-            if dep_score > existing_score:
-                by_fingerprint[fp] = r
+        groups[fp].append(r)
 
-    result = list(by_fingerprint.values())
-    print(f"Phase 1: {len(repos)} -> {len(filtered)} after filters -> {len(result)} after dedup")
-    return result
+    deduped = []
+    for fp, repos in groups.items():
+        best = max(repos, key=lambda r: r.get("deployment_signals", {}).get("deployment_score", 0))
+        deduped.append(best)
+
+    print(f"After dedup: {len(passed)} -> {len(deduped)}")
+    return deduped
 
 
 # ── PHASE 2: SCORING ────────────────────────────────────────────────────────
-
-# Target framework distribution
-TARGET_DISTRIBUTION = {
-    "CrewAI": 0.50,
-    "LangGraph": 0.25,
-    "AutoGen": 0.15,
-    "LangChain": 0.10,
-}
-
-
-def score_architectural(repo: dict) -> int:
-    """Architectural value (0-30 points)."""
+def score_repo(repo, framework_counts, finding_counts):
+    """Score a repo by value to the dataset."""
+    ac = get_agent_count(repo)
+    fw = get_framework(repo)
     score = 0
-    agent_count = repo.get("agent_count", 0)
+    breakdown = {}
 
-    # Agent count scoring
-    if agent_count >= 5:
-        score += 20
-    elif agent_count >= 4:
-        score += 15
-    elif agent_count >= 3:
-        score += 10
-    elif agent_count >= 2:
-        score += 5
+    # a) Architectural value (0-30)
+    arch = 0
+    if ac >= 5:
+        arch = 20
+    elif ac >= 4:
+        arch = 15
+    elif ac >= 3:
+        arch = 10
+    else:
+        arch = 5
 
-    # Graph topology complexity
     topo = repo.get("graph_topology_metrics", {})
-    if isinstance(topo, dict):
-        if topo.get("diameter", 0) > 2:
-            score += 5
-
-    # Guardrails present
+    if topo.get("diameter", 0) > 2:
+        arch += 5
     if repo.get("has_any_guardrails", False):
-        score += 5
+        arch += 5
+    arch = min(arch, 30)
+    breakdown["architectural"] = arch
+    score += arch
 
-    return min(score, 30)
+    # b) Finding diversity value (0-30)
+    find_score = 0
+    rules = repo.get("finding_rules", [])
+    prefixes = get_finding_prefixes(repo)
 
+    # Rare findings are more valuable
+    for rule in rules:
+        count = finding_counts.get(rule, 0)
+        if count < 50:
+            find_score += 5
+        elif count < 200:
+            find_score += 3
+        elif count < 500:
+            find_score += 1
 
-def score_finding_diversity(repo: dict, finding_counts: Counter) -> int:
-    """Finding diversity value (0-30 points). Repos with rare findings score higher."""
-    score = 0
-    findings = repo.get("finding_rules", [])
-    if not findings:
-        return 0
+    if len(prefixes) >= 4:
+        find_score += 10
+    elif len(prefixes) >= 3:
+        find_score += 5
 
-    # Rarity bonus: findings that appear in fewer selected repos are more valuable
-    rarity_sum = 0.0
-    for f in findings:
-        count = finding_counts.get(f, 1)
-        # Inverse frequency scoring
-        rarity_sum += 1.0 / max(count, 1)
+    find_score = min(find_score, 30)
+    breakdown["finding_diversity"] = find_score
+    score += find_score
 
-    # Normalize: max 20 points for rarity
-    score += min(int(rarity_sum * 5), 20)
+    # c) Runnability value (0-20)
+    run_score = 0
+    ds = repo.get("deployment_signals", {})
+    dep_score = ds.get("deployment_score", 0)
+    run_score += min(dep_score * 3, 15)
+    if ds.get("has_lockfile", False):
+        run_score += 5
+    run_score = min(run_score, 20)
+    breakdown["runnability"] = run_score
+    score += run_score
 
-    # Category diversity bonus
-    categories = {extract_finding_category(f) for f in findings}
-    if len(categories) >= 4:
-        score += 20
-    elif len(categories) >= 3:
-        score += 10
+    # d) Framework diversity bonus (0-20)
+    fw_bonus = 0
+    total_selected = sum(framework_counts.values()) or 1
+    current_pct = framework_counts.get(fw, 0) / total_selected
+    target_pct = FRAMEWORK_TARGETS.get(fw, 0.1)
+    if current_pct < target_pct:
+        # Underrepresented — boost
+        gap = target_pct - current_pct
+        fw_bonus = min(int(gap * 200), 20)
+    breakdown["framework_bonus"] = fw_bonus
+    score += fw_bonus
 
-    return min(score, 30)
-
-
-def score_runnability(repo: dict) -> int:
-    """Runnability value (0-20 points)."""
-    score = 0
-    dep = repo.get("deployment_signals", {})
-    if isinstance(dep, dict):
-        dep_score = dep.get("deployment_score", 0)
-        # Map 0-5 deployment score to 0-15 points
-        score += min(int(dep_score * 3), 15)
-        if dep.get("has_lockfile", False):
-            score += 5
-    return min(score, 20)
-
-
-def score_framework_bonus(repo: dict, framework_counts: Counter, total_selected: int) -> int:
-    """Framework diversity bonus (0-20 points). Boost underrepresented frameworks."""
-    framework = repo.get("primary_framework", "")
-    if framework not in TARGET_DISTRIBUTION:
-        return 0
-
-    target_ratio = TARGET_DISTRIBUTION[framework]
-    current_count = framework_counts.get(framework, 0)
-    current_ratio = current_count / max(total_selected, 1)
-
-    # If underrepresented, give bonus proportional to the gap
-    gap = target_ratio - current_ratio
-    if gap > 0:
-        return min(int(gap * 100), 20)
-    return 0
+    return score, breakdown
 
 
-def compute_scores(repos: list[dict]) -> list[dict]:
-    """Phase 2: Score each repo and add composite_score."""
-    # First pass: count findings across all repos for rarity scoring
-    global_finding_counts: Counter = Counter()
+def phase2_score(repos):
+    """Score all repos, iteratively updating framework counts."""
+    # Pre-compute finding frequencies
+    finding_counts = Counter()
     for r in repos:
-        for f in r.get("finding_rules", []):
-            global_finding_counts[f] += 1
+        for rule in r.get("finding_rules", []):
+            finding_counts[rule] += 1
 
-    # Iterative scoring with framework rebalancing
-    framework_counts: Counter = Counter()
+    framework_counts = Counter()
+
+    # Score all repos with initial zero framework counts
     scored = []
-
     for r in repos:
-        arch = score_architectural(r)
-        finding_div = score_finding_diversity(r, global_finding_counts)
-        runnability = score_runnability(r)
-        fw_bonus = score_framework_bonus(r, framework_counts, len(scored))
+        s, bd = score_repo(r, framework_counts, finding_counts)
+        scored.append((s, bd, r))
 
-        composite = arch + finding_div + runnability + fw_bonus
+    # Sort by score descending
+    scored.sort(key=lambda x: x[0], reverse=True)
 
-        r["composite_score"] = composite
-        r["score_breakdown"] = {
-            "architectural": arch,
-            "finding_diversity": finding_div,
-            "runnability": runnability,
-            "framework_bonus": fw_bonus,
-        }
-        scored.append(r)
-
-        # Track framework counts for dynamic rebalancing
-        framework_counts[r.get("primary_framework", "")] += 1
-
-    # Sort by composite score descending
-    scored.sort(key=lambda x: x["composite_score"], reverse=True)
-
-    # Second pass: recalculate framework bonuses with better ordering
-    framework_counts.clear()
-    for r in scored:
-        fw_bonus = score_framework_bonus(r, framework_counts, len(framework_counts))
-        old_composite = r["composite_score"]
-        r["score_breakdown"]["framework_bonus"] = fw_bonus
-        r["composite_score"] = (
-            r["score_breakdown"]["architectural"]
-            + r["score_breakdown"]["finding_diversity"]
-            + r["score_breakdown"]["runnability"]
-            + fw_bonus
-        )
-        framework_counts[r.get("primary_framework", "")] += 1
-
-    # Re-sort after rebalancing
-    scored.sort(key=lambda x: x["composite_score"], reverse=True)
-    return scored
-
-
-# ── PHASE 3: COVERAGE GUARANTEES ──────────────────────────────────────────────
-
-def ensure_coverage(repos: list[dict]) -> list[dict]:
-    """Phase 3: Force-include repos to meet minimum coverage targets."""
-    selected_set = set()
+    # Re-score top N iteratively (framework bonus adjusts as we select)
     selected = []
+    framework_counts = Counter()
 
-    # Start with top-scored repos
-    for r in repos:
-        key = r.get("repo_full_name", r.get("repo_url", ""))
-        if key not in selected_set:
-            selected_set.add(key)
-            selected.append(r)
+    for s, bd, r in scored:
+        if len(selected) >= TARGET_TOTAL * 1.2:  # overshoot for coverage phase
+            break
+        # Re-score with current framework counts
+        new_s, new_bd = score_repo(r, framework_counts, finding_counts)
+        fw = get_framework(r)
+        framework_counts[fw] += 1
+        selected.append((new_s, new_bd, r))
 
-    # Coverage targets
-    framework_min = 100  # per supported framework
-    finding_category_min = 10  # per STRAT category
-    guardrail_min = 20
-    complex_min = 50  # agent_count >= 4
+    selected.sort(key=lambda x: x[0], reverse=True)
+    print(f"\nPhase 2: {len(selected)} repos scored")
+    return selected
 
-    # Check and fix framework coverage
-    for fw in ["CrewAI", "LangGraph", "AutoGen"]:
-        fw_repos = [r for r in selected if r.get("primary_framework") == fw]
-        if len(fw_repos) < framework_min:
-            # Find candidates not yet selected
-            needed = framework_min - len(fw_repos)
-            candidates = [
-                r for r in repos
-                if r.get("primary_framework") == fw
-                and r.get("repo_full_name", r.get("repo_url", "")) not in selected_set
-            ]
-            candidates.sort(key=lambda x: x.get("composite_score", 0), reverse=True)
-            for c in candidates[:needed]:
-                key = c.get("repo_full_name", c.get("repo_url", ""))
-                selected_set.add(key)
-                selected.append(c)
 
-    # Check finding category coverage
-    for cat in FINDING_CATEGORIES:
-        cat_repos = [
-            r for r in selected
-            if any(extract_finding_category(f) == cat for f in r.get("finding_rules", []))
-        ]
-        if len(cat_repos) < finding_category_min:
-            needed = finding_category_min - len(cat_repos)
-            candidates = [
-                r for r in repos
-                if any(extract_finding_category(f) == cat for f in r.get("finding_rules", []))
-                and r.get("repo_full_name", r.get("repo_url", "")) not in selected_set
-            ]
-            candidates.sort(key=lambda x: x.get("composite_score", 0), reverse=True)
-            for c in candidates[:needed]:
-                key = c.get("repo_full_name", c.get("repo_url", ""))
-                selected_set.add(key)
-                selected.append(c)
+# ── PHASE 3: COVERAGE GUARANTEES ────────────────────────────────────────────
+def phase3_coverage(scored_repos, all_repos):
+    """Ensure minimum coverage for frameworks, findings, complexity."""
+    selected = [(s, bd, r) for s, bd, r in scored_repos[:TARGET_TOTAL]]
+    selected_urls = {r.get("repo_full_name") for _, _, r in selected}
 
-    # Check guardrail coverage
-    guard_repos = [r for r in selected if r.get("has_any_guardrails", False)]
-    if len(guard_repos) < guardrail_min:
-        needed = guardrail_min - len(guard_repos)
-        candidates = [
-            r for r in repos
-            if r.get("has_any_guardrails", False)
-            and r.get("repo_full_name", r.get("repo_url", "")) not in selected_set
-        ]
-        candidates.sort(key=lambda x: x.get("composite_score", 0), reverse=True)
-        for c in candidates[:needed]:
-            key = c.get("repo_full_name", c.get("repo_url", ""))
-            selected_set.add(key)
-            selected.append(c)
+    def add_if_missing(repo, reason):
+        name = repo.get("repo_full_name")
+        if name not in selected_urls:
+            selected.append((0, {"coverage_fill": reason}, repo))
+            selected_urls.add(name)
+            return True
+        return False
 
-    # Check complex topology coverage
-    complex_repos = [r for r in selected if r.get("agent_count", 0) >= 4]
-    if len(complex_repos) < complex_min:
-        needed = complex_min - len(complex_repos)
-        candidates = [
-            r for r in repos
-            if r.get("agent_count", 0) >= 4
-            and r.get("repo_full_name", r.get("repo_url", "")) not in selected_set
-        ]
-        candidates.sort(key=lambda x: x.get("composite_score", 0), reverse=True)
-        for c in candidates[:needed]:
-            key = c.get("repo_full_name", c.get("repo_url", ""))
-            selected_set.add(key)
-            selected.append(c)
+    # Framework minimums
+    for fw in SUPPORTED_FRAMEWORKS:
+        fw_repos = [(s, bd, r) for s, bd, r in selected if get_framework(r) == fw]
+        if len(fw_repos) < MIN_PER_FRAMEWORK:
+            need = MIN_PER_FRAMEWORK - len(fw_repos)
+            candidates = [r for r in all_repos if get_framework(r) == fw and r.get("repo_full_name") not in selected_urls]
+            candidates.sort(key=lambda r: r.get("deployment_signals", {}).get("deployment_score", 0), reverse=True)
+            added = 0
+            for r in candidates[:need]:
+                if add_if_missing(r, f"framework_fill:{fw}"):
+                    added += 1
+            if added > 0:
+                print(f"  Added {added} repos for {fw} coverage (had {len(fw_repos)})")
 
-    # Final sort by composite score
-    selected.sort(key=lambda x: x.get("composite_score", 0), reverse=True)
+    # Complex topology minimum
+    complex_repos = [(s, bd, r) for s, bd, r in selected if get_agent_count(r) >= 4]
+    if len(complex_repos) < MIN_COMPLEX:
+        need = MIN_COMPLEX - len(complex_repos)
+        candidates = [r for r in all_repos if get_agent_count(r) >= 4 and r.get("repo_full_name") not in selected_urls]
+        candidates.sort(key=lambda r: get_agent_count(r), reverse=True)
+        added = 0
+        for r in candidates[:need]:
+            if add_if_missing(r, "complex_fill"):
+                added += 1
+        if added > 0:
+            print(f"  Added {added} repos for complex topology coverage (had {len(complex_repos)})")
+
+    # Guardrail minimum
+    guard_repos = [(s, bd, r) for s, bd, r in selected if r.get("has_any_guardrails", False)]
+    if len(guard_repos) < MIN_WITH_GUARDRAILS:
+        need = MIN_WITH_GUARDRAILS - len(guard_repos)
+        candidates = [r for r in all_repos if r.get("has_any_guardrails", False) and r.get("repo_full_name") not in selected_urls]
+        candidates.sort(key=lambda r: r.get("deployment_signals", {}).get("deployment_score", 0), reverse=True)
+        added = 0
+        for r in candidates[:need]:
+            if add_if_missing(r, "guardrail_fill"):
+                added += 1
+        if added > 0:
+            print(f"  Added {added} repos for guardrail coverage (had {len(guard_repos)})")
+
+    # Trim to target if over
+    selected.sort(key=lambda x: x[0], reverse=True)
+    selected = selected[:TARGET_TOTAL]
+
+    print(f"\nPhase 3: {len(selected)} repos after coverage guarantees")
     return selected
 
 
 # ── PHASE 4: OUTPUT ─────────────────────────────────────────────────────────
+def phase4_output(selected, output_dir):
+    """Write output files and print summary."""
+    output_dir = Path(output_dir)
 
-def format_output_record(repo: dict) -> dict:
-    """Build the output JSONL record."""
-    repo_name = repo.get("repo_full_name", "")
-    repo_url = repo.get("repo_url", "")
-    if not repo_url and repo_name:
-        repo_url = f"https://github.com/{repo_name}"
+    # Build output records
+    records = []
+    for score, breakdown, repo in selected:
+        records.append({
+            "repo_url": f"https://github.com/{repo.get('repo_full_name', '')}",
+            "repo_full_name": repo.get("repo_full_name", ""),
+            "primary_framework": get_framework(repo),
+            "agent_count": get_agent_count(repo),
+            "composite_score": score,
+            "score_breakdown": breakdown,
+            "finding_rules": repo.get("finding_rules", []),
+            "deployment_score": repo.get("deployment_signals", {}).get("deployment_score", 0),
+            "has_guardrails": repo.get("has_any_guardrails", False),
+            "graph_topology": repo.get("graph_topology_metrics", {}),
+        })
 
-    dep = repo.get("deployment_signals", {})
-    dep_score = dep.get("deployment_score", 0) if isinstance(dep, dict) else 0
+    # Write full list
+    full_path = output_dir / "selected_repos_v2.jsonl"
+    with open(full_path, "w") as f:
+        for r in records:
+            f.write(json.dumps(r) + "\n")
 
-    return {
-        "repo_url": repo_url,
-        "repo_full_name": repo_name,
-        "primary_framework": repo.get("primary_framework", ""),
-        "agent_count": repo.get("agent_count", 0),
-        "composite_score": repo.get("composite_score", 0),
-        "score_breakdown": repo.get("score_breakdown", {}),
-        "finding_rules": repo.get("finding_rules", []),
-        "deployment_score": dep_score,
-    }
+    # Split A/B
+    mid = len(records) // 2
+    a_path = output_dir / "selected_repos_v2_A.jsonl"
+    b_path = output_dir / "selected_repos_v2_B.jsonl"
+    with open(a_path, "w") as f:
+        for r in records[:mid]:
+            f.write(json.dumps(r) + "\n")
+    with open(b_path, "w") as f:
+        for r in records[mid:]:
+            f.write(json.dumps(r) + "\n")
 
+    print(f"\nWrote {len(records)} repos to {full_path}")
+    print(f"Wrote {mid} repos to {a_path}")
+    print(f"Wrote {len(records) - mid} repos to {b_path}")
 
-def print_summary(selected: list[dict]) -> None:
-    """Print selection summary statistics."""
-    print(f"\n{'='*60}")
-    print(f"SELECTION SUMMARY")
-    print(f"{'='*60}")
-    print(f"Total repos selected: {len(selected)}")
+    # ── SUMMARY ──────────────────────────────────────────────────────────
+    print("\n" + "=" * 60)
+    print("SELECTION SUMMARY")
+    print("=" * 60)
+    print(f"Total repos selected: {len(records)}")
 
     # Framework distribution
-    fw_counts: Counter = Counter()
-    for r in selected:
-        fw_counts[r.get("primary_framework", "Unknown")] += 1
+    fw_dist = Counter(r["primary_framework"] for r in records)
     print(f"\nFramework distribution:")
-    for fw, count in fw_counts.most_common():
-        pct = count * 100 / len(selected) if selected else 0
-        print(f"  {fw:15s}: {count:5d} ({pct:.1f}%)")
+    for fw, count in fw_dist.most_common():
+        pct = count / len(records) * 100
+        target = FRAMEWORK_TARGETS.get(fw, 0) * 100
+        print(f"  {fw:15s}: {count:5d} ({pct:.1f}%, target {target:.0f}%)")
 
-    # Finding category coverage
-    cat_counts: Counter = Counter()
-    for r in selected:
-        for f in r.get("finding_rules", []):
-            cat = extract_finding_category(f)
-            cat_counts[cat] += 1
-    print(f"\nFinding category coverage (repos with at least one):")
-    for cat in sorted(FINDING_CATEGORIES):
-        repos_with = sum(
-            1 for r in selected
-            if any(extract_finding_category(f) == cat for f in r.get("finding_rules", []))
-        )
-        print(f"  STRAT-{cat}: {repos_with} repos")
+    # Finding coverage
+    finding_prefixes = Counter()
+    all_findings = Counter()
+    for r in records:
+        prefixes = set()
+        for rule in r["finding_rules"]:
+            all_findings[rule] += 1
+            parts = rule.rsplit("-", 1)
+            if parts:
+                prefixes.add(parts[0])
+        for p in prefixes:
+            finding_prefixes[p] += 1
+
+    print(f"\nFinding prefix coverage:")
+    for prefix, count in finding_prefixes.most_common():
+        print(f"  {prefix:20s}: {count:5d} repos")
+
+    print(f"\nTop 15 individual findings:")
+    for finding, count in all_findings.most_common(15):
+        print(f"  {finding:25s}: {count:5d} repos")
 
     # Agent count distribution
-    agent_dist: Counter = Counter()
-    for r in selected:
-        ac = r.get("agent_count", 0)
-        if ac >= 5:
-            agent_dist["5+"] += 1
-        else:
-            agent_dist[str(ac)] += 1
+    ac_dist = Counter(r["agent_count"] for r in records)
     print(f"\nAgent count distribution:")
-    for k in sorted(agent_dist.keys()):
-        print(f"  {k} agents: {agent_dist[k]} repos")
+    for ac in sorted(ac_dist.keys()):
+        print(f"  {ac} agents: {ac_dist[ac]:5d} repos")
 
     # Guardrails
-    guard_count = sum(1 for r in selected if r.get("has_any_guardrails", False))
+    guard_count = sum(1 for r in records if r["has_guardrails"])
     print(f"\nRepos with guardrails: {guard_count}")
 
     # Top 10
     print(f"\nTop 10 repos by composite score:")
-    for r in selected[:10]:
-        name = r.get("repo_full_name", r.get("repo_url", "unknown"))
-        score = r.get("composite_score", 0)
-        fw = r.get("primary_framework", "?")
-        ac = r.get("agent_count", 0)
-        print(f"  {score:3d}  {fw:12s}  agents={ac}  {name}")
+    for r in records[:10]:
+        print(f"  {r['composite_score']:3d}  {r['primary_framework']:12s}  {r['agent_count']}a  {r['repo_full_name']}")
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Intelligent repo selection for stratum-lab v2")
-    parser.add_argument("scan_results", help="Path to scan_results.jsonl")
-    parser.add_argument("--output-dir", default=".", help="Output directory for JSONL files")
-    args = parser.parse_args()
-
-    scan_path = Path(args.scan_results)
-    output_dir = Path(args.output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Load scan results
-    print(f"Loading {scan_path}...")
-    repos: list[dict] = []
-    with open(scan_path, "r", encoding="utf-8") as f:
-        for line_num, line in enumerate(f, 1):
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                repos.append(json.loads(line))
-            except json.JSONDecodeError:
-                if line_num <= 5:
-                    print(f"Warning: skipping malformed line {line_num}")
-    print(f"Loaded {len(repos)} repos")
-
-    # Phase 1: Hard filters
-    filtered = apply_hard_filters(repos)
-
-    # Phase 2: Scoring
-    print("Phase 2: Scoring...")
-    scored = compute_scores(filtered)
-    print(f"Phase 2: {len(scored)} repos scored")
-
-    # Phase 3: Coverage guarantees
-    print("Phase 3: Coverage guarantees...")
-    selected = ensure_coverage(scored)
-    print(f"Phase 3: {len(selected)} repos after coverage guarantees")
-
-    # Phase 4: Output
-    output_records = [format_output_record(r) for r in selected]
-
-    # Write main output
-    main_output = output_dir / "selected_repos_v2.jsonl"
-    with open(main_output, "w", encoding="utf-8") as f:
-        for rec in output_records:
-            f.write(json.dumps(rec, default=str) + "\n")
-    print(f"\nWrote {len(output_records)} repos to {main_output}")
-
-    # Write split outputs for two droplets
-    mid = len(output_records) // 2
-    split_a = output_dir / "selected_repos_v2_A.jsonl"
-    split_b = output_dir / "selected_repos_v2_B.jsonl"
-
-    with open(split_a, "w", encoding="utf-8") as f:
-        for rec in output_records[:mid]:
-            f.write(json.dumps(rec, default=str) + "\n")
-
-    with open(split_b, "w", encoding="utf-8") as f:
-        for rec in output_records[mid:]:
-            f.write(json.dumps(rec, default=str) + "\n")
-
-    print(f"Wrote {mid} repos to {split_a}")
-    print(f"Wrote {len(output_records) - mid} repos to {split_b}")
-
-    # Print summary
-    print_summary(selected)
-
-
+# ── MAIN ─────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) < 2:
+        print("Usage: python select_repos_v2.py <scan_results.jsonl> [output_dir]")
+        sys.exit(1)
+
+    input_path = sys.argv[1]
+    output_dir = sys.argv[2] if len(sys.argv) > 2 else str(Path(input_path).parent)
+
+    all_repos = phase1_filter(input_path)
+    scored = phase2_score(all_repos)
+    final = phase3_coverage(scored, all_repos)
+    phase4_output(final, output_dir)
