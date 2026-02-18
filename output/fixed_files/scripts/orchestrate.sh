@@ -344,7 +344,7 @@ print_progress() {
     fi
 
     printf "[%s: %d/%d] Success: %d | Partial: %d | Tier2: %d | Failed: %d | Rate: %d%% | ETA: %s\n" \
-        "$CURRENT_PHASE" "$((COMPLETED + SKIPPED))" "$PHASE_TOTAL" "$COUNT_SUCCESS" "$COUNT_PARTIAL" "$COUNT_TIER2" "$COUNT_FAILED" "$rate" "$eta_str"
+        "$CURRENT_PHASE" "$COMPLETED" "$PHASE_TOTAL" "$COUNT_SUCCESS" "$COUNT_PARTIAL" "$COUNT_TIER2" "$COUNT_FAILED" "$rate" "$eta_str"
 }
 
 print_status_summary() {

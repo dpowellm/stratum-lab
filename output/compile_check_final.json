@@ -1,0 +1,113 @@
+{
+  "synth_crewai_delegation": {
+    "passed": true,
+    "script_length": 1023,
+    "script_preview": "import os\nos.environ[\"OPENAI_BASE_URL\"] = 'http://localhost:8000/v1'\nos.environ[\"OPENAI_API_KEY\"] = 'sk-test'\nos.environ[\"STRATUM_REPO_ROOT\"] = '/tmp/repo'\nfrom crewai import Agent, Task, Crew, LLM\n\nllm = LLM(\n    model='openai/mistralai/Mistral-7B-Instruct-v0.3',\n    base_url='http://localhost:8000"
+  },
+  "synth_crewai_reviewed": {
+    "passed": true,
+    "script_length": 1507,
+    "script_preview": "import os\nos.environ[\"OPENAI_BASE_URL\"] = 'http://localhost:8000/v1'\nos.environ[\"OPENAI_API_KEY\"] = 'sk-test'\nos.environ[\"STRATUM_REPO_ROOT\"] = '/tmp/repo'\nfrom crewai import Agent, Task, Crew, LLM\n\nllm = LLM(\n    model='openai/mistralai/Mistral-7B-Instruct-v0.3',\n    base_url='http://localhost:8000"
+  },
+  "synth_crewai_tooled": {
+    "passed": true,
+    "script_length": 1316,
+    "script_preview": "import os\nos.environ[\"OPENAI_BASE_URL\"] = 'http://localhost:8000/v1'\nos.environ[\"OPENAI_API_KEY\"] = 'sk-test'\nos.environ[\"STRATUM_REPO_ROOT\"] = '/tmp/repo'\nfrom crewai import Agent, Task, Crew, LLM\nfrom crewai.tools import tool\n\n@tool(\"word_counter\")\ndef word_counter(text: str) -> str:\n    \"\"\"Count "
+  },
+  "synth_crewai_sequential": {
+    "passed": true,
+    "script_length": 759,
+    "script_preview": "import os\nos.environ[\"OPENAI_BASE_URL\"] = 'http://localhost:8000/v1'\nos.environ[\"OPENAI_API_KEY\"] = 'sk-test'\nos.environ[\"STRATUM_REPO_ROOT\"] = '/tmp/repo'\nfrom crewai import Agent, Task, Crew, LLM\n\nllm = LLM(\n    model='openai/mistralai/Mistral-7B-Instruct-v0.3',\n    base_url='http://localhost:8000"
+  },
+  "synth_langgraph_sequential": {
+    "passed": true,
+    "script_length": 1409,
+    "script_preview": "import os\nos.environ[\"OPENAI_BASE_URL\"] = 'http://localhost:8000/v1'\nos.environ[\"OPENAI_API_KEY\"] = 'sk-test'\nos.environ[\"STRATUM_REPO_ROOT\"] = '/tmp/repo'\nfrom langgraph.graph import StateGraph, START, END\nfrom langchain_openai import ChatOpenAI\nfrom langchain_core.messages import HumanMessage, Sys"
+  },
+  "synth_langgraph_conditional": {
+    "passed": true,
+    "script_length": 1730,
+    "script_preview": "import os\nos.environ[\"OPENAI_BASE_URL\"] = 'http://localhost:8000/v1'\nos.environ[\"OPENAI_API_KEY\"] = 'sk-test'\nos.environ[\"STRATUM_REPO_ROOT\"] = '/tmp/repo'\nfrom langgraph.graph import StateGraph, START, END\nfrom langchain_openai import ChatOpenAI\nfrom langchain_core.messages import HumanMessage, Sys"
+  },
+  "synth_langgraph_branching": {
+    "passed": true,
+    "script_length": 1941,
+    "script_preview": "import os\nos.environ[\"OPENAI_BASE_URL\"] = 'http://localhost:8000/v1'\nos.environ[\"OPENAI_API_KEY\"] = 'sk-test'\nos.environ[\"STRATUM_REPO_ROOT\"] = '/tmp/repo'\nfrom langgraph.graph import StateGraph, START, END\nfrom langchain_openai import ChatOpenAI\nfrom langchain_core.messages import HumanMessage, Sys"
+  },
+  "synth_autogen_sequential": {
+    "passed": true,
+    "script_length": 776,
+    "script_preview": "import os\nos.environ[\"OPENAI_BASE_URL\"] = 'http://localhost:8000/v1'\nos.environ[\"OPENAI_API_KEY\"] = 'sk-test'\nos.environ[\"STRATUM_REPO_ROOT\"] = '/tmp/repo'\nimport autogen\n\nconfig_list = [{\n    \"model\": 'mistralai/Mistral-7B-Instruct-v0.3',\n    \"base_url\": 'http://localhost:8000/v1',\n    \"api_key\": '"
+  },
+  "synth_autogen_twoway": {
+    "passed": true,
+    "script_length": 1208,
+    "script_preview": "import os\nos.environ[\"OPENAI_BASE_URL\"] = 'http://localhost:8000/v1'\nos.environ[\"OPENAI_API_KEY\"] = 'sk-test'\nos.environ[\"STRATUM_REPO_ROOT\"] = '/tmp/repo'\nimport autogen\n\nconfig_list = [{\n    \"model\": 'mistralai/Mistral-7B-Instruct-v0.3',\n    \"base_url\": 'http://localhost:8000/v1',\n    \"api_key\": '"
+  },
+  "synth_autogen_groupchat": {
+    "passed": true,
+    "script_length": 1358,
+    "script_preview": "import os\nos.environ[\"OPENAI_BASE_URL\"] = 'http://localhost:8000/v1'\nos.environ[\"OPENAI_API_KEY\"] = 'sk-test'\nos.environ[\"STRATUM_REPO_ROOT\"] = '/tmp/repo'\nimport autogen\n\nconfig_list = [{\n    \"model\": 'mistralai/Mistral-7B-Instruct-v0.3',\n    \"base_url\": 'http://localhost:8000/v1',\n    \"api_key\": '"
+  },
+  "synth_openai": {
+    "passed": true,
+    "script_length": 796
+  },
+  "synth_tier15_crewai_func": {
+    "passed": true,
+    "script_length": 2056
+  },
+  "synth_tier15_crewai_var": {
+    "passed": true,
+    "script_length": 2087
+  },
+  "synth_tier15_langgraph_func": {
+    "passed": true,
+    "script_length": 2138
+  },
+  "synth_tier15_langgraph_var": {
+    "passed": true,
+    "script_length": 2151
+  },
+  "synth_tier15_autogen_func": {
+    "passed": true,
+    "script_length": 2053
+  },
+  "synth_tier15_autogen_var": {
+    "passed": true,
+    "script_length": 2347
+  },
+  "inject_crewai_func": {
+    "passed": true,
+    "script_length": 1738
+  },
+  "inject_crewai_var": {
+    "passed": true,
+    "script_length": 1773
+  },
+  "inject_langgraph_func": {
+    "passed": true,
+    "script_length": 1798
+  },
+  "inject_langgraph_var": {
+    "passed": true,
+    "script_length": 1815
+  },
+  "inject_autogen_func": {
+    "passed": true,
+    "script_length": 1729
+  },
+  "inject_autogen_var": {
+    "passed": true,
+    "script_length": 2033
+  },
+  "tier15_has_google_parent_before_children": true,
+  "inject_has_google_parent_before_children": true,
+  "summary": {
+    "total_compile_tests": 23,
+    "total_passed": 23,
+    "total_failed": 0,
+    "google_mock_checks_passed": true,
+    "all_passed": true
+  }
+}

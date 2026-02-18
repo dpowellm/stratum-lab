@@ -1,0 +1,22 @@
+{
+  "scan_id_preserved_before_overwrite": true,
+  "scan_id_in_status_json": true,
+  "scan_id_in_run_metadata": true,
+  "no_hardcoded_tier1_120": true,
+  "no_hardcoded_tier15_180": true,
+  "no_hardcoded_tier2_300": true,
+  "tier_timeout_derived": true,
+  "tier_timeout_has_floor": true,
+  "host_timeout_buffer_120": true,
+  "orphan_recovery_exists": true,
+  "recovery_writes_metadata": true,
+  "smoke_failure_exits": true,
+  "validate_scan_exists": true,
+  "validate_scan_compiles": true,
+  "network_host": true,
+  "entrypoint_bash": true,
+  "no_deps": true,
+  "tier_detail": true,
+  "protected_re": true,
+  "all_passed": true
+}
