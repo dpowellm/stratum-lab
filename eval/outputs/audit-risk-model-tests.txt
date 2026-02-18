@@ -1,0 +1,28 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\dpowe\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\dpowe\OneDrive\Documents\Coding Projects\stratum-observability\stratum-lab
+configfile: pyproject.toml
+plugins: anyio-4.12.1
+collecting ... collected 18 items
+
+eval/test_audit_risk_model.py::TestEventCompleteness::test_event_completeness_perfect PASSED [  5%]
+eval/test_audit_risk_model.py::TestEventCompleteness::test_event_completeness_partial PASSED [ 11%]
+eval/test_audit_risk_model.py::TestSeparationOfDuties::test_separation_self_review PASSED [ 16%]
+eval/test_audit_risk_model.py::TestSeparationOfDuties::test_separation_good PASSED [ 22%]
+eval/test_audit_risk_model.py::TestDecisionTraceability::test_traceability_with_routing PASSED [ 27%]
+eval/test_audit_risk_model.py::TestDecisionTraceability::test_traceability_no_outputs PASSED [ 33%]
+eval/test_audit_risk_model.py::TestRegulatoryMapping::test_regulatory_mapping_strat_hc PASSED [ 38%]
+eval/test_audit_risk_model.py::TestRegulatoryMapping::test_regulatory_mapping_strat_pl PASSED [ 44%]
+eval/test_audit_risk_model.py::TestAuditReadinessScore::test_audit_readiness_score_bounds PASSED [ 50%]
+eval/test_audit_risk_model.py::TestAuditReadinessScore::test_frameworks_at_risk PASSED [ 55%]
+eval/test_audit_risk_model.py::TestStateSequenceExtraction::test_state_sequence_extraction PASSED [ 61%]
+eval/test_audit_risk_model.py::TestDTMCLearning::test_dtmc_learning_basic PASSED [ 66%]
+eval/test_audit_risk_model.py::TestDTMCLearning::test_dtmc_laplace_smoothing PASSED [ 72%]
+eval/test_audit_risk_model.py::TestViolationProbability::test_violation_probability_safe PASSED [ 77%]
+eval/test_audit_risk_model.py::TestViolationProbability::test_violation_probability_risky PASSED [ 83%]
+eval/test_audit_risk_model.py::TestViolationProbability::test_violation_probability_unknown_state PASSED [ 88%]
+eval/test_audit_risk_model.py::TestPACBound::test_pac_confidence_bound PASSED [ 94%]
+eval/test_audit_risk_model.py::TestFindingViolationProbabilities::test_finding_violation_probabilities PASSED [100%]
+
+============================= 18 passed in 0.03s ==============================

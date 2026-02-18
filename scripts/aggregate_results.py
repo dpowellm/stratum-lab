@@ -16,6 +16,8 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import math
+import os
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -393,6 +395,252 @@ def _classify_topology(graph: dict) -> str | None:
 
 
 # ---------------------------------------------------------------------------
+# Semantic corpus statistics (v3)
+# ---------------------------------------------------------------------------
+
+def _stdev(values: list[float]) -> float:
+    """Compute standard deviation."""
+    if len(values) < 2:
+        return 0.0
+    mean = sum(values) / len(values)
+    variance = sum((x - mean) ** 2 for x in values) / (len(values) - 1)
+    return math.sqrt(variance)
+
+
+def aggregate_semantic(behavioral_records_dir: Path) -> dict:
+    """Corpus-level semantic analysis statistics."""
+    semantic_records: list[dict] = []
+
+    for record_file in sorted(behavioral_records_dir.iterdir()):
+        if not record_file.is_file() or record_file.suffix != ".json":
+            continue
+        record = _load_json(record_file)
+        if record is None:
+            continue
+        sem = record.get("semantic_analysis", {})
+        if isinstance(sem, dict) and sem.get("aggregate_scores"):
+            semantic_records.append(record)
+
+    if not semantic_records:
+        return {"available": False, "reason": "no semantic analysis data"}
+
+    scores_keys = [
+        "hedging_preservation_rate", "trust_elevation_rate",
+        "mean_stability_score", "mean_chain_fidelity",
+        "confidence_escalation_rate", "fabrication_risk_rate",
+        "oer_estimate", "max_vulnerability_score",
+    ]
+
+    corpus_scores: dict[str, dict] = {}
+    for key in scores_keys:
+        values = [
+            r["semantic_analysis"]["aggregate_scores"][key]
+            for r in semantic_records
+            if key in r.get("semantic_analysis", {}).get("aggregate_scores", {})
+        ]
+        if values:
+            sorted_vals = sorted(values)
+            corpus_scores[key] = {
+                "mean": round(sum(values) / len(values), 3),
+                "median": round(sorted_vals[len(sorted_vals) // 2], 3),
+                "min": round(min(values), 3),
+                "max": round(max(values), 3),
+                "std": round(_stdev(values), 3),
+                "n": len(values),
+            }
+
+    # MAST failure mode distribution across corpus
+    mast_modes: dict[str, list[float]] = {}
+    for r in semantic_records:
+        dist = r.get("semantic_analysis", {}).get("aggregate_scores", {}).get("mast_failure_distribution", {})
+        if isinstance(dist, dict):
+            for mode, rate in dist.items():
+                if mode not in mast_modes:
+                    mast_modes[mode] = []
+                mast_modes[mode].append(rate)
+
+    corpus_mast = {
+        mode: round(sum(rates) / len(rates), 3)
+        for mode, rates in mast_modes.items() if rates
+    }
+
+    return {
+        "available": True,
+        "repos_with_semantic_data": len(semantic_records),
+        "corpus_scores": corpus_scores,
+        "corpus_mast_distribution": corpus_mast,
+    }
+
+
+def aggregate_semantic_findings(behavioral_records_dir: Path) -> dict:
+    """Prevalence and severity distribution of semantic findings across corpus."""
+    semantic_finding_ids = [
+        "STRAT-SD-001", "STRAT-HC-001", "STRAT-CE-001",
+        "STRAT-SC-001", "STRAT-TV-001",
+    ]
+
+    records: list[dict] = []
+    for record_file in sorted(behavioral_records_dir.iterdir()):
+        if not record_file.is_file() or record_file.suffix != ".json":
+            continue
+        record = _load_json(record_file)
+        if record is not None:
+            records.append(record)
+
+    prevalence: dict[str, dict] = {}
+    for fid in semantic_finding_ids:
+        count = sum(
+            1 for r in records
+            if any(
+                isinstance(f, dict) and f.get("finding_id") == fid
+                for f in r.get("failure_modes", r.get("findings", []))
+            )
+        )
+        prevalence[fid] = {
+            "count": count,
+            "rate": round(count / max(1, len(records)), 3),
+        }
+
+    return {
+        "total_records": len(records),
+        "finding_prevalence": prevalence,
+    }
+
+
+def aggregate_enrichments(behavioral_records_dir: Path) -> dict:
+    """Aggregate V4 research enrichment scores across the corpus."""
+    privacy_scores: list[float] = []
+    permission_risks: list[float] = []
+    cost_risks: list[float] = []
+    audit_scores: list[float] = []
+    utilization_rates: list[float] = []
+    retry_rates: list[float] = []
+    amplification_maxes: list[float] = []
+    cross_domain_flows: Counter[str] = Counter()
+    frameworks_at_risk: Counter[str] = Counter()
+
+    repos_high_exposure = 0
+    repos_critical_asym = 0
+    repos_high_amp = 0
+    repos_below_audit = 0
+    total_records = 0
+
+    for record_file in sorted(behavioral_records_dir.iterdir()):
+        if not record_file.is_file() or record_file.suffix != ".json":
+            continue
+        record = _load_json(record_file)
+        if record is None:
+            continue
+
+        enrichments = record.get("research_enrichments")
+        if not enrichments or not isinstance(enrichments, dict):
+            continue
+
+        total_records += 1
+
+        # Privacy
+        pt = enrichments.get("privacy_topology", {})
+        if isinstance(pt, dict) and "error" not in pt:
+            score = pt.get("privacy_exposure_score", 0.0)
+            privacy_scores.append(score)
+            if score > 0.3:
+                repos_high_exposure += 1
+            for flow in pt.get("cross_domain_flows", []):
+                src = ",".join(sorted(flow.get("source_domains", [])))
+                tgt = ",".join(sorted(flow.get("target_domains", [])))
+                cross_domain_flows[f"{src}->{tgt}"] += 1
+
+        # Permissions
+        pb = enrichments.get("permission_blast_radius", {})
+        if isinstance(pb, dict) and "error" not in pb:
+            permission_risks.append(pb.get("permission_risk_score", 0.0))
+            utilization_rates.append(pb.get("mean_utilization_rate", 0.0))
+            if pb.get("critical_asymmetries", 0) > 0:
+                repos_critical_asym += 1
+
+        # Cost
+        cr = enrichments.get("cost_risk", {})
+        if isinstance(cr, dict) and "error" not in cr:
+            cost_risks.append(cr.get("cost_risk_score", 0.0))
+            ta = cr.get("token_amplification", {})
+            amp_max = ta.get("max_amplification_ratio", 0.0)
+            amplification_maxes.append(amp_max)
+            if amp_max > 20:
+                repos_high_amp += 1
+            rw = cr.get("retry_waste", {})
+            retry_rates.append(rw.get("corpus_retry_rate", 0.0))
+
+        # Audit
+        ar = enrichments.get("audit_readiness", {})
+        if isinstance(ar, dict) and "error" not in ar:
+            score = ar.get("audit_readiness_score", 0.0)
+            audit_scores.append(score)
+            if score < 0.5:
+                repos_below_audit += 1
+            for fw in ar.get("frameworks_at_risk", []):
+                frameworks_at_risk[fw] += 1
+
+    def _safe_mean(vals: list[float]) -> float:
+        return round(sum(vals) / len(vals), 3) if vals else 0.0
+
+    return {
+        "total_enriched_records": total_records,
+        "privacy_topology": {
+            "mean_exposure_score": _safe_mean(privacy_scores),
+            "repos_with_high_exposure": repos_high_exposure,
+            "most_common_cross_domain_flows": cross_domain_flows.most_common(10),
+        },
+        "permission_blast_radius": {
+            "mean_permission_risk": _safe_mean(permission_risks),
+            "repos_with_critical_asymmetries": repos_critical_asym,
+            "mean_utilization_rate": _safe_mean(utilization_rates),
+        },
+        "cost_risk": {
+            "mean_cost_risk": _safe_mean(cost_risks),
+            "repos_with_high_amplification": repos_high_amp,
+            "mean_retry_rate": _safe_mean(retry_rates),
+        },
+        "audit_readiness": {
+            "mean_readiness_score": _safe_mean(audit_scores),
+            "repos_below_threshold": repos_below_audit,
+            "most_common_frameworks_at_risk": frameworks_at_risk.most_common(10),
+        },
+    }
+
+
+def aggregate_remediation(scan_dir: Path) -> dict:
+    """Include remediation evidence in corpus report."""
+    evidence_path = scan_dir / "remediation_evidence.json"
+    if not evidence_path.exists():
+        return {"available": False}
+
+    evidence = _load_json(evidence_path)
+    if not evidence or "error" in evidence:
+        return {"available": False}
+
+    summary: list[dict] = []
+    for finding in evidence.get("evidence", []):
+        top_remediation = None
+        ranked = finding.get("priority_ranked_remediations", [])
+        if ranked:
+            top_remediation = ranked[0]
+
+        summary.append({
+            "finding_id": finding["finding_id"],
+            "severity": finding.get("severity"),
+            "corpus_prevalence": finding.get("corpus_statistics", {}).get("manifestation_rate"),
+            "top_remediation": top_remediation,
+            "candidate_count": len(finding.get("remediation_candidates", [])),
+        })
+
+    return {
+        "available": True,
+        "findings_with_evidence": evidence.get("findings_with_evidence", 0),
+        "summary": summary,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Core aggregation
 # ---------------------------------------------------------------------------
 
@@ -712,6 +960,20 @@ def aggregate(results_dir: Path, behavioral_records_dir: Path | None = None) -> 
         )
         multi_run_stats = _compute_multi_run_stats(behavioral_records_dir)
         report["execution_results"].update(multi_run_stats)
+
+        # v3: Semantic corpus statistics
+        report["semantic_analysis"] = aggregate_semantic(behavioral_records_dir)
+        report["semantic_findings"] = aggregate_semantic_findings(behavioral_records_dir)
+
+        # v4: Research enrichment aggregation
+        report["enrichment_summary"] = aggregate_enrichments(behavioral_records_dir)
+
+    # v3: Remediation evidence (from scan-level file, not per-record)
+    # Try to find remediation_evidence.json in parent of results_dir or results_dir
+    for candidate_dir in [results_dir.parent, results_dir]:
+        report["remediation_evidence"] = aggregate_remediation(candidate_dir)
+        if report["remediation_evidence"].get("available"):
+            break
 
     return report
 

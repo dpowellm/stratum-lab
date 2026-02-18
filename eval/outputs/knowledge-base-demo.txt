@@ -375,5 +375,3 @@ CHECK 29: CROSS-PATTERN INTERACTION FIRES (NON-GATED)
   CHECK 29: PASS
 
 Done.
-
-Output saved to: C:\Users\dpowe\OneDrive\Documents\Coding Projects\stratum-observability\stratum-lab\eval\outputs\knowledge-base-demo.txt

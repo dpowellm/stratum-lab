@@ -1,0 +1,49 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\dpowe\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\dpowe\OneDrive\Documents\Coding Projects\stratum-observability\stratum-lab
+configfile: pyproject.toml
+plugins: anyio-4.12.1
+collecting ... collected 39 items
+
+eval/test_export.py::TestLoadEvents::test_load_valid_jsonl PASSED        [  2%]
+eval/test_export.py::TestLoadEvents::test_load_skips_malformed PASSED    [  5%]
+eval/test_export.py::TestLoadEvents::test_load_missing_file PASSED       [  7%]
+eval/test_export.py::TestLoadEvents::test_load_empty_file PASSED         [ 10%]
+eval/test_export.py::TestBuildRepoSummary::test_basic_two_agent_crew PASSED [ 12%]
+eval/test_export.py::TestBuildRepoSummary::test_agent_name_from_agent_role PASSED [ 15%]
+eval/test_export.py::TestBuildRepoSummary::test_agent_name_fallback_to_node_name PASSED [ 17%]
+eval/test_export.py::TestBuildRepoSummary::test_output_text_from_output_preview PASSED [ 20%]
+eval/test_export.py::TestBuildRepoSummary::test_task_description_extracted PASSED [ 23%]
+eval/test_export.py::TestBuildRepoSummary::test_task_description_missing_graceful PASSED [ 25%]
+eval/test_export.py::TestBuildRepoSummary::test_agent_goal_extracted PASSED [ 28%]
+eval/test_export.py::TestBuildRepoSummary::test_tools_available_extracted PASSED [ 30%]
+eval/test_export.py::TestBuildRepoSummary::test_llm_calls_nested_in_agent PASSED [ 33%]
+eval/test_export.py::TestBuildRepoSummary::test_llm_call_fields PASSED   [ 35%]
+eval/test_export.py::TestBuildRepoSummary::test_delegation_chain_from_events PASSED [ 38%]
+eval/test_export.py::TestBuildRepoSummary::test_delegation_chain_inferred PASSED [ 41%]
+eval/test_export.py::TestBuildRepoSummary::test_execution_summary_totals PASSED [ 43%]
+eval/test_export.py::TestBuildRepoSummary::test_execution_summary_delegation_depth PASSED [ 46%]
+eval/test_export.py::TestBuildRepoSummary::test_incomplete_agent PASSED  [ 48%]
+eval/test_export.py::TestBuildRepoSummary::test_no_llm_calls PASSED      [ 51%]
+eval/test_export.py::TestBuildRepoSummary::test_empty_output PASSED      [ 53%]
+eval/test_export.py::TestBuildRepoSummary::test_skip_failed_run PASSED   [ 56%]
+eval/test_export.py::TestBuildRepoSummary::test_multiple_runs PASSED     [ 58%]
+eval/test_export.py::TestBuildRepoSummary::test_single_agent PASSED      [ 61%]
+eval/test_export.py::TestBuildRepoSummary::test_three_agent_chain PASSED [ 64%]
+eval/test_export.py::TestExportBehavioralTraces::test_export_writes_jsonl PASSED [ 66%]
+eval/test_export.py::TestExportBehavioralTraces::test_export_skips_failed PASSED [ 69%]
+eval/test_export.py::TestExportBehavioralTraces::test_export_includes_success_and_partial PASSED [ 71%]
+eval/test_export.py::TestExportBehavioralTraces::test_export_returns_statistics PASSED [ 74%]
+eval/test_export.py::TestExportBehavioralTraces::test_export_include_raw_copies_events PASSED [ 76%]
+eval/test_export.py::TestExportBehavioralTraces::test_export_no_duplicates PASSED [ 79%]
+eval/test_export.py::TestValidateExport::test_valid_export_passes PASSED [ 82%]
+eval/test_export.py::TestValidateExport::test_invalid_json_detected PASSED [ 84%]
+eval/test_export.py::TestValidateExport::test_missing_output_text_flagged PASSED [ 87%]
+eval/test_export.py::TestValidateExport::test_invalid_repo_id_flagged PASSED [ 89%]
+eval/test_export.py::TestValidateExport::test_duplicate_repo_id_flagged PASSED [ 92%]
+eval/test_export.py::TestValidateExport::test_dangling_delegation_reference PASSED [ 94%]
+eval/test_export.py::TestValidateExport::test_missing_required_fields PASSED [ 97%]
+eval/test_export.py::TestValidateExport::test_statistics_computed PASSED [100%]
+
+============================= 39 passed in 0.13s ==============================

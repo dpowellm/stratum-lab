@@ -1,0 +1,36 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\dpowe\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\dpowe\OneDrive\Documents\Coding Projects\stratum-observability\stratum-lab
+configfile: pyproject.toml
+plugins: anyio-4.12.1
+collecting ... collected 26 items
+
+eval/test_enrichment_pipeline.py::TestComputeAllEnrichments::test_all_four_enrichments_complete PASSED [  3%]
+eval/test_enrichment_pipeline.py::TestComputeAllEnrichments::test_missing_data_topology_doesnt_crash PASSED [  7%]
+eval/test_enrichment_pipeline.py::TestComputeAllEnrichments::test_missing_behavioral_record PASSED [ 11%]
+eval/test_enrichment_pipeline.py::TestComputeAllEnrichments::test_crash_isolation PASSED [ 15%]
+eval/test_enrichment_pipeline.py::TestComputeAllEnrichments::test_empty_event_streams PASSED [ 19%]
+eval/test_enrichment_pipeline.py::TestComputeAllEnrichments::test_writes_enrichments_json PASSED [ 23%]
+eval/test_enrichment_pipeline.py::TestComputeAllEnrichments::test_extract_runtime_tool_calls PASSED [ 26%]
+eval/test_enrichment_pipeline.py::TestDataFlow::test_tool_registrations_to_privacy_domains PASSED [ 30%]
+eval/test_enrichment_pipeline.py::TestDataFlow::test_tool_registrations_to_permission_blast PASSED [ 34%]
+eval/test_enrichment_pipeline.py::TestDataFlow::test_state_keys_to_privacy_domains PASSED [ 38%]
+eval/test_enrichment_pipeline.py::TestDataFlow::test_events_to_cost_risk PASSED [ 42%]
+eval/test_enrichment_pipeline.py::TestDataFlow::test_events_to_audit_completeness PASSED [ 46%]
+eval/test_enrichment_pipeline.py::TestNewFindings::test_privacy_finding_triggered PASSED [ 50%]
+eval/test_enrichment_pipeline.py::TestNewFindings::test_permission_finding_triggered PASSED [ 53%]
+eval/test_enrichment_pipeline.py::TestNewFindings::test_all_four_v4_findings_via_enrichments PASSED [ 57%]
+eval/test_enrichment_pipeline.py::TestRegulatoryMapping::test_privacy_finding_maps_to_gdpr_hipaa PASSED [ 61%]
+eval/test_enrichment_pipeline.py::TestRegulatoryMapping::test_permission_finding_maps_to_sox PASSED [ 65%]
+eval/test_enrichment_pipeline.py::TestCorpusRiskModel::test_corpus_model_from_directory PASSED [ 69%]
+eval/test_enrichment_pipeline.py::TestCorpusRiskModel::test_corpus_model_empty_directory PASSED [ 73%]
+eval/test_enrichment_pipeline.py::TestCorpusRiskModel::test_corpus_model_includes_error_repos PASSED [ 76%]
+eval/test_enrichment_pipeline.py::TestCorpusRiskModel::test_corpus_model_top_transitions PASSED [ 80%]
+eval/test_enrichment_pipeline.py::TestMassScanEdgeCases::test_generic_tool_names_classify_as_generic PASSED [ 84%]
+eval/test_enrichment_pipeline.py::TestMassScanEdgeCases::test_hub_spoke_permission_blast_radius PASSED [ 88%]
+eval/test_enrichment_pipeline.py::TestMassScanEdgeCases::test_amplification_threshold_boundary PASSED [ 92%]
+eval/test_enrichment_pipeline.py::TestMassScanEdgeCases::test_single_node_no_delegation PASSED [ 96%]
+eval/test_enrichment_pipeline.py::TestMassScanEdgeCases::test_large_fan_in_privacy_convergence PASSED [100%]
+
+============================= 26 passed in 0.23s ==============================

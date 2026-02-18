@@ -1,0 +1,26 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\dpowe\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\dpowe\OneDrive\Documents\Coding Projects\stratum-observability\stratum-lab
+configfile: pyproject.toml
+plugins: anyio-4.12.1
+collecting ... collected 16 items
+
+eval/test_privacy_topology.py::TestClassifyDataDomain::test_classify_single_domain PASSED [  6%]
+eval/test_privacy_topology.py::TestClassifyDataDomain::test_classify_multi_domain PASSED [ 12%]
+eval/test_privacy_topology.py::TestClassifyDataDomain::test_classify_generic_fallback PASSED [ 18%]
+eval/test_privacy_topology.py::TestFanIn::test_fan_in_single_source PASSED [ 25%]
+eval/test_privacy_topology.py::TestFanIn::test_fan_in_high_risk PASSED   [ 31%]
+eval/test_privacy_topology.py::TestCrossDomainFlows::test_cross_domain_flow_detected PASSED [ 37%]
+eval/test_privacy_topology.py::TestCrossDomainFlows::test_no_cross_domain_same_type PASSED [ 43%]
+eval/test_privacy_topology.py::TestPrivacyScoring::test_privacy_exposure_score_bounds PASSED [ 50%]
+eval/test_privacy_topology.py::TestPrivacyScoring::test_finding_triggered_above_threshold PASSED [ 56%]
+eval/test_privacy_topology.py::TestPrivacyScoring::test_finding_not_triggered_below PASSED [ 62%]
+eval/test_privacy_topology.py::TestNodeDataDomains::test_node_data_domains_union PASSED [ 68%]
+eval/test_privacy_topology.py::TestNodeDataDomains::test_empty_tool_registrations PASSED [ 75%]
+eval/test_privacy_topology.py::TestNodeDataDomains::test_state_key_classification PASSED [ 81%]
+eval/test_privacy_topology.py::TestFullPrivacyTopology::test_full_privacy_topology PASSED [ 87%]
+eval/test_privacy_topology.py::TestFullPrivacyTopology::test_compute_privacy_handles_missing_nodes PASSED [ 93%]
+eval/test_privacy_topology.py::TestFullPrivacyTopology::test_heterogeneous_detection PASSED [100%]
+
+============================= 16 passed in 0.02s ==============================

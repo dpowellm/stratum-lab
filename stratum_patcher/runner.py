@@ -12,6 +12,7 @@ This script is the Docker ENTRYPOINT.  It:
 from __future__ import annotations
 
 import importlib
+import importlib.util
 import os
 import re
 import signal
@@ -33,6 +34,39 @@ LAZY_IMPORT_PATTERNS: dict[str, list[str]] = {
     "langgraph": [r'import\s+langgraph', r'from\s+langgraph', r'import_module\(["\']langgraph'],
     "autogen": [r'import\s+autogen', r'from\s+autogen', r'import_module\(["\']autogen'],
 }
+
+# Map framework names to package names for importlib.util.find_spec
+FRAMEWORK_PACKAGES: dict[str, list[str]] = {
+    "openai": ["openai"],
+    "crewai": ["crewai"],
+    "langchain": ["langchain", "langchain_core"],
+    "langgraph": ["langgraph"],
+    "autogen": ["autogen", "pyautogen"],
+    "litellm": ["litellm"],
+    "anthropic": ["anthropic"],
+}
+
+
+def detect_installed_frameworks() -> list[str]:
+    """Detect frameworks by checking which packages are actually installed.
+
+    Uses importlib.util.find_spec which is fast and doesn't import the module.
+
+    Returns
+    -------
+    list[str]
+        All detected framework names.
+    """
+    detected: set[str] = set()
+    for framework, packages in FRAMEWORK_PACKAGES.items():
+        for pkg in packages:
+            try:
+                if importlib.util.find_spec(pkg) is not None:
+                    detected.add(framework)
+                    break
+            except (ModuleNotFoundError, ValueError):
+                continue
+    return sorted(detected)
 
 
 def detect_frameworks_in_source(repo_path: str | Path) -> list[str]:
@@ -63,6 +97,18 @@ def detect_frameworks_in_source(repo_path: str | Path) -> list[str]:
             pass
 
     return sorted(detected)
+
+
+def detect_all_frameworks(repo_path: str | Path | None = None) -> list[str]:
+    """Detect frameworks using both installed packages AND source scanning.
+
+    Returns the union of both detection methods as a sorted list.
+    """
+    installed = set(detect_installed_frameworks())
+    source_detected: set[str] = set()
+    if repo_path is not None:
+        source_detected = set(detect_frameworks_in_source(repo_path))
+    return sorted(installed | source_detected)
 
 
 def _setup_timeout(timeout_seconds: int) -> None:
@@ -116,19 +162,15 @@ def main() -> None:
     sys.argv = sys.argv[1:]
 
     # ---------------------------------------------------------------
-    # 1) Import stratum_patcher -> applies all monkey-patches
+    # 1) Detect installed frameworks and import stratum_patcher
     # ---------------------------------------------------------------
+    detected = detect_installed_frameworks()
+    print(f"[stratum-runner] Detected frameworks: {detected}", file=sys.stderr, flush=True)
+
     try:
         import stratum_patcher  # noqa: F401
     except Exception as exc:
         print(f"[stratum-runner] WARNING: failed to load patcher: {exc}", file=sys.stderr)
-
-    # Apply LangChain patches (separate module, safe if langchain not installed)
-    try:
-        from stratum_patcher.langchain_patch import patch_langchain
-        patch_langchain()
-    except Exception:
-        pass
 
     # ---------------------------------------------------------------
     # 2) Set up timeout

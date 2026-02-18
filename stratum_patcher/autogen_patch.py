@@ -1,16 +1,19 @@
 """Monkey-patch for Microsoft AutoGen (pyautogen / autogen-agentchat).
 
-Instruments the core message-passing and reply-generation loop:
+Instruments the core message-passing and reply-generation loop using
+standard event types that the export pipeline recognizes:
 
-* ``ConversableAgent.receive()``          -> ``message.received``
-* ``ConversableAgent.generate_reply()``   -> ``reply.generated``
-* ``GroupChat.select_speaker()``          -> ``speaker.selected``
+* ``ConversableAgent.initiate_chat()`` -> ``execution.start`` / ``execution.end``
+* ``ConversableAgent.receive()``       -> ``agent.task_start``
+* ``ConversableAgent.generate_reply()`` -> ``agent.task_end``
+* ``GroupChat.select_speaker()``       -> delegation event (logged in payload)
 * ``ConversableAgent.execute_function()`` -> ``tool.invoked`` / ``tool.completed``
 """
 
 from __future__ import annotations
 
 import functools
+import sys
 import time
 from typing import Any
 
@@ -28,155 +31,21 @@ _PATCHED = False
 _FRAMEWORK = "autogen"
 
 
-# ---------------------------------------------------------------------------
-# ConversableAgent.receive wrapper
-# ---------------------------------------------------------------------------
-
-def _wrap_receive(original: Any) -> Any:
-    """Wrap ``ConversableAgent.receive`` to log incoming messages."""
-
-    @functools.wraps(original)
-    def wrapper(self: Any, message: Any, sender: Any, *args: Any, **kwargs: Any) -> Any:
-        logger = EventLogger.get()
-        receiver_name = getattr(self, "name", type(self).__name__)
-        sender_name = getattr(sender, "name", type(sender).__name__) if sender else "unknown"
-
-        recv_nid = generate_node_id(_FRAMEWORK, receiver_name, __file__, 0)
-        recv_node = make_node("agent", recv_nid, receiver_name)
-
-        send_nid = generate_node_id(_FRAMEWORK, sender_name, __file__, 0)
-        send_node = make_node("agent", send_nid, sender_name)
-
-        # Describe the message without capturing its content
-        msg_shape = get_data_shape(message)
-        msg_hash = hash_content(message)
-        _context_sig = capture_output_signature(message)
-
-        start_id = logger.log_event(
-            "message.received",
-            source_node=send_node,
-            target_node=recv_node,
-            edge_type="sends_to",
-            payload={
-                "sender": sender_name,
-                "receiver": receiver_name,
-                "message_shape": msg_shape,
-                "message_hash": msg_hash,
-                "context_hash": _context_sig["hash"],
-                "context_type": _context_sig["type"],
-                "context_size_bytes": _context_sig["size_bytes"],
-                "context_source_node": send_nid,
-                "has_classification_dependency": _context_sig["classification_fields"] is not None,
-                "source_node_id": send_nid,
-                "target_node_id": recv_nid,
-                "delegation_type": "implicit",
-                "input_data_hash": msg_hash,
-            },
-        )
-        logger.record_edge_activation(source=send_nid, target=recv_nid, data_hash=msg_hash)
-
-        t0 = time.perf_counter()
-        error: Exception | None = None
-        result: Any = None
-        try:
-            result = original(self, message, sender, *args, **kwargs)
-            return result
-        except Exception as exc:
-            error = exc
-            raise
-        finally:
-            latency_ms = (time.perf_counter() - t0) * 1000.0
-            if error:
-                logger.log_event(
-                    "message.receive_error",
-                    source_node=send_node,
-                    target_node=recv_node,
-                    payload={
-                        "sender": sender_name,
-                        "receiver": receiver_name,
-                        "error": str(error)[:500],
-                        "error_type": type(error).__name__,
-                        "latency_ms": round(latency_ms, 2),
-                    },
-                    parent_event_id=start_id,
-                )
-
-    return wrapper
+def _stderr(msg: str) -> None:
+    print(f"stratum_patcher: {msg}", file=sys.stderr, flush=True)
 
 
-def _wrap_a_receive(original: Any) -> Any:
-    """Wrap ``ConversableAgent.a_receive`` (async) to log incoming messages."""
-
-    @functools.wraps(original)
-    async def wrapper(self: Any, message: Any, sender: Any, *args: Any, **kwargs: Any) -> Any:
-        logger = EventLogger.get()
-        receiver_name = getattr(self, "name", type(self).__name__)
-        sender_name = getattr(sender, "name", type(sender).__name__) if sender else "unknown"
-
-        recv_nid = generate_node_id(_FRAMEWORK, receiver_name, __file__, 0)
-        recv_node = make_node("agent", recv_nid, receiver_name)
-
-        send_nid = generate_node_id(_FRAMEWORK, sender_name, __file__, 0)
-        send_node = make_node("agent", send_nid, sender_name)
-
-        msg_shape = get_data_shape(message)
-        msg_hash = hash_content(message)
-        _context_sig = capture_output_signature(message)
-
-        start_id = logger.log_event(
-            "message.received",
-            source_node=send_node,
-            target_node=recv_node,
-            edge_type="sends_to",
-            payload={
-                "sender": sender_name,
-                "receiver": receiver_name,
-                "message_shape": msg_shape,
-                "message_hash": msg_hash,
-                "async": True,
-                "context_hash": _context_sig["hash"],
-                "context_type": _context_sig["type"],
-                "context_size_bytes": _context_sig["size_bytes"],
-                "context_source_node": send_nid,
-                "has_classification_dependency": _context_sig["classification_fields"] is not None,
-            },
-        )
-
-        t0 = time.perf_counter()
-        error: Exception | None = None
-        result: Any = None
-        try:
-            result = await original(self, message, sender, *args, **kwargs)
-            return result
-        except Exception as exc:
-            error = exc
-            raise
-        finally:
-            latency_ms = (time.perf_counter() - t0) * 1000.0
-            if error:
-                logger.log_event(
-                    "message.receive_error",
-                    source_node=send_node,
-                    target_node=recv_node,
-                    payload={
-                        "sender": sender_name,
-                        "receiver": receiver_name,
-                        "error": str(error)[:500],
-                        "error_type": type(error).__name__,
-                        "latency_ms": round(latency_ms, 2),
-                    },
-                    parent_event_id=start_id,
-                )
-
-    return wrapper
+def _truncate(text: Any, limit: int = 2000) -> str:
+    s = str(text)
+    return s[:limit] if len(s) > limit else s
 
 
 # ---------------------------------------------------------------------------
-# ConversableAgent.generate_reply wrapper
+# ConversableAgent.initiate_chat wrapper -> execution.start / execution.end
 # ---------------------------------------------------------------------------
 
-def _wrap_generate_reply(original: Any) -> Any:
-    """Wrap ``generate_reply`` to log when an agent produces a reply."""
+def _wrap_initiate_chat(original: Any) -> Any:
+    """Wrap ``initiate_chat`` to log execution start/end."""
 
     @functools.wraps(original)
     def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
@@ -184,24 +53,19 @@ def _wrap_generate_reply(original: Any) -> Any:
         agent_name = getattr(self, "name", type(self).__name__)
         nid = generate_node_id(_FRAMEWORK, agent_name, __file__, 0)
         source = make_node("agent", nid, agent_name)
-        logger.push_active_node(nid)
 
-        # Describe messages being replied to
-        messages = kwargs.get("messages") or (args[0] if args else None)
-        msg_count = len(messages) if isinstance(messages, list) else 0
-
-        sender = kwargs.get("sender") or (args[1] if len(args) > 1 else None)
-        sender_name = getattr(sender, "name", "unknown") if sender else "unknown"
+        # Determine recipient
+        recipient = args[0] if args else kwargs.get("recipient")
+        recipient_name = getattr(recipient, "name", "unknown") if recipient else "unknown"
+        message = kwargs.get("message", args[1] if len(args) > 1 else "")
 
         start_id = logger.log_event(
-            "reply.generation_start",
+            "execution.start",
             source_node=source,
             payload={
-                "agent_name": agent_name,
-                "messages_count": msg_count,
-                "sender": sender_name,
-                "node_id": nid,
-                "parent_node_id": logger.parent_node(),
+                "initiator": agent_name,
+                "recipient": recipient_name,
+                "message_shape": get_data_shape(message),
             },
         )
 
@@ -217,44 +81,28 @@ def _wrap_generate_reply(original: Any) -> Any:
         finally:
             latency_ms = (time.perf_counter() - t0) * 1000.0
             payload: dict[str, Any] = {
-                "agent_name": agent_name,
+                "initiator": agent_name,
+                "recipient": recipient_name,
                 "latency_ms": round(latency_ms, 2),
                 "status": "error" if error else "success",
-                "error_type": classify_error(error) if error else None,
             }
             if error:
                 payload["error"] = str(error)[:500]
+                payload["error_type"] = type(error).__name__
             if result is not None:
-                payload["reply_shape"] = get_data_shape(result)
-                payload["reply_hash"] = hash_content(result)
-                # Detect if the reply is a function/tool call
-                if isinstance(result, dict):
-                    if "function_call" in result or "tool_calls" in result:
-                        payload["has_tool_call"] = True
-                try:
-                    _sig = capture_output_signature(result)
-                    payload["output_hash"] = _sig["hash"]
-                    payload["output_type"] = _sig["type"]
-                    payload["output_size_bytes"] = _sig["size_bytes"]
-                    payload["output_preview"] = _sig["preview"]
-                    payload["classification_fields"] = _sig["classification_fields"]
-                except Exception:
-                    pass
+                payload["result_shape"] = get_data_shape(result)
             logger.log_event(
-                "reply.generated",
+                "execution.end",
                 source_node=source,
                 payload=payload,
                 parent_event_id=start_id,
             )
-            logger.pop_active_node()
-            if error:
-                logger.record_error_context(node_id=nid, error_type=classify_error(error), error_msg=str(error))
 
     return wrapper
 
 
-def _wrap_a_generate_reply(original: Any) -> Any:
-    """Async wrapper for ``a_generate_reply``."""
+def _wrap_a_initiate_chat(original: Any) -> Any:
+    """Async wrapper for ``a_initiate_chat``."""
 
     @functools.wraps(original)
     async def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
@@ -263,18 +111,15 @@ def _wrap_a_generate_reply(original: Any) -> Any:
         nid = generate_node_id(_FRAMEWORK, agent_name, __file__, 0)
         source = make_node("agent", nid, agent_name)
 
-        messages = kwargs.get("messages") or (args[0] if args else None)
-        msg_count = len(messages) if isinstance(messages, list) else 0
-        sender = kwargs.get("sender") or (args[1] if len(args) > 1 else None)
-        sender_name = getattr(sender, "name", "unknown") if sender else "unknown"
+        recipient = args[0] if args else kwargs.get("recipient")
+        recipient_name = getattr(recipient, "name", "unknown") if recipient else "unknown"
 
         start_id = logger.log_event(
-            "reply.generation_start",
+            "execution.start",
             source_node=source,
             payload={
-                "agent_name": agent_name,
-                "messages_count": msg_count,
-                "sender": sender_name,
+                "initiator": agent_name,
+                "recipient": recipient_name,
                 "async": True,
             },
         )
@@ -291,30 +136,15 @@ def _wrap_a_generate_reply(original: Any) -> Any:
         finally:
             latency_ms = (time.perf_counter() - t0) * 1000.0
             payload: dict[str, Any] = {
-                "agent_name": agent_name,
+                "initiator": agent_name,
                 "latency_ms": round(latency_ms, 2),
                 "status": "error" if error else "success",
             }
             if error:
                 payload["error"] = str(error)[:500]
                 payload["error_type"] = type(error).__name__
-            if result is not None:
-                payload["reply_shape"] = get_data_shape(result)
-                payload["reply_hash"] = hash_content(result)
-                if isinstance(result, dict):
-                    if "function_call" in result or "tool_calls" in result:
-                        payload["has_tool_call"] = True
-                try:
-                    _sig = capture_output_signature(result)
-                    payload["output_hash"] = _sig["hash"]
-                    payload["output_type"] = _sig["type"]
-                    payload["output_size_bytes"] = _sig["size_bytes"]
-                    payload["output_preview"] = _sig["preview"]
-                    payload["classification_fields"] = _sig["classification_fields"]
-                except Exception:
-                    pass
             logger.log_event(
-                "reply.generated",
+                "execution.end",
                 source_node=source,
                 payload=payload,
                 parent_event_id=start_id,
@@ -324,11 +154,153 @@ def _wrap_a_generate_reply(original: Any) -> Any:
 
 
 # ---------------------------------------------------------------------------
+# ConversableAgent.receive wrapper -> agent.task_start
+# ---------------------------------------------------------------------------
+
+def _wrap_receive(original: Any) -> Any:
+    """Wrap ``ConversableAgent.receive`` to emit agent.task_start."""
+
+    @functools.wraps(original)
+    def wrapper(self: Any, message: Any, sender: Any, *args: Any, **kwargs: Any) -> Any:
+        logger = EventLogger.get()
+        receiver_name = getattr(self, "name", type(self).__name__)
+        sender_name = getattr(sender, "name", type(sender).__name__) if sender else "unknown"
+        system_message = getattr(self, "system_message", "") or ""
+
+        recv_nid = generate_node_id(_FRAMEWORK, receiver_name, __file__, 0)
+        recv_node = make_node("agent", recv_nid, receiver_name)
+        logger.push_active_node(recv_nid)
+
+        # Extract message content for task_description
+        msg_content = ""
+        if isinstance(message, str):
+            msg_content = message
+        elif isinstance(message, dict):
+            msg_content = str(message.get("content", ""))
+        msg_shape = get_data_shape(message)
+
+        start_id = logger.log_event(
+            "agent.task_start",
+            source_node=recv_node,
+            payload={
+                "agent_name": receiver_name,
+                "agent_goal": _truncate(system_message, 500),
+                "task_description": _truncate(msg_content, 500),
+                "tools_available": [],
+                "sender": sender_name,
+                "message_shape": msg_shape,
+                "node_id": recv_nid,
+                "parent_node_id": logger.parent_node(),
+            },
+        )
+
+        t0 = time.perf_counter()
+        error: Exception | None = None
+        result: Any = None
+        try:
+            result = original(self, message, sender, *args, **kwargs)
+            return result
+        except Exception as exc:
+            error = exc
+            raise
+        finally:
+            latency_ms = (time.perf_counter() - t0) * 1000.0
+            payload: dict[str, Any] = {
+                "agent_name": receiver_name,
+                "output_text": "",
+                "success": error is None,
+                "duration_ms": round(latency_ms, 2),
+            }
+            if error:
+                payload["error"] = str(error)[:500]
+                payload["error_type"] = classify_error(error)
+            logger.log_event(
+                "agent.task_end",
+                source_node=recv_node,
+                payload=payload,
+                parent_event_id=start_id,
+            )
+            logger.pop_active_node()
+            if error:
+                logger.record_error_context(node_id=recv_nid, error_type=classify_error(error), error_msg=str(error))
+
+    return wrapper
+
+
+def _wrap_a_receive(original: Any) -> Any:
+    """Wrap ``ConversableAgent.a_receive`` (async) to emit agent.task_start/end."""
+
+    @functools.wraps(original)
+    async def wrapper(self: Any, message: Any, sender: Any, *args: Any, **kwargs: Any) -> Any:
+        logger = EventLogger.get()
+        receiver_name = getattr(self, "name", type(self).__name__)
+        sender_name = getattr(sender, "name", type(sender).__name__) if sender else "unknown"
+        system_message = getattr(self, "system_message", "") or ""
+
+        recv_nid = generate_node_id(_FRAMEWORK, receiver_name, __file__, 0)
+        recv_node = make_node("agent", recv_nid, receiver_name)
+        logger.push_active_node(recv_nid)
+
+        msg_content = ""
+        if isinstance(message, str):
+            msg_content = message
+        elif isinstance(message, dict):
+            msg_content = str(message.get("content", ""))
+
+        start_id = logger.log_event(
+            "agent.task_start",
+            source_node=recv_node,
+            payload={
+                "agent_name": receiver_name,
+                "agent_goal": _truncate(system_message, 500),
+                "task_description": _truncate(msg_content, 500),
+                "tools_available": [],
+                "sender": sender_name,
+                "async": True,
+                "node_id": recv_nid,
+                "parent_node_id": logger.parent_node(),
+            },
+        )
+
+        t0 = time.perf_counter()
+        error: Exception | None = None
+        result: Any = None
+        try:
+            result = await original(self, message, sender, *args, **kwargs)
+            return result
+        except Exception as exc:
+            error = exc
+            raise
+        finally:
+            latency_ms = (time.perf_counter() - t0) * 1000.0
+            payload: dict[str, Any] = {
+                "agent_name": receiver_name,
+                "output_text": "",
+                "success": error is None,
+                "duration_ms": round(latency_ms, 2),
+            }
+            if error:
+                payload["error"] = str(error)[:500]
+                payload["error_type"] = classify_error(error)
+            logger.log_event(
+                "agent.task_end",
+                source_node=recv_node,
+                payload=payload,
+                parent_event_id=start_id,
+            )
+            logger.pop_active_node()
+            if error:
+                logger.record_error_context(node_id=recv_nid, error_type=classify_error(error), error_msg=str(error))
+
+    return wrapper
+
+
+# ---------------------------------------------------------------------------
 # GroupChat.select_speaker wrapper
 # ---------------------------------------------------------------------------
 
 def _wrap_select_speaker(original: Any) -> Any:
-    """Wrap ``GroupChat.select_speaker`` to log speaker selection."""
+    """Wrap ``GroupChat.select_speaker`` to log speaker selection as delegation."""
 
     @functools.wraps(original)
     def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
@@ -360,27 +332,36 @@ def _wrap_select_speaker(original: Any) -> Any:
             if result is not None:
                 selected_name = getattr(result, "name", str(result))
 
-            payload: dict[str, Any] = {
-                "group_chat": gc_name,
-                "available_agents": agent_names,
-                "selected_speaker": selected_name,
-                "latency_ms": round(latency_ms, 2),
-                "status": "error" if error else "success",
-            }
-            if error:
-                payload["error"] = str(error)[:500]
-            logger.log_event(
-                "speaker.selected",
+            # Log as agent.task_start/end for the GroupChat orchestrator
+            start_id = logger.log_event(
+                "agent.task_start",
                 source_node=source,
-                payload=payload,
+                payload={
+                    "agent_name": gc_name,
+                    "agent_goal": "select next speaker",
+                    "task_description": f"selecting from {agent_names}",
+                    "tools_available": [],
+                    "available_agents": agent_names,
+                },
             )
-            _log_routing_decision(nid, selected_name, "manager_delegation", "llm_output")
+            logger.log_event(
+                "agent.task_end",
+                source_node=source,
+                payload={
+                    "agent_name": gc_name,
+                    "output_text": f"selected: {selected_name}",
+                    "success": error is None,
+                    "duration_ms": round(latency_ms, 2),
+                    "selected_speaker": selected_name,
+                },
+                parent_event_id=start_id,
+            )
 
     return wrapper
 
 
 # ---------------------------------------------------------------------------
-# ConversableAgent.execute_function wrapper
+# ConversableAgent.execute_function wrapper -> tool.invoked / tool.completed
 # ---------------------------------------------------------------------------
 
 def _wrap_execute_function(original: Any) -> Any:
@@ -453,39 +434,6 @@ def _wrap_execute_function(original: Any) -> Any:
 
 
 # ---------------------------------------------------------------------------
-# Implicit interaction detection helpers
-# ---------------------------------------------------------------------------
-
-def _log_state_access(node_id: str, state_key: str, access_type: str, data_hash: str = "") -> None:
-    """Log access to shared state for implicit interaction detection."""
-    logger = EventLogger.get()
-    logger.log_event(
-        "state.access",
-        payload={
-            "node_id": node_id,
-            "state_key": state_key,
-            "access_type": access_type,
-            "data_hash": data_hash,
-        },
-    )
-
-
-def _log_routing_decision(source_node: str, target_node: str, routing_type: str,
-                          decision_basis: str = "") -> None:
-    """Log a routing decision for emergent edge detection."""
-    logger = EventLogger.get()
-    logger.log_event(
-        "routing.decision",
-        payload={
-            "source_node": source_node,
-            "target_node": target_node,
-            "routing_type": routing_type,
-            "decision_basis": decision_basis,
-        },
-    )
-
-
-# ---------------------------------------------------------------------------
 # Patch entry point
 # ---------------------------------------------------------------------------
 
@@ -514,10 +462,38 @@ def patch() -> None:
             continue
 
     if ConversableAgent is None:
+        _stderr("autogen_patch SKIP: autogen not installed")
         return
 
+    _stderr("autogen_patch activating")
+
     # ------------------------------------------------------------------
-    # 1) ConversableAgent.receive
+    # 1) ConversableAgent.initiate_chat -> execution.start / execution.end
+    # ------------------------------------------------------------------
+    try:
+        if hasattr(ConversableAgent, "initiate_chat"):
+            orig = ConversableAgent.initiate_chat
+            if not getattr(orig, "_stratum_patched", False):
+                wrapped = _wrap_initiate_chat(orig)
+                wrapped._stratum_patched = True  # type: ignore[attr-defined]
+                ConversableAgent.initiate_chat = wrapped  # type: ignore[attr-defined]
+                _stderr("autogen_patch: initiate_chat patched")
+    except Exception as e:
+        _stderr(f"autogen_patch: initiate_chat FAILED: {e}")
+
+    try:
+        if hasattr(ConversableAgent, "a_initiate_chat"):
+            orig = ConversableAgent.a_initiate_chat
+            if not getattr(orig, "_stratum_patched", False):
+                wrapped = _wrap_a_initiate_chat(orig)
+                wrapped._stratum_patched = True  # type: ignore[attr-defined]
+                ConversableAgent.a_initiate_chat = wrapped  # type: ignore[attr-defined]
+                _stderr("autogen_patch: a_initiate_chat patched")
+    except Exception as e:
+        _stderr(f"autogen_patch: a_initiate_chat FAILED: {e}")
+
+    # ------------------------------------------------------------------
+    # 2) ConversableAgent.receive -> agent.task_start / agent.task_end
     # ------------------------------------------------------------------
     try:
         orig = ConversableAgent.receive
@@ -525,8 +501,9 @@ def patch() -> None:
             wrapped = _wrap_receive(orig)
             wrapped._stratum_patched = True  # type: ignore[attr-defined]
             ConversableAgent.receive = wrapped  # type: ignore[attr-defined]
-    except Exception:
-        pass
+            _stderr("autogen_patch: receive patched")
+    except Exception as e:
+        _stderr(f"autogen_patch: receive FAILED: {e}")
 
     # Async variant
     try:
@@ -536,30 +513,9 @@ def patch() -> None:
                 wrapped = _wrap_a_receive(orig)
                 wrapped._stratum_patched = True  # type: ignore[attr-defined]
                 ConversableAgent.a_receive = wrapped  # type: ignore[attr-defined]
-    except Exception:
-        pass
-
-    # ------------------------------------------------------------------
-    # 2) ConversableAgent.generate_reply
-    # ------------------------------------------------------------------
-    try:
-        orig = ConversableAgent.generate_reply
-        if not getattr(orig, "_stratum_patched", False):
-            wrapped = _wrap_generate_reply(orig)
-            wrapped._stratum_patched = True  # type: ignore[attr-defined]
-            ConversableAgent.generate_reply = wrapped  # type: ignore[attr-defined]
-    except Exception:
-        pass
-
-    try:
-        if hasattr(ConversableAgent, "a_generate_reply"):
-            orig = ConversableAgent.a_generate_reply
-            if not getattr(orig, "_stratum_patched", False):
-                wrapped = _wrap_a_generate_reply(orig)
-                wrapped._stratum_patched = True  # type: ignore[attr-defined]
-                ConversableAgent.a_generate_reply = wrapped  # type: ignore[attr-defined]
-    except Exception:
-        pass
+                _stderr("autogen_patch: a_receive patched")
+    except Exception as e:
+        _stderr(f"autogen_patch: a_receive FAILED: {e}")
 
     # ------------------------------------------------------------------
     # 3) GroupChat.select_speaker
@@ -587,8 +543,9 @@ def patch() -> None:
                 wrapped = _wrap_select_speaker(orig)
                 wrapped._stratum_patched = True  # type: ignore[attr-defined]
                 GroupChat.select_speaker = wrapped  # type: ignore[attr-defined]
-        except Exception:
-            pass
+                _stderr("autogen_patch: select_speaker patched")
+        except Exception as e:
+            _stderr(f"autogen_patch: select_speaker FAILED: {e}")
 
     # ------------------------------------------------------------------
     # 4) ConversableAgent.execute_function
@@ -600,8 +557,9 @@ def patch() -> None:
                 wrapped = _wrap_execute_function(orig)
                 wrapped._stratum_patched = True  # type: ignore[attr-defined]
                 ConversableAgent.execute_function = wrapped  # type: ignore[attr-defined]
-    except Exception:
-        pass
+                _stderr("autogen_patch: execute_function patched")
+    except Exception as e:
+        _stderr(f"autogen_patch: execute_function FAILED: {e}")
 
     # Also try _execute_tool_call used in some AutoGen versions
     try:
@@ -611,8 +569,11 @@ def patch() -> None:
                 wrapped = _wrap_execute_function(orig)
                 wrapped._stratum_patched = True  # type: ignore[attr-defined]
                 ConversableAgent._execute_tool_call = wrapped  # type: ignore[attr-defined]
-    except Exception:
-        pass
+                _stderr("autogen_patch: _execute_tool_call patched")
+    except Exception as e:
+        _stderr(f"autogen_patch: _execute_tool_call FAILED: {e}")
+
+    _stderr("autogen_patch activated")
 
 
 # Auto-patch on import

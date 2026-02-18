@@ -10,6 +10,7 @@ Monkey-patches:
 from __future__ import annotations
 
 import functools
+import sys
 import time
 from typing import Any
 
@@ -23,6 +24,10 @@ from stratum_patcher.event_logger import (
 
 _PATCHED = False
 _FRAMEWORK = "langchain"
+
+
+def _stderr(msg: str) -> None:
+    print(f"stratum_patcher: {msg}", file=sys.stderr, flush=True)
 
 
 def patch_langchain(event_logger: Any = None) -> None:
@@ -41,20 +46,26 @@ def patch_langchain(event_logger: Any = None) -> None:
         Chain = None  # type: ignore[misc,assignment]
 
     if Chain is not None:
+        _stderr("langchain_patch activating")
         try:
             _orig_invoke = Chain.invoke
 
             @functools.wraps(_orig_invoke)
             def _patched_invoke(self: Any, input: Any, config: Any = None, **kwargs: Any) -> Any:
                 logger = EventLogger.get()
-                node_id = generate_node_id(_FRAMEWORK, self.__class__.__name__, __file__, 0)
-                source = make_node("agent", node_id, self.__class__.__name__)
+                chain_name = self.__class__.__name__
+                node_id = generate_node_id(_FRAMEWORK, chain_name, __file__, 0)
+                source = make_node("agent", node_id, chain_name)
                 logger.push_active_node(node_id)
 
                 start_id = logger.log_event(
                     "agent.task_start",
                     source_node=source,
                     payload={
+                        "agent_name": chain_name,
+                        "agent_goal": chain_name,
+                        "task_description": str(input)[:500],
+                        "tools_available": [],
                         "input_preview": str(input)[:500],
                         "node_id": node_id,
                         "parent_node_id": logger.parent_node(),
@@ -102,8 +113,9 @@ def patch_langchain(event_logger: Any = None) -> None:
             if not getattr(Chain.invoke, "_stratum_patched", False):
                 _patched_invoke._stratum_patched = True  # type: ignore[attr-defined]
                 Chain.invoke = _patched_invoke  # type: ignore[attr-defined]
-        except Exception:
-            pass
+                _stderr("langchain_patch: Chain.invoke patched")
+        except Exception as e:
+            _stderr(f"langchain_patch: Chain.invoke FAILED: {e}")
 
         # ------------------------------------------------------------------
         # 2) Chain.ainvoke (async)
@@ -150,10 +162,11 @@ def patch_langchain(event_logger: Any = None) -> None:
             if not getattr(Chain.ainvoke, "_stratum_patched", False):
                 _patched_ainvoke._stratum_patched = True  # type: ignore[attr-defined]
                 Chain.ainvoke = _patched_ainvoke  # type: ignore[attr-defined]
+                _stderr("langchain_patch: Chain.ainvoke patched")
         except AttributeError:
             pass
-        except Exception:
-            pass
+        except Exception as e:
+            _stderr(f"langchain_patch: Chain.ainvoke FAILED: {e}")
 
     # ------------------------------------------------------------------
     # 3) BaseChatModel._generate (LLM call tracking)
@@ -221,10 +234,16 @@ def patch_langchain(event_logger: Any = None) -> None:
         if not getattr(BaseChatModel._generate, "_stratum_patched", False):
             _patched_generate._stratum_patched = True  # type: ignore[attr-defined]
             BaseChatModel._generate = _patched_generate  # type: ignore[attr-defined]
+            _stderr("langchain_patch: BaseChatModel._generate patched")
     except ImportError:
         pass
-    except Exception:
-        pass
+    except Exception as e:
+        _stderr(f"langchain_patch: BaseChatModel._generate FAILED: {e}")
+
+    if Chain is not None:
+        _stderr("langchain_patch activated")
+    else:
+        _stderr("langchain_patch SKIP: langchain not installed")
 
 
 def patch() -> None:

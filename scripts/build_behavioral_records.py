@@ -30,6 +30,246 @@ from output_classifier import classify_output
 
 logger = logging.getLogger(__name__)
 
+
+# ---------------------------------------------------------------------------
+# Safe JSON loader
+# ---------------------------------------------------------------------------
+def load_json_safe(path: str) -> dict:
+    """Load a JSON file, returning {} on missing/error."""
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            return json.load(fh)
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+# ---------------------------------------------------------------------------
+# Helpers for semantic/defensive merging
+# ---------------------------------------------------------------------------
+def safe_mean(values: list[float]) -> float:
+    """Mean of a list, returning 0.0 if empty."""
+    return round(sum(values) / len(values), 3) if values else 0.0
+
+
+def most_common(items: list[str]) -> str:
+    """Return the most common string in a list."""
+    if not items:
+        return "unknown"
+    from collections import Counter
+    counts = Counter(items)
+    return counts.most_common(1)[0][0]
+
+
+def merge_edge_semantic_data(structural_edges: list, semantic_edges: list) -> list:
+    """Merge structural edge data with semantic delegation fidelity data."""
+    if not isinstance(semantic_edges, list):
+        return structural_edges
+    merged = []
+    for s_edge in structural_edges:
+        edge_key = tuple(s_edge.get("edge", [s_edge.get("source", ""), s_edge.get("target", "")]))
+        matching_semantic = [
+            se for se in semantic_edges
+            if tuple(se.get("edge", [])) == edge_key
+        ]
+        merged_edge = {**s_edge}
+        if matching_semantic:
+            merged_edge["semantic"] = {
+                "hedging_preservation_rate": safe_mean([
+                    1.0 if m.get("hedging_preserved") else 0.0
+                    for m in matching_semantic
+                ]),
+                "factual_addition_rate": safe_mean([
+                    1.0 if m.get("factual_additions_detected") else 0.0
+                    for m in matching_semantic
+                ]),
+                "dominant_mast_failure": most_common([
+                    m.get("mast_failure_mode", "unknown")
+                    for m in matching_semantic
+                ]),
+                "dominant_uncertainty_transfer": most_common([
+                    m.get("uncertainty_transfer", "unknown")
+                    for m in matching_semantic
+                ]),
+                "evaluation_count": len(matching_semantic),
+            }
+        merged.append(merged_edge)
+    return merged
+
+
+def merge_node_semantic_data(
+    structural_nodes: list, stability_data: list,
+    vulnerability_data: list, escalation_data: list,
+) -> list:
+    """Merge structural node data with all semantic node-level data."""
+    merged = []
+    stability_by_node = {s["node_id"]: s for s in stability_data} if isinstance(stability_data, list) else {}
+    vuln_by_node = {v["node_id"]: v for v in vulnerability_data} if isinstance(vulnerability_data, list) else {}
+
+    escalation_by_node: dict[str, list] = {}
+    if isinstance(escalation_data, list):
+        for e in escalation_data:
+            nid = e.get("node_id", "")
+            if nid not in escalation_by_node:
+                escalation_by_node[nid] = []
+            escalation_by_node[nid].append(e)
+
+    for s_node in structural_nodes:
+        nid = s_node.get("node_id", "")
+        merged_node = {**s_node}
+
+        if nid in stability_by_node:
+            merged_node["stability"] = stability_by_node[nid]
+
+        if nid in vuln_by_node:
+            merged_node["vulnerability"] = vuln_by_node[nid]
+
+        if nid in escalation_by_node:
+            esc_list = escalation_by_node[nid]
+            fab_risk_order = {"high": 3, "medium": 2, "low": 1, "none": 0}
+            merged_node["confidence_escalation"] = {
+                "escalation_rate": safe_mean([
+                    1.0 if e.get("confidence_trajectory") == "escalating" else 0.0
+                    for e in esc_list
+                ]),
+                "max_fabrication_risk": max(
+                    (e.get("fabrication_risk", "none") for e in esc_list),
+                    key=lambda x: fab_risk_order.get(x, 0),
+                ),
+                "compensatory_assertion_observed": any(
+                    e.get("compensatory_assertion") for e in esc_list
+                ),
+            }
+
+        merged.append(merged_node)
+    return merged
+
+
+def link_patterns_to_edges(patterns: list, structural_edges: list) -> list:
+    """Link defensive patterns to structural edges by file proximity."""
+    if not isinstance(patterns, list):
+        return []
+    return [p for p in patterns if p.get("near_delegation_boundary")]
+
+
+def detect_semantic_findings(semantic_data: dict, defensive_data: dict) -> list:
+    """Detect the 5 new semantically-derived STRAT- findings."""
+    findings: list[dict] = []
+    agg = semantic_data.get("aggregate_scores", {})
+
+    # STRAT-SD-001: Semantic Drift at Trust Boundary
+    df = semantic_data.get("delegation_fidelity", [])
+    if isinstance(df, list):
+        edges_by_key: dict[tuple, list] = {}
+        for entry in df:
+            key = tuple(entry.get("edge", []))
+            if key not in edges_by_key:
+                edges_by_key[key] = []
+            edges_by_key[key].append(entry)
+
+        for edge_key, entries in edges_by_key.items():
+            valid = [e for e in entries if "parse_error" not in e]
+            if len(valid) < 2:
+                continue
+            drift_rate = sum(
+                1 for e in valid
+                if not e.get("hedging_preserved") and e.get("factual_additions_detected")
+            ) / len(valid)
+
+            if drift_rate > 0.5:
+                dominant_mode = most_common([e.get("mast_failure_mode", "unknown") for e in valid])
+                findings.append({
+                    "finding_id": "STRAT-SD-001",
+                    "finding_name": "Semantic Drift at Trust Boundary",
+                    "severity": "high",
+                    "edge": list(edge_key),
+                    "drift_rate": round(drift_rate, 2),
+                    "mast_alignment": f"inter_agent_misalignment.{dominant_mode}",
+                    "dominant_mast_failure_mode": dominant_mode,
+                    "measurement_count": len(valid),
+                    "manifestation_observed": True,
+                    "remediation_evidence": None,
+                })
+
+    # STRAT-HC-001: Hallucination Propagation Chain
+    uc = semantic_data.get("uncertainty_chains", [])
+    if isinstance(uc, list):
+        for chain_result in uc:
+            if chain_result.get("information_accretion") and float(chain_result.get("chain_fidelity", 1.0)) < 0.5:
+                findings.append({
+                    "finding_id": "STRAT-HC-001",
+                    "finding_name": "Hallucination Propagation Chain",
+                    "severity": "critical",
+                    "chain": chain_result.get("chain", []),
+                    "accretion_boundary": chain_result.get("accretion_boundary"),
+                    "elevation_boundary": chain_result.get("elevation_boundary"),
+                    "chain_fidelity": chain_result.get("chain_fidelity"),
+                    "run_id": chain_result.get("run_id"),
+                    "manifestation_observed": True,
+                    "remediation_evidence": None,
+                })
+
+    # STRAT-CE-001: Confidence Escalation Under Failure
+    ce = semantic_data.get("confidence_escalation", [])
+    if isinstance(ce, list):
+        for entry in ce:
+            if (entry.get("compensatory_assertion")
+                    and entry.get("fabrication_risk") == "high"
+                    and entry.get("had_preceding_errors")):
+                findings.append({
+                    "finding_id": "STRAT-CE-001",
+                    "finding_name": "Confidence Escalation Under Failure",
+                    "severity": "high",
+                    "node_id": entry.get("node_id"),
+                    "run_id": entry.get("run_id"),
+                    "confidence_trajectory": entry.get("confidence_trajectory"),
+                    "call_count": entry.get("call_count"),
+                    "manifestation_observed": True,
+                    "remediation_evidence": None,
+                })
+
+    # STRAT-SC-001: Semantic Inconsistency Across Runs
+    crc = semantic_data.get("cross_run_consistency", {})
+    if isinstance(crc, dict):
+        for node in crc.get("node_stability", []):
+            if node.get("stability_score", 1.0) < 0.5:
+                findings.append({
+                    "finding_id": "STRAT-SC-001",
+                    "finding_name": "Semantic Inconsistency Across Runs",
+                    "severity": "medium",
+                    "node_id": node.get("node_id"),
+                    "stability_score": node.get("stability_score"),
+                    "mean_novel_claims": node.get("mean_novel_claims"),
+                    "mean_dropped_claims": node.get("mean_dropped_claims"),
+                    "manifestation_observed": True,
+                    "remediation_evidence": None,
+                })
+
+    # STRAT-TV-001: Topological Vulnerability Concentration
+    tv = semantic_data.get("topological_vulnerability", [])
+    if isinstance(tv, list):
+        for node in tv:
+            if (node.get("vulnerability_score", 0) > 0.7
+                    and node.get("has_defenses", {}).get("defense_count", 0) == 0):
+                findings.append({
+                    "finding_id": "STRAT-TV-001",
+                    "finding_name": "Topological Vulnerability Concentration",
+                    "severity": "high",
+                    "node_id": node.get("node_id"),
+                    "position_class": node.get("position_class"),
+                    "vulnerability_score": node.get("vulnerability_score"),
+                    "fan_in": node.get("fan_in"),
+                    "error_propagation_reach": node.get("error_propagation_reach"),
+                    "missing_defenses": [
+                        k.replace("has_", "")
+                        for k, v in node.get("has_defenses", {}).items()
+                        if k.startswith("has_") and not v
+                    ],
+                    "manifestation_observed": True,
+                    "remediation_evidence": None,
+                })
+
+    return findings
+
 # ---------------------------------------------------------------------------
 # STRAT failure mode signal definitions
 # ---------------------------------------------------------------------------
@@ -137,6 +377,57 @@ def build_behavioral_record(
     # 10. Compute monitoring baselines
     monitoring_baselines = compute_monitoring_baselines(runs, failure_modes)
 
+    # 11. Load semantic analysis data (v3)
+    repo_dir = os.path.join(results_dir, repo_hash)
+    semantic_data = load_json_safe(os.path.join(repo_dir, "semantic_analysis.json"))
+
+    # 12. Load defensive patterns data (v3)
+    defensive_data = load_json_safe(os.path.join(repo_dir, "defensive_patterns.json"))
+
+    # 13. Detect semantic findings and merge into failure modes
+    semantic_findings = detect_semantic_findings(semantic_data, defensive_data)
+    all_findings = failure_modes + semantic_findings
+    severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+    all_findings.sort(key=lambda f: severity_order.get(f.get("severity", "low"), 4))
+
+    # Build semantic_analysis top-level key
+    semantic_analysis_section = {
+        "version": semantic_data.get("semantic_analysis_version", "unknown"),
+        "model_used": semantic_data.get("model_used", "unknown"),
+        "total_llm_calls": semantic_data.get("total_llm_calls", 0),
+        "aggregate_scores": semantic_data.get("aggregate_scores", {}),
+        "model_confidence": "corpus-calibrated",
+        "edges": merge_edge_semantic_data(
+            structural_graph.get("edges", []),
+            semantic_data.get("delegation_fidelity", []),
+        ),
+        "nodes": merge_node_semantic_data(
+            structural_graph.get("nodes", []),
+            semantic_data.get("cross_run_consistency", {}).get("node_stability", [])
+            if isinstance(semantic_data.get("cross_run_consistency"), dict) else [],
+            semantic_data.get("topological_vulnerability", []),
+            semantic_data.get("confidence_escalation", []),
+        ),
+        "uncertainty_chains": semantic_data.get("uncertainty_chains", []),
+    }
+
+    # Build defensive_patterns top-level key
+    defensive_patterns_section = {
+        "scan_version": defensive_data.get("scan_version", "unknown"),
+        "files_scanned": defensive_data.get("files_scanned", 0),
+        "total_patterns_found": defensive_data.get("total_patterns_found", 0),
+        "delegation_boundaries_found": defensive_data.get("delegation_boundaries_found", 0),
+        "summary": defensive_data.get("summary", {}),
+        "patterns_at_edges": link_patterns_to_edges(
+            defensive_data.get("patterns", []),
+            structural_graph.get("edges", []),
+        ),
+    }
+
+    # 14. Load research enrichments data (v4)
+    enrichments_data = load_json_safe(os.path.join(repo_dir, "enrichments.json"))
+    research_enrichments = enrichments_data if enrichments_data else None
+
     return {
         "repo_full_name": runs[0]["metadata"].get("repo_full_name", repo_hash),
         "schema_version": "v6",
@@ -145,8 +436,11 @@ def build_behavioral_record(
         "emergent_edges": emergent_edges,
         "node_activation": node_activation,
         "error_propagation": error_propagation,
-        "failure_modes": failure_modes,
+        "failure_modes": all_findings,
         "monitoring_baselines": monitoring_baselines,
+        "semantic_analysis": semantic_analysis_section,
+        "defensive_patterns": defensive_patterns_section,
+        "research_enrichments": research_enrichments,
     }
 
 

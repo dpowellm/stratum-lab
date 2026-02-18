@@ -1,0 +1,30 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\dpowe\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\dpowe\OneDrive\Documents\Coding Projects\stratum-observability\stratum-lab
+configfile: pyproject.toml
+plugins: anyio-4.12.1
+collecting ... collected 20 items
+
+eval/test_permissions_cost.py::TestClassifyToolPermissions::test_classify_read_tool PASSED [  5%]
+eval/test_permissions_cost.py::TestClassifyToolPermissions::test_classify_write_tool PASSED [ 10%]
+eval/test_permissions_cost.py::TestClassifyToolPermissions::test_classify_dangerous_tool PASSED [ 15%]
+eval/test_permissions_cost.py::TestTransitiveClosure::test_transitive_closure_simple PASSED [ 20%]
+eval/test_permissions_cost.py::TestTransitiveClosure::test_transitive_closure_chain PASSED [ 25%]
+eval/test_permissions_cost.py::TestEscalation::test_escalation_detected PASSED [ 30%]
+eval/test_permissions_cost.py::TestEscalation::test_no_escalation_same_perms PASSED [ 35%]
+eval/test_permissions_cost.py::TestAsymmetries::test_asymmetry_risk_critical PASSED [ 40%]
+eval/test_permissions_cost.py::TestUnusedPermissions::test_unused_permissions_detected PASSED [ 45%]
+eval/test_permissions_cost.py::TestPermissionBlastRadius::test_permission_blast_radius_score PASSED [ 50%]
+eval/test_permissions_cost.py::TestTokenAmplification::test_token_amplification_basic PASSED [ 55%]
+eval/test_permissions_cost.py::TestTokenAmplification::test_token_amplification_single_node PASSED [ 60%]
+eval/test_permissions_cost.py::TestToolCallDensity::test_tool_call_density PASSED [ 65%]
+eval/test_permissions_cost.py::TestRetryWaste::test_retry_waste_detection PASSED [ 70%]
+eval/test_permissions_cost.py::TestRetryWaste::test_retry_waste_zero_errors PASSED [ 75%]
+eval/test_permissions_cost.py::TestLatencyProfile::test_latency_profile PASSED [ 80%]
+eval/test_permissions_cost.py::TestCostRiskScoring::test_cost_risk_score_bounds PASSED [ 85%]
+eval/test_permissions_cost.py::TestCostRiskScoring::test_cost_finding_triggered PASSED [ 90%]
+eval/test_permissions_cost.py::TestCostRiskScoring::test_cost_finding_not_triggered PASSED [ 95%]
+eval/test_permissions_cost.py::TestCostRiskScoring::test_monthly_cost_multiplier PASSED [100%]
+
+============================= 20 passed in 0.03s ==============================

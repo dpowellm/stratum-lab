@@ -1,0 +1,2 @@
+[console_scripts]
+stratum-lab = stratum_lab.cli:main

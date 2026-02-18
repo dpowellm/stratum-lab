@@ -38,6 +38,22 @@
 # No set -e — we handle errors explicitly.
 # ============================================================================
 
+# ── VLLM_HOST preflight check ────────────────────────────────────────
+if [ -z "$VLLM_HOST" ]; then
+    echo "FATAL: VLLM_HOST is not set. Export it before running." >&2
+    echo "  export VLLM_HOST=http://your-vllm-server:8000" >&2
+    exit 1
+fi
+# Health check
+if ! curl -sf "$VLLM_HOST/health" > /dev/null 2>&1; then
+    # Try /v1/models as fallback health check
+    if ! curl -sf "$VLLM_HOST/v1/models" > /dev/null 2>&1; then
+        echo "FATAL: vLLM not reachable at $VLLM_HOST" >&2
+        exit 1
+    fi
+fi
+echo "vLLM health check passed: $VLLM_HOST"
+
 # ── Defaults ─────────────────────────────────────────────────────────────
 CONCURRENCY="${WORKERS:-5}"
 TIMEOUT=600
@@ -150,6 +166,61 @@ fi
 # ── Helper: SHA256-based directory name (12 hex chars) ───────────────────
 repo_hash() {
     echo -n "$1" | sha256sum | cut -c1-12
+}
+
+# ── Helper: Extract repo URL from a line (supports TSV and JSONL) ────────
+extract_repo_url() {
+    local line="$1"
+    # Check if line starts with { — JSONL format
+    if [[ "$line" == \{* ]]; then
+        # Extract repo_url from JSON object
+        local url
+        url=$(echo "$line" | python3 -c "import sys,json; print(json.loads(sys.stdin.read()).get('repo_url',''))" 2>/dev/null)
+        if [ -n "$url" ]; then
+            echo "$url"
+            return
+        fi
+    fi
+    # Fallback: TSV format — take last field (score\tURL or just URL)
+    echo "$line" | awk '{print $NF}'
+}
+
+# ── Helper: Post-run behavioral status classification ─────────────────
+classify_behavioral_status() {
+    local events_file="$1"
+    if [ ! -f "$events_file" ]; then
+        echo "NO_EVENTS_FILE"
+        return
+    fi
+    python3 -c "
+import json, sys
+agent_starts = 0
+llm_starts = 0
+try:
+    with open(sys.argv[1], 'r') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                evt = json.loads(line)
+                et = evt.get('event_type', '')
+                if et == 'agent.task_start':
+                    agent_starts += 1
+                elif et == 'llm.call_start':
+                    llm_starts += 1
+            except json.JSONDecodeError:
+                continue
+except Exception:
+    pass
+
+if agent_starts > 0 and llm_starts > 0:
+    print('FULL_BEHAVIORAL')
+elif llm_starts > 0:
+    print('LLM_ONLY')
+else:
+    print('NO_BEHAVIORAL_DATA')
+" "$events_file" 2>/dev/null || echo "CLASSIFY_ERROR"
 }
 
 # ── Docker network detection ────────────────────────────────────────────
@@ -373,16 +444,23 @@ except Exception:
                 status="ERROR"
             fi
 
+            # Post-run behavioral status classification
+            local behavioral_status="UNKNOWN"
+            local events_file="$RESULTS_DIR/$repo_dir/events_run_${run_number}.jsonl"
+            if [ -f "$events_file" ]; then
+                behavioral_status=$(classify_behavioral_status "$events_file")
+            fi
+
             # Update running totals
             classify_status "$status" "$tier"
 
             # Progress line with phase context
             print_progress
 
-            # Append to scan_log.txt
+            # Append to scan_log.txt with behavioral status
             local timestamp
             timestamp=$(date -u +"%Y-%m-%dT%H:%M:%S")
-            echo "$timestamp $repo_dir run=$run_number $status $repo_url" >> "$OUTPUT_DIR/scan_log.txt"
+            echo "$timestamp $repo_dir run=$run_number $status behavioral=$behavioral_status $repo_url" >> "$OUTPUT_DIR/scan_log.txt"
 
             unset "BG_PIDS[$pid]"
             unset "BG_REPO_DIRS[$pid]"
@@ -465,6 +543,7 @@ launch_container() {
 # ── Run a list of repos through Phase 1 (1 run each) ────────────────────
 run_phase1_for_list() {
     local repo_file="$1"
+    local phase1_count=0
 
     while IFS= read -r line; do
         if [ "$SHUTDOWN" = true ]; then
@@ -475,9 +554,11 @@ run_phase1_for_list() {
         [ -z "$line" ] && continue
         [[ "$line" == \#* ]] && continue
 
-        # Support TSV format: score\tURL — take last field
+        # Support both TSV and JSONL input formats
         local repo_url
-        repo_url=$(echo "$line" | awk '{print $NF}')
+        repo_url=$(extract_repo_url "$line")
+        [ -z "$repo_url" ] && continue
+
         local repo_dir
         repo_dir=$(repo_hash "$repo_url")
 
@@ -495,6 +576,26 @@ run_phase1_for_list() {
 
         # Collect any that finished while reading the list
         collect_finished
+
+        # Periodic vLLM health check every 50 repos
+        phase1_count=$((phase1_count + 1))
+        if [ $((phase1_count % 50)) -eq 0 ]; then
+            echo "[orchestrate] Periodic vLLM health check (repo #$phase1_count)..."
+            local health_retries=0
+            while ! check_vllm; do
+                health_retries=$((health_retries + 1))
+                if [ $health_retries -gt 3 ]; then
+                    echo "FATAL: vLLM unreachable after 3 retries during periodic check, aborting" >&2
+                    SHUTDOWN=true
+                    break
+                fi
+                echo "vLLM unreachable, retrying in 30s (attempt $health_retries/3)..."
+                sleep 30
+            done
+            if [ "$SHUTDOWN" = true ]; then
+                break
+            fi
+        fi
 
         # vLLM health check before launching container
         wait_for_vllm
@@ -680,10 +781,80 @@ else
 fi
 
 # ============================================================================
-# PHASE 3: COLLECTION
+# PHASE 3: PER-REPO SEMANTIC ANALYSIS
 # ============================================================================
 echo ""
-echo "=== PHASE 3: COLLECTION ==="
+echo "=== PHASE 3: SEMANTIC ANALYSIS ==="
+
+if [ -f "$SCRIPT_DIR/analyze_semantics.py" ] && [ -n "$VLLM_HOST" ]; then
+    for repo_dir in "$RESULTS_DIR"/*/; do
+        [ -d "$repo_dir" ] || continue
+        REPO_NAME=$(basename "$repo_dir")
+
+        # Skip repos without events
+        if ! ls "$repo_dir"/events_run_*.jsonl 1>/dev/null 2>&1; then
+            continue
+        fi
+
+        # Skip if already analyzed
+        if [ -f "$repo_dir/semantic_analysis.json" ]; then
+            continue
+        fi
+
+        echo "[orchestrate] Phase 3: Running semantic analysis for $REPO_NAME..."
+        python3 "$SCRIPT_DIR/analyze_semantics.py" \
+            --results-dir "$repo_dir" \
+            --vllm-url "$VLLM_HOST/v1" \
+            --model "${VLLM_MODEL:-mistralai/Mistral-7B-Instruct-v0.3}" \
+            --output "$repo_dir/semantic_analysis.json" \
+            2>>"$repo_dir/semantic_analysis_stderr.log" || {
+            echo '{"error": "semantic analysis failed", "aggregate_scores": {}}' > "$repo_dir/semantic_analysis.json"
+            echo "[WARN] Semantic analysis failed for $REPO_NAME"
+        }
+    done
+else
+    echo "[orchestrate] Skipping Phase 3: analyze_semantics.py or VLLM_HOST not available"
+fi
+
+# ============================================================================
+# PHASE 0b: DATA TOPOLOGY SCAN (tool registrations, state keys, permissions)
+# ============================================================================
+echo ""
+echo "=== PHASE 0b: DATA TOPOLOGY SCAN ==="
+
+if [ -f "$SCRIPT_DIR/scan_data_topology.py" ]; then
+    for repo_dir in "$RESULTS_DIR"/*/; do
+        [ -d "$repo_dir" ] || continue
+        REPO_NAME=$(basename "$repo_dir")
+
+        # Skip if already scanned
+        if [ -f "$repo_dir/data_topology.json" ]; then
+            continue
+        fi
+
+        # Look for cloned repo source (may be in repo_dir/repo or similar)
+        REPO_SRC=""
+        for candidate in "$repo_dir/repo" "$repo_dir/source" "$repo_dir"; do
+            if [ -d "$candidate" ] && ls "$candidate"/*.py 1>/dev/null 2>&1; then
+                REPO_SRC="$candidate"
+                break
+            fi
+        done
+
+        if [ -n "$REPO_SRC" ]; then
+            echo "[Phase 0b] Scanning data topology for $REPO_NAME..."
+            python3 "$SCRIPT_DIR/scan_data_topology.py" "$REPO_SRC" > "$repo_dir/data_topology.json" 2>/dev/null || echo '{"error":"scan_failed"}' > "$repo_dir/data_topology.json"
+        fi
+    done
+else
+    echo "[orchestrate] Skipping Phase 0b: scan_data_topology.py not found"
+fi
+
+# ============================================================================
+# PHASE 4: COLLECTION (behavioral records)
+# ============================================================================
+echo ""
+echo "=== PHASE 4: COLLECTION ==="
 
 if [ -f "$SCRIPT_DIR/build_behavioral_records.py" ]; then
     mkdir -p "$OUTPUT_DIR/behavioral_records"
@@ -692,6 +863,68 @@ if [ -f "$SCRIPT_DIR/build_behavioral_records.py" ]; then
         --output-dir "$OUTPUT_DIR/behavioral_records/"
 else
     echo "[orchestrate] Warning: build_behavioral_records.py not found in $SCRIPT_DIR, skipping collection"
+fi
+
+# ============================================================================
+# PHASE 4b: RESEARCH ENRICHMENTS (privacy, permissions, cost, audit)
+# ============================================================================
+echo ""
+echo "=== PHASE 4b: RESEARCH ENRICHMENTS ==="
+
+if [ -f "$SCRIPT_DIR/compute_enrichments.py" ]; then
+    for repo_dir in "$RESULTS_DIR"/*/; do
+        [ -d "$repo_dir" ] || continue
+        REPO_NAME=$(basename "$repo_dir")
+
+        # Skip repos without events
+        if ! ls "$repo_dir"/events_run_*.jsonl 1>/dev/null 2>&1; then
+            continue
+        fi
+
+        # Skip if already enriched
+        if [ -f "$repo_dir/enrichments.json" ]; then
+            continue
+        fi
+
+        echo "[Phase 4b] Computing research enrichments for $REPO_NAME..."
+        python3 "$SCRIPT_DIR/compute_enrichments.py" "$repo_dir" 2>/dev/null || echo "Warning: enrichment computation failed for $REPO_NAME"
+    done
+else
+    echo "[orchestrate] Skipping Phase 4b: compute_enrichments.py not found"
+fi
+
+# ============================================================================
+# PHASE 5: CROSS-REPO REMEDIATION MINING
+# ============================================================================
+echo ""
+echo "=== PHASE 5: REMEDIATION MINING ==="
+
+if [ -f "$SCRIPT_DIR/mine_remediations.py" ]; then
+    echo "[orchestrate] Phase 5: Mining remediation evidence across corpus..."
+    python3 "$SCRIPT_DIR/mine_remediations.py" \
+        --scan-dir "$OUTPUT_DIR" \
+        --output "$OUTPUT_DIR/remediation_evidence.json" \
+        2>>"$OUTPUT_DIR/remediation_mining_stderr.log" || {
+        echo '{"error": "remediation mining failed", "findings": []}' > "$OUTPUT_DIR/remediation_evidence.json"
+        echo "[WARN] Remediation mining failed"
+    }
+else
+    echo "[orchestrate] Skipping Phase 5: mine_remediations.py not found"
+fi
+
+# ============================================================================
+# PHASE 5b: CORPUS-WIDE RISK MODEL (DTMC learning)
+# ============================================================================
+echo ""
+echo "=== PHASE 5b: CORPUS RISK MODEL ==="
+
+if [ -f "$SCRIPT_DIR/compute_risk_model.py" ]; then
+    CORPUS_DIR="$OUTPUT_DIR"
+    ALL_RECORDS_DIR="$RESULTS_DIR"
+    echo "[Phase 5b] Computing corpus risk model..."
+    python3 "$SCRIPT_DIR/compute_risk_model.py" "$ALL_RECORDS_DIR" > "$CORPUS_DIR/risk_model.json" 2>/dev/null || echo '{"error":"model_failed"}' > "$CORPUS_DIR/risk_model.json"
+else
+    echo "[orchestrate] Skipping Phase 5b: compute_risk_model.py not found"
 fi
 
 # ── Final summary and post-processing ────────────────────────────────────
@@ -719,6 +952,15 @@ echo ""
 echo "Status distribution:"
 if [ -f "$OUTPUT_DIR/scan_summary.csv" ]; then
     tail -n +2 "$OUTPUT_DIR/scan_summary.csv" | cut -d',' -f2 | sort | uniq -c | sort -rn
+fi
+
+# Print behavioral yield summary from scan_log.txt
+echo ""
+echo "Behavioral yield:"
+if [ -f "$OUTPUT_DIR/scan_log.txt" ]; then
+    echo "  FULL_BEHAVIORAL:    $(grep -c 'behavioral=FULL_BEHAVIORAL' "$OUTPUT_DIR/scan_log.txt" 2>/dev/null || echo 0)"
+    echo "  LLM_ONLY:           $(grep -c 'behavioral=LLM_ONLY' "$OUTPUT_DIR/scan_log.txt" 2>/dev/null || echo 0)"
+    echo "  NO_BEHAVIORAL_DATA: $(grep -c 'behavioral=NO_BEHAVIORAL_DATA' "$OUTPUT_DIR/scan_log.txt" 2>/dev/null || echo 0)"
 fi
 
 echo "=== SCAN COMPLETE ==="

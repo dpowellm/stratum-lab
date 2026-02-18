@@ -1,0 +1,22 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\dpowe\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\dpowe\OneDrive\Documents\Coding Projects\stratum-observability\stratum-lab
+configfile: pyproject.toml
+plugins: anyio-4.12.1
+collecting ... collected 12 items
+
+eval/test_scan_data_topology.py::TestToolDetection::test_at_tool_decorator PASSED [  8%]
+eval/test_scan_data_topology.py::TestToolDetection::test_tool_constructor PASSED [ 16%]
+eval/test_scan_data_topology.py::TestToolDetection::test_structured_tool PASSED [ 25%]
+eval/test_scan_data_topology.py::TestToolDetection::test_api_pattern_requests PASSED [ 33%]
+eval/test_scan_data_topology.py::TestToolDetection::test_database_pattern PASSED [ 41%]
+eval/test_scan_data_topology.py::TestToolDetection::test_multiple_tools_in_one_file PASSED [ 50%]
+eval/test_scan_data_topology.py::TestStateKeyDetection::test_typed_dict_fields PASSED [ 58%]
+eval/test_scan_data_topology.py::TestStateKeyDetection::test_dict_access_patterns PASSED [ 66%]
+eval/test_scan_data_topology.py::TestStateKeyDetection::test_pydantic_model_fields PASSED [ 75%]
+eval/test_scan_data_topology.py::TestEdgeCases::test_skips_excluded_directories PASSED [ 83%]
+eval/test_scan_data_topology.py::TestEdgeCases::test_empty_repo PASSED   [ 91%]
+eval/test_scan_data_topology.py::TestEdgeCases::test_binary_file_no_crash PASSED [100%]
+
+============================= 12 passed in 0.06s ==============================
