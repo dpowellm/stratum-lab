@@ -275,7 +275,9 @@ RUN_UUID=$(python3 -c "import uuid; print(uuid.uuid4())" 2>/dev/null || cat /pro
 
 # Count total repos
 while IFS= read -r line; do
-    line=$(echo "$line" | xargs 2>/dev/null || true)
+    # Trim whitespace — but NOT with xargs (it strips double quotes from JSON)
+    line="${line#"${line%%[![:space:]]*}"}"  # trim leading
+    line="${line%"${line##*[![:space:]]}"}"  # trim trailing
     [ -z "$line" ] && continue
     [[ "$line" == \#* ]] && continue
     TOTAL=$((TOTAL + 1))
@@ -576,7 +578,9 @@ run_phase1_for_list() {
             break
         fi
 
-        line=$(echo "$line" | xargs 2>/dev/null || true)
+        # Trim whitespace — but NOT with xargs (it strips double quotes from JSON)
+        line="${line#"${line%%[![:space:]]*}"}"  # trim leading
+        line="${line%"${line##*[![:space:]]}"}"  # trim trailing
         [ -z "$line" ] && continue
         [[ "$line" == \#* ]] && continue
 
