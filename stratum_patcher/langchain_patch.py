@@ -10,6 +10,8 @@ Monkey-patches:
 from __future__ import annotations
 
 import functools
+import hashlib
+import os
 import sys
 import time
 from typing import Any
@@ -185,10 +187,41 @@ def patch_langchain(event_logger: Any = None) -> None:
             node_id = generate_node_id(_FRAMEWORK, self.__class__.__name__, __file__, 0)
             source = make_node("capability", node_id, self.__class__.__name__)
 
+            # Build start payload with model info
+            start_payload: dict[str, Any] = {
+                "model_requested": getattr(self, "model_name", None) or getattr(self, "model", "unknown"),
+                "message_count": len(messages) if messages else 0,
+                "has_tools": bool(kwargs.get("tools") or kwargs.get("functions")),
+            }
+
+            # Capture I/O from LangChain messages
+            if os.environ.get("STRATUM_CAPTURE_PROMPTS") == "1" and messages:
+                try:
+                    # Extract system prompt
+                    sys_msgs = [m for m in messages if getattr(m, "type", "") == "system"]
+                    if sys_msgs:
+                        sys_text = getattr(sys_msgs[0], "content", str(sys_msgs[0]))
+                        if sys_text:
+                            start_payload["system_prompt_preview"] = str(sys_text)[:500]
+                            start_payload["system_prompt_hash"] = hashlib.sha256(
+                                str(sys_text).encode("utf-8", errors="replace")
+                            ).hexdigest()
+                    # Extract last user/human message
+                    human_msgs = [m for m in messages if getattr(m, "type", "") in ("human", "user")]
+                    if human_msgs:
+                        last_user = getattr(human_msgs[-1], "content", str(human_msgs[-1]))
+                        if last_user:
+                            start_payload["last_user_message_preview"] = str(last_user)[:500]
+                            start_payload["last_user_message_hash"] = hashlib.sha256(
+                                str(last_user).encode("utf-8", errors="replace")
+                            ).hexdigest()
+                except Exception:
+                    pass
+
             start_id = logger.log_event(
                 "llm.call_start",
                 source_node=source,
-                payload={"model": getattr(self, "model_name", "unknown")},
+                payload=start_payload,
             )
 
             t0 = time.perf_counter()
@@ -221,6 +254,7 @@ def patch_langchain(event_logger: Any = None) -> None:
                         payload["output_hash"] = _sig["hash"]
                         payload["output_type"] = _sig["type"]
                         payload["output_size_bytes"] = _sig["size_bytes"]
+                        payload["output_preview"] = _sig["preview"]
                         payload["classification_fields"] = _sig["classification_fields"]
                     except Exception:
                         pass

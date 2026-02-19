@@ -109,7 +109,7 @@ done
 
 REPO_LIST="${POSITIONAL[0]:-}"
 OUTPUT_DIR="${POSITIONAL[1]:-}"
-OUTPUT_DIR="$(cd "$OUTPUT_DIR" 2>/dev/null && pwd || mkdir -p "$OUTPUT_DIR" && cd "$OUTPUT_DIR" && pwd)"
+OUTPUT_DIR="$(cd "$OUTPUT_DIR" 2>/dev/null && pwd || (mkdir -p "$OUTPUT_DIR" && cd "$OUTPUT_DIR" && pwd))"
 
 if [ -z "$REPO_LIST" ] || [ -z "$OUTPUT_DIR" ]; then
     echo "Error: repo_list_file and output_dir are required" >&2

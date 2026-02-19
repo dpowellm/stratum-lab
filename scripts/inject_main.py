@@ -109,8 +109,8 @@ def _find_orchestration_targets(
                 module_path=module_path,
             ))
 
-    # ── CrewAI: look for methods that return Crew() ──
-    for node in ast.walk(tree):
+    # ── CrewAI: look for TOP-LEVEL functions that return Crew() ──
+    for node in ast.iter_child_nodes(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             for child in ast.walk(node):
                 if isinstance(child, ast.Return) and child.value is not None:
@@ -130,13 +130,15 @@ def _find_orchestration_targets(
                                 module_path=module_path,
                             ))
 
-    # ── LangGraph: look for .compile() calls ──
+    # ── LangGraph: look for .compile() on StateGraph objects ──
     for node in ast.walk(tree):
         if isinstance(node, ast.Assign):
             for target in node.targets:
                 if isinstance(target, ast.Name) and isinstance(node.value, ast.Call):
                     func = node.value.func
-                    if isinstance(func, ast.Attribute) and func.attr == "compile":
+                    if (isinstance(func, ast.Attribute) and func.attr == "compile"
+                            and isinstance(func.value, ast.Name)
+                            and assigned_vars.get(func.value.id) == "StateGraph"):
                         targets.append(OrchestrationTarget(
                             framework="langgraph",
                             variable=target.id,
@@ -145,8 +147,9 @@ def _find_orchestration_targets(
                             module_path=module_path,
                         ))
 
-    # ── LangGraph: look for functions that build and return a graph ──
-    for node in ast.walk(tree):
+    # ── LangGraph: look for TOP-LEVEL functions that build and return a graph ──
+    # Only check direct children of the module (not methods inside classes)
+    for node in ast.iter_child_nodes(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             has_state_graph = False
             has_compile = False
@@ -196,6 +199,98 @@ def _find_orchestration_targets(
                             module_path=module_path,
                         ))
                         break
+
+    # ── Extended patterns for class-based and indirect orchestration ──
+
+    # Collect top-level class and function names
+    top_classes: dict[str, ast.ClassDef] = {}
+    top_functions: dict[str, ast.FunctionDef] = {}
+    for node in ast.iter_child_nodes(tree):
+        if isinstance(node, ast.ClassDef):
+            top_classes[node.name] = node
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            top_functions[node.name] = node
+
+    # Pattern A: Classes whose methods contain Crew(), StateGraph(), GroupChat()
+    _ORCH_CLASSES = {"Crew": ("crewai", "kickoff"),
+                     "StateGraph": ("langgraph", "invoke"),
+                     "GroupChat": ("autogen", "initiate_chat"),
+                     "GroupChatManager": ("autogen", "initiate_chat")}
+    for cls_name, cls_node in top_classes.items():
+        found_fw = found_call = None
+        for child in ast.walk(cls_node):
+            if isinstance(child, ast.Call):
+                f = child.func
+                fname = (f.id if isinstance(f, ast.Name) else
+                         f.attr if isinstance(f, ast.Attribute) else None)
+                if fname in _ORCH_CLASSES:
+                    found_fw, found_call = _ORCH_CLASSES[fname]
+                    break
+        if not found_fw:
+            continue
+        # Look for convenience functions that instantiate this class
+        factory_func = None
+        for fn_name, fn_node in top_functions.items():
+            for child in ast.walk(fn_node):
+                if isinstance(child, ast.Call):
+                    f = child.func
+                    fname = (f.id if isinstance(f, ast.Name) else
+                             f.attr if isinstance(f, ast.Attribute) else None)
+                    if fname == cls_name:
+                        factory_func = fn_name
+                        break
+            if factory_func:
+                break
+        if factory_func:
+            # Check if factory calls methods internally (→ direct)
+            fn_node = top_functions[factory_func]
+            _RUN_METHODS = {"run", "execute", "kickoff", "invoke",
+                            "initiate_chat", "process", "start"}
+            calls_method = any(
+                isinstance(c, ast.Call) and isinstance(c.func, ast.Attribute)
+                and c.func.attr in _RUN_METHODS
+                for c in ast.walk(fn_node))
+            targets.append(OrchestrationTarget(
+                found_fw, f"{factory_func}()",
+                "direct" if calls_method else found_call,
+                file_path, module_path))
+        else:
+            targets.append(OrchestrationTarget(
+                found_fw, f"{cls_name}()", found_call,
+                file_path, module_path))
+
+    # Pattern B: Module-level functions calling .kickoff()/.invoke()/.run() etc.
+    _EXEC_METHODS = {"kickoff": "crewai", "invoke": "langgraph",
+                     "initiate_chat": "autogen"}
+    has_fw = bool(crewai_imports or langgraph_imports or autogen_imports)
+    if has_fw:
+        _EXEC_METHODS["run"] = (
+            "crewai" if crewai_imports else
+            "langgraph" if langgraph_imports else "autogen")
+    for fn_name, fn_node in top_functions.items():
+        if any(t.variable == f"{fn_name}()" for t in targets):
+            continue
+        for child in ast.walk(fn_node):
+            if (isinstance(child, ast.Call)
+                    and isinstance(child.func, ast.Attribute)
+                    and child.func.attr in _EXEC_METHODS):
+                fw = _EXEC_METHODS[child.func.attr]
+                targets.append(OrchestrationTarget(
+                    fw, f"{fn_name}()", "direct",
+                    file_path, module_path))
+                break
+
+    # Pattern C: Functions that create StateGraph (even without compile)
+    for fn_name, fn_node in top_functions.items():
+        if any(t.variable == f"{fn_name}()" for t in targets):
+            continue
+        for child in ast.walk(fn_node):
+            if (isinstance(child, ast.Call) and isinstance(child.func, ast.Name)
+                    and child.func.id == "StateGraph"):
+                targets.append(OrchestrationTarget(
+                    "langgraph", f"{fn_name}()", "invoke",
+                    file_path, module_path))
+                break
 
     return targets
 
@@ -253,11 +348,23 @@ def generate_wrapper(target: OrchestrationTarget, repo_root: str) -> str:
 
     if is_function_call and func_name:
         import_lines.append(f"from {target.module_path} import {func_name}")
-        if target.framework == "crewai":
+        if target.call_method == "direct":
+            # Function handles orchestration internally — just call it
+            call_lines.append(f"result = {func_name}()")
+        elif target.framework == "crewai":
             call_lines.append(f"result = {func_name}().{target.call_method}()")
         elif target.framework == "langgraph":
             call_lines.append(f"graph = {func_name}()")
-            call_lines.append(f'result = graph.invoke({{"input": "Analyze AI agent frameworks"}})')
+            call_lines.append("if hasattr(graph, 'compile'):")
+            call_lines.append("    graph = graph.compile()")
+            call_lines.append("try:")
+            call_lines.append('    result = graph.invoke({"messages": [{"role": "user", "content": "Analyze AI agent frameworks"}]})')
+            call_lines.append("except TypeError as _te:")
+            call_lines.append('    if "synchronous" in str(_te).lower() or "ainvoke" in str(_te).lower():')
+            call_lines.append("        import asyncio")
+            call_lines.append('        result = asyncio.run(graph.ainvoke({"messages": [{"role": "user", "content": "Analyze AI agent frameworks"}]}))')
+            call_lines.append("    else:")
+            call_lines.append("        raise")
         else:
             call_lines.append(f"result = {func_name}()")
     else:
@@ -266,9 +373,18 @@ def generate_wrapper(target: OrchestrationTarget, repo_root: str) -> str:
         if target.framework == "crewai":
             call_lines.append(f"result = _mod.{var}.{target.call_method}()")
         elif target.framework == "langgraph":
+            call_lines.append("try:")
             call_lines.append(
-                f'result = _mod.{var}.{target.call_method}'
-                f'({{"input": "Analyze AI agent frameworks"}})')
+                f'    result = _mod.{var}.{target.call_method}'
+                f'({{"messages": [{{"role": "user", "content": "Analyze AI agent frameworks"}}]}})')
+            call_lines.append("except TypeError as _te:")
+            call_lines.append('    if "synchronous" in str(_te).lower() or "ainvoke" in str(_te).lower():')
+            call_lines.append("        import asyncio")
+            call_lines.append(
+                f'        result = asyncio.run(_mod.{var}.ainvoke'
+                f'({{"messages": [{{"role": "user", "content": "Analyze AI agent frameworks"}}]}}))')
+            call_lines.append("    else:")
+            call_lines.append("        raise")
         elif target.framework == "autogen":
             call_lines.append("# AutoGen: initiate_chat needs a target agent")
             call_lines.append("_agents = [")
@@ -327,6 +443,24 @@ def generate_wrapper(target: OrchestrationTarget, repo_root: str) -> str:
     lines.append("            _m.__spec__ = None")
     lines.append("            sys.modules[_mod_name] = _m")
     lines.append("")
+    lines.append("# Override non-OpenAI LLM constructors to use vLLM")
+    lines.append("try:")
+    lines.append("    from langchain_openai import ChatOpenAI as _StratumLLM")
+    lines.append("    _stratum_llm = _StratumLLM(")
+    lines.append('        base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:8000/v1"),')
+    lines.append('        api_key=os.environ.get("OPENAI_API_KEY", "sk-proj-stratum000000000000000000000000000000000000000000000000"),')
+    lines.append('        model=os.environ.get("STRATUM_VLLM_MODEL", "mistralai/Mistral-7B-Instruct-v0.3"),')
+    lines.append("        max_tokens=512,")
+    lines.append("    )")
+    lines.append("    try:")
+    lines.append("        import langchain.chat_models as _chat_mod")
+    lines.append("        if hasattr(_chat_mod, 'init_chat_model'):")
+    lines.append("            _chat_mod.init_chat_model = lambda *a, **kw: _stratum_llm")
+    lines.append("    except ImportError:")
+    lines.append("        pass")
+    lines.append("except Exception:")
+    lines.append("    pass")
+    lines.append("")
     lines.append("try:")
     for il in import_lines:
         lines.append(f"    {il}")
@@ -357,11 +491,52 @@ def generate_wrapper(target: OrchestrationTarget, repo_root: str) -> str:
     return script
 
 
+def _pick_best_target(targets: list[OrchestrationTarget]) -> OrchestrationTarget:
+    """Pick the best target, preferring module-level vars over functions/classes.
+
+    Priority (lower = better):
+    1. Module-level compiled graph variables (e.g. ``graph``)
+    2. Functions with call_method="direct" (they handle execution internally)
+    3. Functions returning framework objects (e.g. ``create_crew()``)
+    4. Class instantiation targets (e.g. ``Workflow()``) — risky, often needs args
+    """
+    if not targets:
+        raise ValueError("No targets")
+
+    def _score(t: OrchestrationTarget) -> tuple:
+        is_func = t.variable.endswith("()")
+        is_direct = t.call_method == "direct"
+        # Check if the variable name looks like a class (starts with uppercase)
+        var_base = t.variable.rstrip("()")
+        is_class = var_base[0:1].isupper() if var_base else False
+        is_private = var_base.startswith("_")
+
+        # Score tuple: lower is better
+        # (is_function_call, is_class_instantiation, not_direct, is_private)
+        if not is_func:
+            # Module-level variable — best option
+            return (0, is_private, 0, 0)
+        elif is_direct:
+            # Direct-call function — second best
+            return (1, is_private, 0, 0)
+        elif not is_class:
+            # Function returning framework object — third
+            return (2, is_private, 0, 0)
+        else:
+            # Class instantiation — worst (often needs constructor args)
+            return (3, is_private, 0, 0)
+
+    return sorted(targets, key=_score)[0]
+
+
 def main() -> int:
     """CLI entry point.
 
     Takes a file path, analyzes it, and either prints the original path
     (if it already has __main__) or writes a wrapper and prints that path.
+
+    Falls back to scanning the entire repo if the primary file yields no
+    usable targets.
     """
     if len(sys.argv) < 2:
         print("Usage: inject_main.py <file_path> [repo_root]", file=sys.stderr)
@@ -381,13 +556,23 @@ def main() -> int:
         print(file_path)
         return 0
 
+    # Also scan the whole repo for additional targets (broader search)
+    repo_targets = scan_repo(repo_root)
+
+    # Merge: primary file targets + repo-wide targets (deduplicate)
+    seen = {(t.module_path, t.variable) for t in targets}
+    for rt in repo_targets:
+        key = (rt.module_path, rt.variable)
+        if key not in seen:
+            targets.append(rt)
+            seen.add(key)
+
     if not targets:
-        # No orchestration objects found — nothing to inject
         print(file_path)
         return 1
 
-    # Pick the best target (prefer the first one found)
-    target = targets[0]
+    # Pick the best target
+    target = _pick_best_target(targets)
 
     # Generate wrapper
     wrapper_content = generate_wrapper(target, repo_root)

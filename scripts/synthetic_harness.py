@@ -137,10 +137,20 @@ def _find_orch_targets_in_file(
                             file_path, module_path))
                         break
 
-    # LangGraph: compiled graphs
-    for var, cls in assignments.items():
-        if cls == "compile":
-            targets.append(OrchTarget("langgraph", var, "invoke", file_path, module_path))
+    # LangGraph: compiled graphs (e.g. app = graph.compile())
+    # Only match if the .compile() call is on a variable that was assigned
+    # a StateGraph, not just any .compile() (like re.compile())
+    for node in ast.iter_child_nodes(tree):
+        if isinstance(node, ast.Assign):
+            for tgt in node.targets:
+                if isinstance(tgt, ast.Name) and isinstance(node.value, ast.Call):
+                    func = node.value.func
+                    if (isinstance(func, ast.Attribute) and func.attr == "compile"
+                            and isinstance(func.value, ast.Name)
+                            and func.value.id in assignments
+                            and assignments.get(func.value.id) == "StateGraph"):
+                        targets.append(OrchTarget("langgraph", tgt.id, "invoke",
+                                                  file_path, module_path))
 
     # LangGraph: functions that build+compile a StateGraph
     for node in ast.walk(tree):
@@ -171,6 +181,128 @@ def _find_orch_targets_in_file(
                         targets.append(OrchTarget(
                             "autogen", var, "initiate_chat", file_path, module_path))
                         break
+
+    # ── Extended patterns for class-based and indirect orchestration ──
+
+    # Collect top-level class and function names for cross-referencing
+    top_classes: dict[str, ast.ClassDef] = {}
+    top_functions: dict[str, ast.FunctionDef] = {}
+    for node in ast.iter_child_nodes(tree):
+        if isinstance(node, ast.ClassDef):
+            top_classes[node.name] = node
+        elif isinstance(node, ast.FunctionDef):
+            top_functions[node.name] = node
+
+    # Pattern A: Classes whose methods contain Crew(), StateGraph(), or GroupChat()
+    _ORCH_CLASS_NAMES = {"Crew", "StateGraph", "GroupChat", "GroupChatManager"}
+    for cls_name, cls_node in top_classes.items():
+        found_framework = None
+        found_call = None
+        for child in ast.walk(cls_node):
+            if isinstance(child, ast.Call):
+                f = child.func
+                fname = None
+                if isinstance(f, ast.Name):
+                    fname = f.id
+                elif isinstance(f, ast.Attribute):
+                    fname = f.attr
+                if fname in _ORCH_CLASS_NAMES:
+                    if fname == "Crew":
+                        found_framework = "crewai"
+                        found_call = "kickoff"
+                    elif fname == "StateGraph":
+                        found_framework = "langgraph"
+                        found_call = "invoke"
+                    elif fname in ("GroupChat", "GroupChatManager"):
+                        found_framework = "autogen"
+                        found_call = "initiate_chat"
+                    break
+        if found_framework:
+            # Look for a module-level factory/convenience function that
+            # instantiates this class (e.g. run_workflow(), create_orchestrator())
+            factory_func = None
+            for fn_name, fn_node in top_functions.items():
+                for child in ast.walk(fn_node):
+                    if isinstance(child, ast.Call):
+                        f = child.func
+                        fname = None
+                        if isinstance(f, ast.Name):
+                            fname = f.id
+                        elif isinstance(f, ast.Attribute):
+                            fname = f.attr
+                        if fname == cls_name:
+                            factory_func = fn_name
+                            break
+                if factory_func:
+                    break
+            if factory_func:
+                # Check if the factory function also calls methods on the
+                # instance (making it a "complete" function → direct call)
+                fn_node = top_functions[factory_func]
+                calls_method = False
+                _RUN_METHODS = {"run", "execute", "kickoff", "invoke",
+                                "initiate_chat", "process", "start"}
+                for child in ast.walk(fn_node):
+                    if (isinstance(child, ast.Call)
+                            and isinstance(child.func, ast.Attribute)
+                            and child.func.attr in _RUN_METHODS):
+                        calls_method = True
+                        break
+                targets.append(OrchTarget(
+                    found_framework, f"{factory_func}()",
+                    "direct" if calls_method else found_call,
+                    file_path, module_path))
+            else:
+                # No factory function — generate a wrapper that instantiates
+                # the class directly and calls the first likely method
+                targets.append(OrchTarget(
+                    found_framework, f"{cls_name}()", found_call,
+                    file_path, module_path))
+
+    # Pattern B: Module-level functions that call .kickoff(), .invoke(),
+    # .initiate_chat(), or .run() (when framework imports present)
+    _EXEC_METHODS = {"kickoff": "crewai", "invoke": "langgraph",
+                     "initiate_chat": "autogen"}
+    # .run() is a common orchestration method but also very generic —
+    # only match it when the file imports a known framework.
+    has_framework = bool(crewai_names or langgraph_names or autogen_names)
+    if has_framework:
+        _EXEC_METHODS["run"] = (
+            "crewai" if crewai_names else
+            "langgraph" if langgraph_names else "autogen")
+    for fn_name, fn_node in top_functions.items():
+        already_found = any(t.variable == f"{fn_name}()" for t in targets)
+        if already_found:
+            continue
+        for child in ast.walk(fn_node):
+            if isinstance(child, ast.Call) and isinstance(child.func, ast.Attribute):
+                method = child.func.attr
+                if method in _EXEC_METHODS:
+                    fw = _EXEC_METHODS[method]
+                    # This function calls the execution method internally,
+                    # so mark it as "direct" — just call the function.
+                    targets.append(OrchTarget(
+                        fw, f"{fn_name}()", "direct",
+                        file_path, module_path))
+                    break
+
+    # Pattern C: Functions that create StateGraph but don't compile
+    # (compile may happen in a separate class/function)
+    for fn_name, fn_node in top_functions.items():
+        already_found = any(t.variable == f"{fn_name}()" for t in targets)
+        if already_found:
+            continue
+        has_sg = False
+        for child in ast.walk(fn_node):
+            if isinstance(child, ast.Call):
+                f = child.func
+                if isinstance(f, ast.Name) and f.id == "StateGraph":
+                    has_sg = True
+                    break
+        if has_sg:
+            targets.append(OrchTarget(
+                "langgraph", f"{fn_name}()", "invoke",
+                file_path, module_path))
 
     return has_main, targets
 
@@ -227,11 +359,56 @@ def generate_import_and_call_script(
 
     if is_func and func_name:
         import_lines.append(f"from {target.module_path} import {func_name}")
-        if target.framework == "crewai":
+        if target.call_method == "direct":
+            # Function handles orchestration internally — just call it
+            call_lines.append(f"result = {func_name}()")
+        elif target.framework == "crewai":
             call_lines.append(f"result = {func_name}().kickoff()")
         elif target.framework == "langgraph":
             call_lines.append(f"graph = {func_name}()")
-            call_lines.append(f'result = graph.invoke({{"input": "Analyze AI agent frameworks and their capabilities"}})')
+            call_lines.append("if hasattr(graph, 'compile'):")
+            call_lines.append("    graph = graph.compile()")
+            # Try multiple state formats — repos use different StateGraph schemas
+            # Document-processing variant first (has all keys doc-extraction graphs need)
+            call_lines.append("_state_variants = [")
+            call_lines.append('    {"messages": [{"role": "user", "content": "Extract data from this invoice document"}], "input": "Extract data from invoice",')
+            call_lines.append('     "document": {"filename": "sample_invoice.pdf", "file_type": "pdf", "classification": "unknown"},')
+            call_lines.append('     "extracted_text": "INVOICE #12345\\nDate: 2024-01-15\\nBill To: Acme Corp\\nAmount: $1,250.00\\nDue Date: 2024-02-15",')
+            call_lines.append('     "raw_image_data": b"\\x89PNG\\r\\n\\x1a\\n" + b"\\x00" * 100,')
+            call_lines.append('     "target_fields": ["invoice_number", "date", "amount", "vendor"],')
+            call_lines.append('     "critical_fields": ["invoice_number", "amount"],')
+            call_lines.append('     "session_id": "stratum-test-001",')
+            call_lines.append('     "stage": "initialized", "processing_plan": {},')
+            call_lines.append('     "council_votes": [], "voting_strategy": "confidence_weighted",')
+            call_lines.append('     "consensus_threshold": 0.85, "extracted_fields": [],')
+            call_lines.append('     "conflict_resolutions": [], "validation_results": [],')
+            call_lines.append('     "requires_correction": False, "final_extraction": {},')
+            call_lines.append('     "confidence_score": 0.0, "requires_human_review": False,')
+            call_lines.append('     "human_review_reason": "", "human_review_fields": [],')
+            call_lines.append('     "metrics": {}, "error": None, "error_stage": None},')
+            call_lines.append('    {"messages": [{"role": "user", "content": "Analyze AI agent frameworks and their capabilities"}], "input": "Analyze AI agent frameworks"},')
+            call_lines.append('    {"input": "Analyze AI agent frameworks and their capabilities"},')
+            call_lines.append("]")
+            call_lines.append("_sync_failed = False")
+            call_lines.append("for _state in _state_variants:")
+            call_lines.append("    try:")
+            call_lines.append("        result = graph.invoke(_state)")
+            call_lines.append("        break")
+            call_lines.append("    except TypeError as _te:")
+            call_lines.append('        if "synchronous" in str(_te).lower() or "ainvoke" in str(_te).lower():')
+            call_lines.append("            _sync_failed = True")
+            call_lines.append("            continue")
+            call_lines.append("        continue")
+            call_lines.append("    except Exception:")
+            call_lines.append("        continue")
+            call_lines.append("if _sync_failed:")
+            call_lines.append("    import asyncio")
+            call_lines.append("    for _state in _state_variants:")
+            call_lines.append("        try:")
+            call_lines.append("            result = asyncio.run(graph.ainvoke(_state))")
+            call_lines.append("            break")
+            call_lines.append("        except Exception:")
+            call_lines.append("            continue")
         else:
             call_lines.append(f"result = {func_name}()")
     else:
@@ -240,9 +417,30 @@ def generate_import_and_call_script(
         if target.framework == "crewai":
             call_lines.append(f"result = _mod.{var}.kickoff()")
         elif target.framework == "langgraph":
-            call_lines.append(
-                f'result = _mod.{var}.invoke('
-                f'{{"input": "Analyze AI agent frameworks and their capabilities"}})')
+            call_lines.append("_state_variants = [")
+            call_lines.append('    {"messages": [{"role": "user", "content": "Analyze AI agent frameworks"}], "input": "Analyze AI agent frameworks"},')
+            call_lines.append('    {"input": "Analyze AI agent frameworks and their capabilities"},')
+            call_lines.append("]")
+            call_lines.append("_sync_failed = False")
+            call_lines.append("for _state in _state_variants:")
+            call_lines.append("    try:")
+            call_lines.append(f"        result = _mod.{var}.invoke(_state)")
+            call_lines.append("        break")
+            call_lines.append("    except TypeError as _te:")
+            call_lines.append('        if "synchronous" in str(_te).lower() or "ainvoke" in str(_te).lower():')
+            call_lines.append("            _sync_failed = True")
+            call_lines.append("            continue")
+            call_lines.append("        continue")
+            call_lines.append("    except Exception:")
+            call_lines.append("        continue")
+            call_lines.append("if _sync_failed:")
+            call_lines.append("    import asyncio")
+            call_lines.append("    for _state in _state_variants:")
+            call_lines.append("        try:")
+            call_lines.append(f"            result = asyncio.run(_mod.{var}.ainvoke(_state))")
+            call_lines.append("            break")
+            call_lines.append("        except Exception:")
+            call_lines.append("            continue")
         elif target.framework == "autogen":
             call_lines.append("# Find a target agent for initiate_chat")
             call_lines.append("_agents = [")
@@ -292,6 +490,9 @@ def generate_import_and_call_script(
     lines.append("    'firebase_admin', 'supabase', 'notion_client',")
     lines.append("    'google', 'google.cloud', 'google.auth', 'google.oauth2',")
     lines.append("    'firecrawl', 'browserbase', 'e2b', 'composio',")
+    lines.append("    'astrapy', 'redis', 'praw', 'yfinance', 'polygon',")
+    lines.append("    'sentence_transformers', 'paddleocr', 'paddlepaddle',")
+    lines.append("    'llama_cpp', 'llama_cpp.llama_chat_format',")
     lines.append("]")
     lines.append("for _mod_name in _MOCK_MODULES:")
     lines.append("    if _mod_name not in sys.modules:")
@@ -310,6 +511,54 @@ def generate_import_and_call_script(
     lines.append("src_dir = os.path.join(repo_root, 'src')")
     lines.append("if os.path.isdir(src_dir):")
     lines.append("    sys.path.insert(0, src_dir)")
+    lines.append("# Add Dockerfile WORKDIR path if present")
+    lines.append("_dockerfile = os.path.join(repo_root, 'Dockerfile')")
+    lines.append("if os.path.isfile(_dockerfile):")
+    lines.append("    with open(_dockerfile) as _df:")
+    lines.append("        for _line in _df:")
+    lines.append("            if _line.strip().upper().startswith('WORKDIR'):")
+    lines.append("                _wd = _line.split()[-1].strip('\"\\'')")
+    lines.append("                _local_wd = os.path.join(repo_root, _wd.lstrip('/'))")
+    lines.append("                if os.path.isdir(_local_wd) and _local_wd != repo_root:")
+    lines.append("                    sys.path.insert(0, _local_wd)")
+    lines.append("")
+    lines.append("# Override LLM factory functions to use our vLLM-backed model")
+    lines.append("# This ensures repos using Google AI, Anthropic, etc. still make real LLM calls")
+    lines.append("try:")
+    lines.append("    from langchain_openai import ChatOpenAI as _StratumLLM")
+    lines.append("    _stratum_llm = _StratumLLM(")
+    lines.append('        base_url=os.environ.get("OPENAI_BASE_URL", "http://localhost:8000/v1"),')
+    lines.append('        api_key=os.environ.get("OPENAI_API_KEY", "sk-placeholder"),')
+    lines.append('        model=os.environ.get("STRATUM_VLLM_MODEL", "mistralai/Mistral-7B-Instruct-v0.3"),')
+    lines.append("        max_tokens=512,")
+    lines.append("    )")
+    lines.append("    # Override init_chat_model to return our vLLM model")
+    lines.append("    try:")
+    lines.append("        import langchain.chat_models as _chat_mod")
+    lines.append("        _orig_init = getattr(_chat_mod, 'init_chat_model', None)")
+    lines.append("        if _orig_init:")
+    lines.append("            _chat_mod.init_chat_model = lambda *a, **kw: _stratum_llm")
+    lines.append("    except ImportError:")
+    lines.append("        pass")
+    lines.append("    # Override common provider-specific model constructors")
+    lines.append("    for _pkg in ['langchain_google_genai', 'langchain_anthropic', 'langchain_mistralai', 'langchain_groq']:")
+    lines.append("        try:")
+    lines.append("            _pmod = importlib.import_module(_pkg)")
+    lines.append("            for _cls_name in dir(_pmod):")
+    lines.append("                if _cls_name.startswith('Chat'):")
+    lines.append("                    setattr(_pmod, _cls_name, lambda *a, **kw: _stratum_llm)")
+    lines.append("        except ImportError:")
+    lines.append("            # If not installed, mock it with a factory returning our LLM")
+    lines.append("            _m = MagicMock()")
+    lines.append("            _m.ChatGoogleGenerativeAI = lambda *a, **kw: _stratum_llm")
+    lines.append("            _m.ChatAnthropic = lambda *a, **kw: _stratum_llm")
+    lines.append("            _m.ChatMistralAI = lambda *a, **kw: _stratum_llm")
+    lines.append("            _m.ChatGroq = lambda *a, **kw: _stratum_llm")
+    lines.append("            _m.__path__ = []")
+    lines.append("            _m.__spec__ = None")
+    lines.append("            sys.modules[_pkg] = _m")
+    lines.append("except ImportError:")
+    lines.append("    pass  # langchain_openai not available")
     lines.append("")
     lines.append("try:")
     for il in import_lines:
@@ -364,12 +613,26 @@ def try_tier_1_5(
         print("[tier1.5] No import-and-call targets found", file=sys.stderr)
         return 1
 
+    # Prioritize targets most likely to succeed:
+    # - Module-level variables (e.g. graph.invoke()) over functions over classes
+    # - Non-private names over _private methods
+    # - invoke() targets over direct() (direct may swallow errors)
+    def _target_priority(t: OrchTarget) -> tuple:
+        var = t.variable
+        is_func = var.endswith("()")
+        is_private = var.lstrip("_") != var.replace("_", "", 1) if not is_func else var.startswith("_")
+        # Module-level variable (no parens) = best
+        # Function call = medium
+        # Private/dunder = worst
+        return (is_private, is_func, t.call_method == "direct")
+    targets.sort(key=_target_priority)
+
     print(f"[tier1.5] Found {len(targets)} targets:", file=sys.stderr)
     for t in targets[:5]:
         print(f"  {t.framework}: {t.module_path}.{t.variable}.{t.call_method}()", file=sys.stderr)
 
-    # Try each target until one produces events (max 3 attempts)
-    for i, target in enumerate(targets[:3]):
+    # Try each target until one produces events (max 5 attempts)
+    for i, target in enumerate(targets[:5]):
         print(f"[tier1.5] Attempt {i+1}: {target.module_path}.{target.variable}", file=sys.stderr)
 
         script = generate_import_and_call_script(
@@ -410,20 +673,47 @@ def try_tier_1_5(
 
         print(f"[tier1.5] Exit code: {result.returncode}", file=sys.stderr)
         if result.stderr:
-            print(f"[tier1.5] stderr: {result.stderr[:500]}", file=sys.stderr)
+            # Filter out patcher noise to show actual errors
+            _err_lines = [l for l in result.stderr.splitlines()
+                          if not l.startswith("stratum_patcher:") and not l.startswith("stratum_redirect:")]
+            _filtered = "\n".join(_err_lines[-20:]) if _err_lines else result.stderr[-500:]
+            print(f"[tier1.5] stderr: {_filtered}", file=sys.stderr)
 
-        # Check for events
+        # Check for BEHAVIORAL events (not just patcher.status noise)
         events_path = Path(events_file)
         if events_path.exists() and events_path.stat().st_size > 0:
+            behavioral_count = 0
+            total_count = 0
             try:
-                event_count = sum(1 for _ in open(events_path, encoding="utf-8"))
+                import json as _json
+                _BEHAVIORAL_TYPES = {
+                    "llm.call_start", "llm.call_end",
+                    "agent.task_start", "agent.task_end",
+                    "execution.start", "execution.end",
+                    "tool.call_start", "tool.call_end",
+                    "tool.invoked", "tool.completed",
+                    "crew.kickoff_start", "crew.kickoff_end",
+                    "delegation.initiated", "delegation.completed",
+                    "edge.traversed",
+                }
+                for line in open(events_path, encoding="utf-8"):
+                    line = line.strip()
+                    if not line:
+                        continue
+                    total_count += 1
+                    try:
+                        evt = _json.loads(line)
+                        if evt.get("event_type") in _BEHAVIORAL_TYPES:
+                            behavioral_count += 1
+                    except (ValueError, KeyError):
+                        pass
             except OSError:
-                event_count = 0
-            if event_count > 0:
-                print(f"[tier1.5] SUCCESS: {event_count} events captured", file=sys.stderr)
+                pass
+            if behavioral_count > 0:
+                print(f"[tier1.5] SUCCESS: {behavioral_count} behavioral events (of {total_count} total)", file=sys.stderr)
                 return 0
 
-        print(f"[tier1.5] No events from attempt {i+1}", file=sys.stderr)
+        print(f"[tier1.5] No behavioral events from attempt {i+1}", file=sys.stderr)
 
     print("[tier1.5] All attempts failed", file=sys.stderr)
     return 1
@@ -1756,17 +2046,43 @@ def main() -> int:
     if result.stderr:
         print(f"[synthetic] stderr: {result.stderr[:1000]}", file=sys.stderr)
 
-    # -- Check if events were captured -------------------------------------
+    # -- Check if BEHAVIORAL events were captured ---------------------------
     events_path = Path(events_file)
     if events_path.exists() and events_path.stat().st_size > 0:
+        behavioral_count = 0
+        total_count = 0
         try:
-            event_count = sum(1 for _ in open(events_path, encoding="utf-8"))
+            import json as _json2
+            _BEHAVIORAL_TYPES_T2 = {
+                "llm.call_start", "llm.call_end",
+                "agent.task_start", "agent.task_end",
+                "execution.start", "execution.end",
+                "tool.call_start", "tool.call_end",
+                "tool.invoked", "tool.completed",
+                "crew.kickoff_start", "crew.kickoff_end",
+                "delegation.initiated", "delegation.completed",
+                "edge.traversed",
+            }
+            for line in open(events_path, encoding="utf-8"):
+                line = line.strip()
+                if not line:
+                    continue
+                total_count += 1
+                try:
+                    evt = _json2.loads(line)
+                    if evt.get("event_type") in _BEHAVIORAL_TYPES_T2:
+                        behavioral_count += 1
+                except (ValueError, KeyError):
+                    pass
         except OSError:
-            event_count = -1
-        print(f"[synthetic] Captured {event_count} events", file=sys.stderr)
-        return 0
+            pass
+        if behavioral_count > 0:
+            print(f"[synthetic] Captured {behavioral_count} behavioral events (of {total_count} total)", file=sys.stderr)
+            return 0
+        else:
+            print(f"[synthetic] Only noise events ({total_count} total, 0 behavioral)", file=sys.stderr)
 
-    print("[synthetic] No events captured", file=sys.stderr)
+    print("[synthetic] No behavioral events captured", file=sys.stderr)
     return 1
 
 

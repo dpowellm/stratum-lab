@@ -237,6 +237,11 @@ def _wrap_sync_create(original: Any) -> Any:
         )
         logger.push_active_node(node_id)
 
+        # Cap max_tokens to avoid exceeding vLLM model context window
+        for _mt_key in ("max_tokens", "max_completion_tokens"):
+            if _mt_key in kwargs and isinstance(kwargs[_mt_key], int) and kwargs[_mt_key] > 512:
+                kwargs[_mt_key] = 512
+
         t0 = time.perf_counter()
         error: Exception | None = None
         result: Any = None
@@ -385,6 +390,11 @@ def _wrap_async_create(original: Any) -> Any:
             payload=start_payload,
         )
         logger.push_active_node(node_id)
+
+        # Cap max_tokens to avoid exceeding vLLM model context window
+        for _mt_key in ("max_tokens", "max_completion_tokens"):
+            if _mt_key in kwargs and isinstance(kwargs[_mt_key], int) and kwargs[_mt_key] > 512:
+                kwargs[_mt_key] = 512
 
         t0 = time.perf_counter()
         error: Exception | None = None

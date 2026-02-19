@@ -8,6 +8,7 @@ Wraps ``litellm.completion`` and ``litellm.acompletion`` so that:
 from __future__ import annotations
 
 import functools
+import hashlib
 import os
 import time
 from typing import Any
@@ -79,16 +80,50 @@ def _wrap_litellm_sync(original: Any) -> Any:
         mapped_model = remap_model(original_model)
         kwargs["model"] = f"openai/{mapped_model}" if os.environ.get("STRATUM_VLLM_MODEL") and not mapped_model.startswith("openai/") else mapped_model
 
+        start_payload = {
+            "model_requested": original_model,
+            "model_actual": mapped_model,
+            "model_mapped": original_model != mapped_model,
+            "message_count": len(kwargs.get("messages", [])),
+        }
+
+        if os.environ.get("STRATUM_CAPTURE_PROMPTS") == "1":
+            messages = kwargs.get("messages", [])
+            try:
+                sys_msgs = [m for m in messages if m.get("role") == "system"]
+                if sys_msgs:
+                    sys_text = str(sys_msgs[0].get("content", ""))[:200]
+                    start_payload["system_prompt_preview"] = sys_text
+                    start_payload["system_prompt_hash"] = hashlib.sha256(
+                        sys_text.encode()
+                    ).hexdigest()[:16]
+                    trust_signals = []
+                    for pattern in ["verified", "confirmed", "factual", "accurate", "trusted", "reliable"]:
+                        if pattern in sys_text.lower():
+                            trust_signals.append(pattern)
+                    if trust_signals:
+                        start_payload["prompt_trust_signals"] = trust_signals
+
+                user_msgs = [m for m in messages if m.get("role") == "user"]
+                if user_msgs:
+                    last_user = str(user_msgs[-1].get("content", ""))[:200]
+                    start_payload["last_user_message_preview"] = last_user
+                    start_payload["last_user_message_hash"] = hashlib.sha256(
+                        last_user.encode()
+                    ).hexdigest()[:16]
+            except Exception:
+                pass
+
         start_id = logger.log_event(
             "llm.call_start",
             source_node=source,
-            payload={
-                "model_requested": original_model,
-                "model_actual": mapped_model,
-                "model_mapped": original_model != mapped_model,
-                "message_count": len(kwargs.get("messages", [])),
-            },
+            payload=start_payload,
         )
+
+        # Cap max_tokens to avoid exceeding vLLM model context window
+        for _mt_key in ("max_tokens", "max_completion_tokens"):
+            if _mt_key in kwargs and isinstance(kwargs[_mt_key], int) and kwargs[_mt_key] > 512:
+                kwargs[_mt_key] = 512
 
         t0 = time.perf_counter()
         error: Exception | None = None
@@ -109,6 +144,10 @@ def _wrap_litellm_sync(original: Any) -> Any:
                     _sig = capture_output_signature(_content)
                     payload["output_hash"] = _sig["hash"]
                     payload["output_type"] = _sig["type"]
+                    payload["output_size_bytes"] = _sig["size_bytes"]
+                    payload["output_preview"] = _sig["preview"]
+                    payload["output_structure"] = _sig["structure"]
+                    payload["classification_fields"] = _sig["classification_fields"]
                 except Exception:
                     pass
             logger.log_event(
@@ -135,16 +174,50 @@ def _wrap_litellm_async(original: Any) -> Any:
         mapped_model = remap_model(original_model)
         kwargs["model"] = f"openai/{mapped_model}" if os.environ.get("STRATUM_VLLM_MODEL") and not mapped_model.startswith("openai/") else mapped_model
 
+        start_payload = {
+            "model_requested": original_model,
+            "model_actual": mapped_model,
+            "model_mapped": original_model != mapped_model,
+            "message_count": len(kwargs.get("messages", [])),
+        }
+
+        if os.environ.get("STRATUM_CAPTURE_PROMPTS") == "1":
+            messages = kwargs.get("messages", [])
+            try:
+                sys_msgs = [m for m in messages if m.get("role") == "system"]
+                if sys_msgs:
+                    sys_text = str(sys_msgs[0].get("content", ""))[:200]
+                    start_payload["system_prompt_preview"] = sys_text
+                    start_payload["system_prompt_hash"] = hashlib.sha256(
+                        sys_text.encode()
+                    ).hexdigest()[:16]
+                    trust_signals = []
+                    for pattern in ["verified", "confirmed", "factual", "accurate", "trusted", "reliable"]:
+                        if pattern in sys_text.lower():
+                            trust_signals.append(pattern)
+                    if trust_signals:
+                        start_payload["prompt_trust_signals"] = trust_signals
+
+                user_msgs = [m for m in messages if m.get("role") == "user"]
+                if user_msgs:
+                    last_user = str(user_msgs[-1].get("content", ""))[:200]
+                    start_payload["last_user_message_preview"] = last_user
+                    start_payload["last_user_message_hash"] = hashlib.sha256(
+                        last_user.encode()
+                    ).hexdigest()[:16]
+            except Exception:
+                pass
+
         start_id = logger.log_event(
             "llm.call_start",
             source_node=source,
-            payload={
-                "model_requested": original_model,
-                "model_actual": mapped_model,
-                "model_mapped": original_model != mapped_model,
-                "message_count": len(kwargs.get("messages", [])),
-            },
+            payload=start_payload,
         )
+
+        # Cap max_tokens to avoid exceeding vLLM model context window
+        for _mt_key in ("max_tokens", "max_completion_tokens"):
+            if _mt_key in kwargs and isinstance(kwargs[_mt_key], int) and kwargs[_mt_key] > 512:
+                kwargs[_mt_key] = 512
 
         t0 = time.perf_counter()
         error: Exception | None = None
@@ -165,6 +238,10 @@ def _wrap_litellm_async(original: Any) -> Any:
                     _sig = capture_output_signature(_content)
                     payload["output_hash"] = _sig["hash"]
                     payload["output_type"] = _sig["type"]
+                    payload["output_size_bytes"] = _sig["size_bytes"]
+                    payload["output_preview"] = _sig["preview"]
+                    payload["output_structure"] = _sig["structure"]
+                    payload["classification_fields"] = _sig["classification_fields"]
                 except Exception:
                     pass
             logger.log_event(

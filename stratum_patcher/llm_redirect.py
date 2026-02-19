@@ -24,11 +24,22 @@ def _stderr(msg: str) -> None:
     print(f"stratum_redirect: {msg}", file=sys.stderr, flush=True)
 
 
+_MAX_TOKENS_CAP = 512  # vLLM models have limited context; cap to avoid 400 errors
+
+
+def _cap_max_tokens(kwargs: dict) -> dict:
+    """Cap max_tokens/max_completion_tokens to avoid exceeding model context."""
+    for key in ("max_tokens", "max_completion_tokens"):
+        if key in kwargs and isinstance(kwargs[key], int) and kwargs[key] > _MAX_TOKENS_CAP:
+            kwargs[key] = _MAX_TOKENS_CAP
+    return kwargs
+
+
 def activate() -> None:
     """Patch all known LLM constructors to route through vLLM."""
     vllm_url = os.environ.get("OPENAI_BASE_URL")
     vllm_model = os.environ.get("STRATUM_VLLM_MODEL")
-    api_key = os.environ.get("OPENAI_API_KEY", "sk-placeholder")
+    api_key = os.environ.get("OPENAI_API_KEY", "sk-proj-stratum000000000000000000000000000000000000000000000000")
 
     if not vllm_url or not vllm_model:
         return
@@ -86,6 +97,9 @@ def activate() -> None:
             kwargs["base_url"] = vllm_url
             kwargs["api_key"] = api_key
             kwargs.pop("temperature", None)
+            # Cap max_tokens to avoid exceeding vLLM context window
+            if kwargs.get("max_tokens") and isinstance(kwargs["max_tokens"], int) and kwargs["max_tokens"] > _MAX_TOKENS_CAP:
+                kwargs["max_tokens"] = _MAX_TOKENS_CAP
             _orig_chat_init(self, *args, **kwargs)
 
         if not getattr(ChatOpenAI.__init__, "_stratum_redirected", False):

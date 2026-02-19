@@ -57,7 +57,8 @@ def validate_events_file(events_path: str) -> dict:
         "has_system_prompt": 0,
         "has_user_message": 0,
         "has_output": 0,
-        "llm_events_checked": 0,
+        "llm_start_count": 0,
+        "llm_end_count": 0,
     }
     try:
         with open(events_path, "r") as f:
@@ -76,14 +77,17 @@ def validate_events_file(events_path: str) -> dict:
                     stats["double_prefix"] += 1
 
                 etype = evt.get("event_type", "")
-                if etype.startswith("llm."):
+                if etype == "llm.call_start":
                     stats["llm_calls"] += 1
-                    stats["llm_events_checked"] += 1
+                    stats["llm_start_count"] += 1
                     payload = evt.get("payload", {})
                     if payload.get("system_prompt_preview"):
                         stats["has_system_prompt"] += 1
                     if payload.get("last_user_message_preview"):
                         stats["has_user_message"] += 1
+                elif etype == "llm.call_end":
+                    stats["llm_end_count"] += 1
+                    payload = evt.get("payload", {})
                     if payload.get("output_preview"):
                         stats["has_output"] += 1
                 if etype.startswith("agent."):
@@ -116,7 +120,8 @@ def validate_scan(results_dir: str) -> dict:
     io_has_system_prompt = 0
     io_has_user_message = 0
     io_has_output = 0
-    io_total_llm_checked = 0
+    io_llm_start_count = 0
+    io_llm_end_count = 0
     recovered_repos = 0
     issues = []
 
@@ -166,7 +171,8 @@ def validate_scan(results_dir: str) -> dict:
                 io_has_system_prompt += estats["has_system_prompt"]
                 io_has_user_message += estats["has_user_message"]
                 io_has_output += estats["has_output"]
-                io_total_llm_checked += estats["llm_events_checked"]
+                io_llm_start_count += estats["llm_start_count"]
+                io_llm_end_count += estats["llm_end_count"]
 
         if repo_has_events:
             repos_with_events += 1
@@ -208,7 +214,8 @@ def validate_scan(results_dir: str) -> dict:
             "has_system_prompt": io_has_system_prompt,
             "has_user_message": io_has_user_message,
             "has_output": io_has_output,
-            "total_llm_events_checked": io_total_llm_checked,
+            "llm_start_count": io_llm_start_count,
+            "llm_end_count": io_llm_end_count,
         },
         "recovered_repos": recovered_repos,
         "issues": issues,
@@ -253,9 +260,9 @@ def print_summary(report: dict) -> None:
     print()
     io = report["io_capture"]
     print("  I/O capture:")
-    print(f"    system_prompt:      {io['has_system_prompt']} / {io['total_llm_events_checked']}")
-    print(f"    user_message:       {io['has_user_message']} / {io['total_llm_events_checked']}")
-    print(f"    output:             {io['has_output']} / {io['total_llm_events_checked']}")
+    print(f"    system_prompt:      {io['has_system_prompt']} / {io['llm_start_count']}")
+    print(f"    user_message:       {io['has_user_message']} / {io['llm_start_count']}")
+    print(f"    output:             {io['has_output']} / {io['llm_end_count']}")
     print()
     if report["issues"]:
         print(f"  Issues ({len(report['issues'])}):")

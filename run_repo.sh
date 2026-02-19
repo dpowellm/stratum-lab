@@ -233,10 +233,20 @@ log "Phase 0: Complete"
 log "Step 2: Setting environment variables ..."
 
 # -- LLM provider keys (placeholders to prevent KeyError crashes) --
-export OPENAI_API_KEY="sk-placeholder"
+# Use a valid-format API key (OpenAI SDK v1.x+ validates sk-proj- prefix + length)
+export OPENAI_API_KEY="sk-proj-stratum000000000000000000000000000000000000000000000000"
 export OPENAI_BASE_URL="${VLLM_HOST}/v1"
 export OPENAI_API_BASE="${VLLM_HOST}/v1"
-export ANTHROPIC_API_KEY="sk-placeholder"
+export ANTHROPIC_API_KEY="sk-ant-stratum000000000000000000000000000000000000000000000000"
+
+# -- Telemetry / tracking (disable to avoid crashes and noise) --
+export CREWAI_TELEMETRY_ENABLED="false"
+export CREWAI_DISABLE_TELEMETRY="true"
+export ANONYMIZED_TELEMETRY="false"
+export DO_NOT_TRACK="1"
+export OTEL_SDK_DISABLED="true"
+export LANGCHAIN_TRACING_V2="false"
+export LANGSMITH_TRACING="false"
 
 # -- Search / tool API keys --
 export TAVILY_API_KEY="tvly-placeholder"
@@ -252,6 +262,11 @@ export BING_SEARCH_URL="https://placeholder"
 export GROQ_API_KEY="placeholder"
 export TOGETHER_API_KEY="placeholder"
 export COHERE_API_KEY="placeholder"
+export NVIDIA_MODEL_KEY="placeholder"
+export NVIDIA_API_KEY="placeholder"
+export DEEPSEEK_API_KEY="placeholder"
+export MISTRAL_API_KEY="placeholder"
+export GEMINI_API_KEY="placeholder"
 
 # -- Hugging Face --
 export HUGGINGFACEHUB_API_TOKEN="placeholder"
@@ -271,6 +286,23 @@ export BROWSERBASE_PROJECT_ID="placeholder"
 export LANGCHAIN_API_KEY="placeholder"
 export LANGCHAIN_TRACING_V2="false"
 export LANGSMITH_API_KEY="placeholder"
+
+# -- Database / service placeholders (prevent KeyError crashes) --
+export ASTRA_TOKEN="placeholder"
+export ASTRA_ENDPOINT="https://placeholder"
+export REDIS_URL="redis://placeholder:6379"
+export DATABASE_URL="sqlite:///tmp/placeholder.db"
+export MONGODB_URI="mongodb://placeholder:27017"
+export SUPABASE_URL="https://placeholder.supabase.co"
+export SUPABASE_KEY="placeholder"
+
+# -- Social / data API placeholders --
+export REDDIT_CLIENT_ID="placeholder"
+export REDDIT_CLIENT_SECRET="placeholder"
+export REDDIT_USER_AGENT="stratum-bot"
+export POLYGON_API_KEY="placeholder"
+export ALPHA_VANTAGE_API_KEY="placeholder"
+export NEWS_API_KEY="placeholder"
 
 # -- Stratum identifiers --
 # orchestrate.sh passes the scan-level UUID via -e STRATUM_RUN_ID.
@@ -306,9 +338,26 @@ done
 # Ensure a root-level .env always exists
 if [ ! -f /tmp/repo/.env ]; then
     log "  Creating default /tmp/repo/.env"
-    echo "OPENAI_API_KEY=sk-placeholder" > /tmp/repo/.env
-    echo "OPENAI_BASE_URL=${VLLM_HOST}/v1" >> /tmp/repo/.env
+    touch /tmp/repo/.env
 fi
+
+# Force-write our LLM redirect values into EVERY .env file.
+# python-dotenv's load_dotenv() runs AFTER our shell exports and can OVERRIDE them,
+# so we must ensure .env files contain our redirect values.
+find /tmp/repo -name '.env' -type f 2>/dev/null | while read envfile; do
+    # Remove any existing LLM endpoint/key lines and re-add ours
+    sed -i '/^OPENAI_API_KEY=/d; /^OPENAI_BASE_URL=/d; /^OPENAI_API_BASE=/d' "$envfile" 2>/dev/null
+    sed -i '/^ANTHROPIC_API_KEY=/d' "$envfile" 2>/dev/null
+    echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> "$envfile"
+    echo "OPENAI_BASE_URL=${VLLM_HOST}/v1" >> "$envfile"
+    echo "OPENAI_API_BASE=${VLLM_HOST}/v1" >> "$envfile"
+    echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" >> "$envfile"
+    # Disable telemetry/tracing
+    sed -i '/^LANGCHAIN_TRACING_V2=/d; /^CREWAI_TELEMETRY_ENABLED=/d; /^LANGSMITH_TRACING=/d' "$envfile" 2>/dev/null
+    echo "LANGCHAIN_TRACING_V2=false" >> "$envfile"
+    echo "CREWAI_TELEMETRY_ENABLED=false" >> "$envfile"
+    echo "LANGSMITH_TRACING=false" >> "$envfile"
+done
 
 
 # ============================================================================
@@ -343,6 +392,21 @@ done
 if [ -f /tmp/repo/pyproject.toml ] || [ -f /tmp/repo/setup.py ]; then
     log "  Installing repo package (editable, --no-deps)"
     pip install -e /tmp/repo --no-deps --quiet 2>&1 | tail -5 || true
+fi
+
+# Step 4.5: Replace hardcoded model names in YAML/config files
+# Many CrewAI repos reference GPT-4, Claude, etc. in agents.yaml/tasks.yaml.
+# Replace with our vLLM model so the redirect doesn't get bypassed by config-level model names.
+if [ -n "$STRATUM_VLLM_MODEL" ]; then
+    find /tmp/repo -maxdepth 4 \( -name '*.yaml' -o -name '*.yml' \) -type f 2>/dev/null | while read yf; do
+        sed -i "s|gpt-4o-mini|${STRATUM_VLLM_MODEL}|g" "$yf" 2>/dev/null
+        sed -i "s|gpt-4o|${STRATUM_VLLM_MODEL}|g" "$yf" 2>/dev/null
+        sed -i "s|gpt-4-turbo|${STRATUM_VLLM_MODEL}|g" "$yf" 2>/dev/null
+        sed -i "s|gpt-4|${STRATUM_VLLM_MODEL}|g" "$yf" 2>/dev/null
+        sed -i "s|gpt-3\.5-turbo|${STRATUM_VLLM_MODEL}|g" "$yf" 2>/dev/null
+        sed -i "s|claude-3[a-z0-9.-]*|${STRATUM_VLLM_MODEL}|g" "$yf" 2>/dev/null
+        sed -i "s|gemini-[a-z0-9.-]*|${STRATUM_VLLM_MODEL}|g" "$yf" 2>/dev/null
+    done
 fi
 
 
@@ -501,6 +565,17 @@ while IFS= read -r pyfile; do
         score=$((score - 5))
     fi
 
+    # -10: in scripts/, utils/, alembic/ or similar non-entry-point directories
+    case "$relpath" in
+        scripts/*|*/scripts/*|utils/*|*/utils/*|tools/*|helpers/*) score=$((score - 10)) ;;
+        alembic/*|*/alembic/*|migrations/*|*/migrations/*) score=$((score - 15)) ;;
+        examples/*|*/examples/*|benchmarks/*|*/benchmarks/*|docs/*|*/docs/*) score=$((score - 10)) ;;
+    esac
+    # -10: filename suggests utility/setup script (download, setup, install, migrate, seed)
+    case "$basename_file" in
+        download_*|setup_*|install_*|migrate_*|seed_*|init_*|create_*|build_*|generate_*|convert_*) score=$((score - 10)) ;;
+    esac
+
     # -5: deeply nested (>3 dirs deep from repo root)
     depth=$(dir_depth "$pyfile")
     if [ "$depth" -gt 3 ]; then
@@ -591,6 +666,51 @@ log "Step 6: Configuring PYTHONPATH ..."
 
 export PYTHONPATH="/tmp/repo:/tmp/repo/src:${PYTHONPATH:-}"
 
+# Add Dockerfile WORKDIR to PYTHONPATH (many repos assume cwd=WORKDIR for bare imports)
+# Scan repo root and immediate subdirectories for Dockerfiles
+for _dockerfile in /tmp/repo/Dockerfile /tmp/repo/*/Dockerfile; do
+    [ -f "$_dockerfile" ] || continue
+    _WORKDIR=$(grep -i '^\s*WORKDIR\s' "$_dockerfile" 2>/dev/null | tail -1 | awk '{print $2}' | tr -d '"' | tr -d "'")
+    [ -n "$_WORKDIR" ] || continue
+    _WORKDIR_BASENAME="${_WORKDIR#/}"  # strip leading /
+    _DOCKER_CONTEXT=$(dirname "$_dockerfile")
+    # If Dockerfile is in a subdirectory (e.g. app/Dockerfile with WORKDIR /app),
+    # the Docker build context is that subdir, so WORKDIR = the subdir itself
+    if [ "$_DOCKER_CONTEXT" != "/tmp/repo" ]; then
+        _LOCAL_WORKDIR="$_DOCKER_CONTEXT"
+    else
+        _LOCAL_WORKDIR="/tmp/repo/${_WORKDIR_BASENAME}"
+    fi
+    if [ -d "$_LOCAL_WORKDIR" ] && [ "$_LOCAL_WORKDIR" != "/tmp/repo" ] && [ "$_LOCAL_WORKDIR" != "/tmp/repo/" ]; then
+        log "  Adding Dockerfile WORKDIR to PYTHONPATH: $_LOCAL_WORKDIR (from $_dockerfile WORKDIR $_WORKDIR)"
+        export PYTHONPATH="$_LOCAL_WORKDIR:$PYTHONPATH"
+    fi
+done
+
+# Add subdirectories with __init__.py that might be import roots
+for _dir in /tmp/repo/*/; do
+    [ -d "$_dir" ] || continue
+    _dirname=$(basename "$_dir")
+    # Skip common non-source directories
+    case "$_dirname" in
+        .git|.github|.venv|venv|node_modules|__pycache__|.mypy_cache|.pytest_cache|.tox|dist|build|*.egg-info) continue ;;
+    esac
+    # If this directory has __init__.py, it's a package — its PARENT should be on PYTHONPATH
+    # (already handled by /tmp/repo being on PYTHONPATH)
+    # But if it has subdirs with bare imports (no __init__.py), we should add IT too
+    if [ ! -f "$_dir/__init__.py" ] && ls "$_dir"/*.py >/dev/null 2>&1; then
+        # Non-package directory with Python files — might need to be on PYTHONPATH
+        # Only add if it contains subdirs that look like packages
+        for _subdir in "$_dir"*/; do
+            if [ -f "$_subdir/__init__.py" ]; then
+                log "  Adding parent of package to PYTHONPATH: $_dir"
+                export PYTHONPATH="$_dir:$PYTHONPATH"
+                break
+            fi
+        done
+    fi
+done
+
 # Walk up from entry point dir to find and install the nearest package root
 if [ -n "$ENTRY" ] && [ -z "$TIER1_SKIP" ]; then
     ENTRY_DIR=$(dirname "$ENTRY")
@@ -670,6 +790,7 @@ else
         # Run from the entry point's directory
         cd "$(dirname "$ENTRY")"
         timeout "$TIER1_TIMEOUT" python "$(basename "$ENTRY")" \
+            < /dev/null \
             > "$OUTPUT_DIR/stdout.log" \
             2> "$OUTPUT_DIR/stderr.log"
         EXIT_CODE=$?
@@ -801,7 +922,7 @@ if [ "$TIER1_SUCCESS" = false ] && [ -f /app/synthetic_harness.py ]; then
     T15_EXIT=$?
 
     T15_HAS_EVENTS=false
-    if [ -f "$EVENTS_FILE" ] && [ -s "$EVENTS_FILE" ]; then
+    if has_behavioral_events "$EVENTS_FILE"; then
         T15_HAS_EVENTS=true
     fi
 
