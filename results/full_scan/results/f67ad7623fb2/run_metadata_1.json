@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/RyanWangZf/BioDSA",
+  "repo_full_name": "RyanWangZf/BioDSA",
+  "run_number": 1,
+  "run_id": "d2d8ee99f5404268",
+  "exit_code": 1,
+  "status": "PARTIAL_SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/biodsa/tool_wrappers/websearch/agentic.py",
+  "framework_detected": "langgraph",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 14,
+  "timestamp": "2026-02-17T05:42:17.381312+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

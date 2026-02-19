@@ -1,0 +1,85 @@
+DEBUG:autogen_core:Starting worker
+DEBUG:asyncio:Using selector: EpollSelector
+INFO:autogen_core:0
+INFO:autogen_core:localhost:50673
+INFO:autogen_core:1
+INFO:autogen_core:Connecting to host: localhost:50673
+INFO:autogen_core:Connecting to localhost:50673
+DEBUG:grpc._cython.cygrpc:[_cygrpc] Loaded running loop: id(loop)=125494436220560
+DEBUG:grpc._cython.cygrpc:Using AsyncIOEngine.POLLER as I/O engine
+DEBUG:grpc._cython.cygrpc:[_cygrpc] Loaded running loop: id(loop)=125494436220560
+DEBUG:grpc._cython.cygrpc:[_cygrpc] Loaded running loop: id(loop)=125494436220560
+DEBUG:grpc.aio._call:Client request_iterator raised exception:
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/asyncio/runners.py", line 190, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/repo/dotnet/test/Microsoft.AutoGen.Integration.Tests.AppHosts/core_xlang_hello_python_agent/hello_python_agent.py", line 40, in main
+    await runtime.start()
+  File "/usr/local/lib/python3.11/site-packages/autogen_ext/runtimes/grpc/_worker_runtime.py", line 266, in start
+    self._host_connection = await HostConnection.from_host_address(
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/autogen_ext/runtimes/grpc/_worker_runtime.py", line 151, in from_host_address
+    instance._connection_task = await instance._connect(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/autogen_ext/runtimes/grpc/_worker_runtime.py", line 177, in _connect
+    await stream.wait_for_connection()
+  File "/usr/local/lib/python3.11/site-packages/grpc/aio/_call.py", line 534, in wait_for_connection
+    await self._raise_for_status()
+  File "/usr/local/lib/python3.11/site-packages/grpc/aio/_call.py", line 272, in _raise_for_status
+    raise _create_rpc_error(
+grpc.aio._call.AioRpcError: <AioRpcError of RPC that terminated with:
+	status = StatusCode.UNAVAILABLE
+	details = "failed to connect to all addresses; last error: UNKNOWN: ipv4:127.0.0.1:50673: Failed to connect to remote host: connect: Connection refused (111)"
+	debug_error_string = "UNKNOWN:Error received from peer  {grpc_message:"failed to connect to all addresses; last error: UNKNOWN: ipv4:127.0.0.1:50673: Failed to connect to remote host: connect: Connection refused (111)", grpc_status:14}"
+>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/grpc/aio/_call.py", line 445, in _consume_request_iterator
+    async for request in request_iterator:
+  File "/usr/local/lib/python3.11/site-packages/autogen_ext/runtimes/grpc/_worker_runtime.py", line 89, in __anext__
+    return await self._queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/asyncio/queues.py", line 158, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+Traceback (most recent call last):
+  File "/tmp/repo/dotnet/test/Microsoft.AutoGen.Integration.Tests.AppHosts/core_xlang_hello_python_agent/hello_python_agent.py", line 75, in <module>
+    asyncio.run(main())
+  File "/usr/local/lib/python3.11/asyncio/runners.py", line 190, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/tmp/repo/dotnet/test/Microsoft.AutoGen.Integration.Tests.AppHosts/core_xlang_hello_python_agent/hello_python_agent.py", line 40, in main
+    await runtime.start()
+  File "/usr/local/lib/python3.11/site-packages/autogen_ext/runtimes/grpc/_worker_runtime.py", line 266, in start
+    self._host_connection = await HostConnection.from_host_address(
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/autogen_ext/runtimes/grpc/_worker_runtime.py", line 151, in from_host_address
+    instance._connection_task = await instance._connect(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/autogen_ext/runtimes/grpc/_worker_runtime.py", line 177, in _connect
+    await stream.wait_for_connection()
+  File "/usr/local/lib/python3.11/site-packages/grpc/aio/_call.py", line 534, in wait_for_connection
+    await self._raise_for_status()
+  File "/usr/local/lib/python3.11/site-packages/grpc/aio/_call.py", line 272, in _raise_for_status
+    raise _create_rpc_error(
+grpc.aio._call.AioRpcError: <AioRpcError of RPC that terminated with:
+	status = StatusCode.UNAVAILABLE
+	details = "failed to connect to all addresses; last error: UNKNOWN: ipv4:127.0.0.1:50673: Failed to connect to remote host: connect: Connection refused (111)"
+	debug_error_string = "UNKNOWN:Error received from peer  {grpc_message:"failed to connect to all addresses; last error: UNKNOWN: ipv4:127.0.0.1:50673: Failed to connect to remote host: connect: Connection refused (111)", grpc_status:14}"
+>

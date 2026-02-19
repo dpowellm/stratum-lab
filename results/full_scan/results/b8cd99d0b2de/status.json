@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/JhonSanz/langgraph_tutorial",
+  "status": "PARTIAL_SUCCESS",
+  "exit_code": 1,
+  "entry_point": "/tmp/repo/freecodecamp/agents/04_drafter.py",
+  "tier": 1,
+  "event_count": 15,
+  "duration_seconds": 640,
+  "run_id": "fe8509e2cf394759",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "  File \"/tmp/repo/freecodecamp/agents/04_drafter.py\", line 140, in run_document_agent\n    for step in app.stream(state, stream_mode=\"values\"):\n  File \"/usr/local/lib/python3.11/site-packages/langgraph/pregel/main.py\", line 2647, in stream\n    for _ in runner.tick(\n  File \"/usr/local/lib/python3.11/site-packages/langgraph/pregel/_runner.py\", line 162, in tick\n    run_with_retry(\n  File \"/usr/local/lib/python3.11/site-packages/langgraph/pregel/_retry.py\", line 42, in run_with_retry\n    return task.proc.invoke(task.input, config)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/langgraph/_internal/_runnable.py\", line 657, in invoke\n    input = context.run(step.invoke, input, config, **kwargs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/langgraph/_internal/_runnable.py\", line 401, in invoke\n    ret = self.func(*args, **kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/repo/freecodecamp/agents/04_drafter.py\", line 71, in our_agent\n    user_input = input(\"\\nWhat would you like to do with the document? \")\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nEOFError: EOF when reading a line\nDuring task with name 'agent' and id 'dddee7b3-1b4a-5468-d7f0-b2cd155ac8f9'\n"
+}

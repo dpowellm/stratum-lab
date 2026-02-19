@@ -1,0 +1,130 @@
+================================================================================
+ESCAI CLI Documentation Generation System Demo
+================================================================================
+
+1. COMPREHENSIVE DOCUMENTATION FOR 'monitor' COMMAND
+------------------------------------------------------------
+Command: monitor
+Description: Real-time monitoring of agent execution with epistemic state tracking
+Number of examples: 4
+Prerequisites satisfied: True
+Research guide available: True
+
+2. DIFFERENT TYPES OF HELP TEXT
+------------------------------------------------------------
+
+BASIC HELP:
+# How to Use: monitor
+
+## Overview
+Real-time monitoring of agent execution with epistemic state tracking
+
+## Basic Syntax
+```bash
+escai monitor [OPTIONS] [ARGUMENTS]
+```
+
+## Interactive Mode
+```bash
+e...
+
+EXAMPLES HELP:
+# Command Examples
+
+
+## Example 1: Basic Agent Monitoring
+
+Start monitoring a single LangChain agent with default settings
+
+### Command
+```bash
+escai monitor --framework langchain --agents my_agent
+``...
+
+RESEARCH HELP:
+# Methodology
+
+## Data Collection
+
+Agent behavior data was collected using the ESCAI (Epistemic State and Causal Analysis Intelligence) framework, which provides real-time monitoring of autonomous age...
+
+PREREQUISITES HELP:
+# Prerequisites for: monitor
+
+## System Requirements
+
+### Required Prerequisites
+These must be satisfied for the command to work properly:
+
+
+#### Python 3.8+
+- **Description**: Python version 3.8 or h...
+
+3. COMMAND READINESS CHECK
+------------------------------------------------------------
+Command ready: True
+All prerequisites met: True
+Number of errors: 0
+Number of warnings: 0
+Next steps: 3
+
+4. PUBLICATION GUIDE GENERATION
+------------------------------------------------------------
+Publication guide generated successfully!
+Guide length: 3193 characters
+
+First 300 characters:
+# Publication Guide for ESCAI Research
+
+# Methodology
+
+## Data Collection
+
+Agent behavior data was collected using the ESCAI (Epistemic State and Causal Analysis Intelligence) framework, which provides real-time monitoring of autonomous agent cognition with minimal performance overhead (<10%).
+
+### ...
+
+5. RESEARCH GUIDE FOR BEHAVIORAL ANALYSIS
+------------------------------------------------------------
+Domain: behavioral_analysis
+Title: Agent Behavioral Analysis with ESCAI
+Research questions: 3
+Recommended commands: 3
+Publication tips: 4
+
+First research question:
+  What behavioral signatures distinguish high-performing agents?
+
+6. DETAILED PREREQUISITE CHECKING
+------------------------------------------------------------
+Command: analyze
+Total prerequisites: 6
+
+  Python 3.8+:
+    Type: python_version
+    Importance: required
+    Status: satisfied
+    Details: Python 3.11.14
+
+  SciPy:
+    Type: python_package
+    Importance: required
+    Status: satisfied
+    Details: Installed version: 1.15.3
+
+  Scikit-learn:
+    Type: python_package
+    Importance: required
+    Status: satisfied
+    Details: Installed version: 1.8.0
+
+7. SYSTEM DIAGNOSTICS
+------------------------------------------------------------
+Platform: Linux
+Python version: 3.11.14
+Architecture: ('64bit', '')
+ESCAI version: 0.2.0
+
+================================================================================
+Documentation generation demo completed successfully!
+================================================================================

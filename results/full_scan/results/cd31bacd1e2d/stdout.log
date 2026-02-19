@@ -1,0 +1,42 @@
+2026-02-17 11:49:53 [info     ] graph.orchestrator             replan=0
+2026-02-17 11:49:53 [info     ] content_factory.start          budget_pct=100.0 model=auto niche='Plant-Based Raw Materials'
+2026-02-17 11:49:58 [warning  ] content_factory.gemini_error   error="400 INVALID_ARGUMENT. {'error': {'code': 400, 'message': 'API key not valid. Please pass a valid API key.', 'status': 'INVALID_ARGUMENT', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'API_KEY_INVALID', 'domain': 'googleapis.com', 'metadata': {'service': 'generativelanguage.googleapis.com'}}, {'@type': 'type.googleapis.com/google.rpc.LocalizedMessage', 'locale': 'en-US', 'message': 'API key not valid. Please pass a valid API key.'}]}}" model=gemini-2.5-flash
+2026-02-17 11:49:59 [warning  ] content_factory.github_models_error error=Unauthorized model=openai/gpt-4o-mini
+2026-02-17 11:49:59 [warning  ] content_factory.all_providers_failed msg='All LLM providers failed — using template'
+2026-02-17 11:49:59 [info     ] hashtag.micro_niche_5          count=5 niche=plant_based_raw platform=instagram tags=['#plantbased', '#vegan', '#healthyfood', '#cleaneating', '#organic']
+2026-02-17 11:49:59 [info     ] risk_health.done               health=0 score=3
+2026-02-17 11:49:59 [info     ] rights_safety.done             issues=0 passed=True warnings=0
+2026-02-17 11:49:59 [info     ] compliance.done                issues=1 passed=False suggestions=0 warnings=3
+2026-02-17 11:49:59 [info     ] cost_agent.done                daily_pct=100.0 model=gpt-4.1 score=0
+2026-02-17 11:49:59 [info     ] reconcile_gpt.start            content_title='The Ultimate Guide to Raw Almonds Benefits'
+2026-02-17 11:49:59 [info     ] reconcile_gpt.done             action=HUMAN_REVIEW auto_score=5 blockers=0 risk=3
+2026-02-17 11:49:59 [info     ] graph.human_review.dev_auto_approved
+2026-02-17 11:49:59 [info     ] graph.publish.done             failed=0 published=2 total=2
+2026-02-17 11:49:59 [info     ] graph.monitor                  failed=0 published=2
+{
+  "title": "The Ultimate Guide to Raw Almonds Benefits",
+  "body": "# Raw Almonds Benefits\n\nRaw almonds = 20g protein/handful?\n\nIf you're a Fitness moms 25-40, this is for you.\n\n## The Problem\n\nExpensive protein snacks, not sure which are truly healthy \u2014 but what if you could achieve Affordable, clean protein source the whole family loves?\n\n## 3 Steps to Get Started\n\n1. Research the basics of raw almonds benefits\n2. Start with small, consistent actions\n3. Share your journey with the community\n\n## Final Thoughts\n\nThe key to success with raw almonds benefits is consistency. Start today!\n\nStart small. One change today = big results tomorrow. \ud83c\udf31",
+  "hook": "Raw almonds = 20g protein/handful?",
+  "pain_point": "Most people struggle with Expensive protein snacks, not sure which are truly healthy.",
+  "solution_steps": "1. Learn the fundamentals of raw almonds benefits\n2. Start with one simple change today\n3. Track your progress weekly\n4. Join a community for accountability\n5. Share your results to inspire others",
+  "step_1": "Learn the basics of raw almonds benefits",
+  "step_2": "Start with one change today",
+  "result": "Better Affordable, clean protein source the whole family loves in 7-14 days",
+  "micro_keywords": "raw almonds benefits \u2022 fitness tips \u2022 beginner guide",
+  "cta": "\ud83d\udcbe Save this for later! Follow for more {niche} tips.",
+  "seo_description": "Discover everything about raw almonds benefits. Expert tips, actionable steps, and proven strategies for Fitness moms 25-40.",
+  "image_prompt": "Professional photo of raw almonds benefits, clean white background, natural lighting, lifestyle photography, high quality, 4K, 9:16 format",
+  "content_type": "how-to",
+  "estimated_engagement": "medium",
+  "_generated_by": "fallback_template",
+  "hashtags": [
+    "#plantbased",
+    "#vegan",
+    "#healthyfood",
+    "#cleaneating",
+    "#organic"
+  ],
+  "hashtag_strategy": "micro_niche_5"
+}
+
+Reconcile: Action=HUMAN_REVIEW | Risk=3/10 | AutoScore=5/12 | Blockers=0 | Warnings=0

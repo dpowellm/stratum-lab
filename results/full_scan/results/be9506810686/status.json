@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/Spador/CrewAI_Projects",
+  "status": "PARTIAL_SUCCESS",
+  "exit_code": 1,
+  "entry_point": "/tmp/repo/financial_researcher/src/financial_researcher/main.py",
+  "tier": 1,
+  "event_count": 31,
+  "duration_seconds": 423,
+  "run_id": "7c5029645c1849a7",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/crewai/llm.py\", line 799, in _handle_non_streaming_response\n    response = litellm.completion(**params)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/stratum_patcher/litellm_patch.py\", line 97, in wrapper\n    result = original(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/litellm/utils.py\", line 1330, in wrapper\n    raise e\n  File \"/usr/local/lib/python3.11/site-packages/litellm/utils.py\", line 1205, in wrapper\n    result = original_function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/litellm/main.py\", line 3427, in completion\n    raise exception_type(\n          ^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py\", line 2301, in exception_type\n    raise e\n  File \"/usr/local/lib/python3.11/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py\", line 447, in exception_type\n    raise BadRequestError(\nlitellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Cannot set `add_generation_prompt` to True when the last message is from the assistant. Consider using `continue_final_message` instead.\n"
+}

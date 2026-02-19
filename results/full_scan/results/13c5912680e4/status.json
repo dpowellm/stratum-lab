@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/agentstack-ai/AgentStack",
+  "status": "SUCCESS",
+  "exit_code": 0,
+  "entry_point": "/tmp/repo/examples/trip_planner/src/main.py",
+  "tier": 1,
+  "event_count": 24,
+  "duration_seconds": 405,
+  "run_id": "fb0435c924c14258",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "\ud83d\udd87 AgentOps: [OPENAI INSTRUMENTOR] Error setting up OpenAI streaming wrappers: No module named 'openai.resources.beta.chat'\n\ud83d\udd87 AgentOps: \u001b[34mSession Replay for default trace: https://app.agentops.ai/sessions?trace_id=72cbdf4a811b7726385acf0d24402c59\u001b[0m\n\ud83d\udd87 AgentOps: \u001b[34mSession Replay for default.session trace: https://app.agentops.ai/sessions?trace_id=72cbdf4a811b7726385acf0d24402c59\u001b[0m\n"
+}

@@ -1,0 +1,44 @@
+[stratum] 21:11:49 Step 1: Cloning https://github.com/KataDavidXD/Agent-Git-Comparison ...
+[stratum] 21:11:50 Phase 0: Scanning defensive patterns...
+[stratum] 21:12:13 Phase 0: Complete
+[stratum] 21:12:13 Step 2: Setting environment variables ...
+[stratum] 21:12:44   RUN_ID=ca266fab162a4970  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 21:12:44 Step 3: Handling .env files ...
+[stratum] 21:12:44   Creating default /tmp/repo/.env
+[stratum] 21:12:44 Step 4: Installing dependencies ...
+[stratum] 21:12:44   Installing repo package (editable)
+ERROR: Could not find a version that satisfies the requirement agentgit (from paper) (from versions: none)
+ERROR: No matching distribution found for agentgit
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 21:13:45 Step 5: Detecting entry point ...
+[stratum] 21:13:47   Detection reasoning: 18 candidate(s) evaluated
+[stratum] 21:13:47   Winner: src/llm_client.py (score=10)
+[stratum] 21:13:47   Runner-up: src/experiments/agnoAgent_exp2.py (score=5)
+[stratum] 21:13:47   Entry point: /tmp/repo/src/llm_client.py (score=10)
+[stratum] 21:13:47 Step 6: Configuring PYTHONPATH ...
+[stratum] 21:13:47   Installing package at /tmp/repo
+ERROR: Could not find a version that satisfies the requirement agentgit (from paper) (from versions: none)
+ERROR: No matching distribution found for agentgit
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 21:14:50   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 21:14:50 Step 7: Executing Tier 1 (native) ...
+[stratum] 21:14:50   Attempt 1/5: python llm_client.py
+[stratum] 21:15:19   Tier 1 result: PARTIAL_SUCCESS (exit_code=1)
+[stratum] 21:15:19 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 21:15:19 Step 9: Writing final output ...
+[stratum] 21:15:19   Final status: PARTIAL_SUCCESS (tier=1, exit_code=1)
+[stratum] 21:16:05 ============================================
+[stratum] 21:16:05   Repo:        https://github.com/KataDavidXD/Agent-Git-Comparison
+[stratum] 21:16:05   Status:      PARTIAL_SUCCESS
+[stratum] 21:16:05   Tier:        1
+[stratum] 21:16:05   Entry:       /tmp/repo/src/llm_client.py
+[stratum] 21:16:05   Events:      17
+[stratum] 21:16:05   Duration:    234s
+[stratum] 21:16:05   Run ID:      ca266fab162a4970
+[stratum] 21:16:05   Framework:   autogen
+[stratum] 21:16:05   Run Number:  1
+[stratum] 21:16:05 ============================================

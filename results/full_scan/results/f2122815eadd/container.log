@@ -1,0 +1,44 @@
+[stratum] 19:45:41 Step 1: Cloning https://github.com/nuglifeleoji/Options-Analytics-Agent ...
+[stratum] 19:45:42 Phase 0: Scanning defensive patterns...
+[stratum] 19:46:03 Phase 0: Complete
+[stratum] 19:46:03 Step 2: Setting environment variables ...
+[stratum] 19:46:24   RUN_ID=96edfa26f0ba45ca  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 19:46:24 Step 3: Handling .env files ...
+[stratum] 19:46:24   Creating default /tmp/repo/.env
+[stratum] 19:46:24 Step 4: Installing dependencies ...
+[stratum] 19:46:24   Installing /tmp/repo/microservice/requirements.txt
+mcp 1.23.3 requires uvicorn>=0.31.1; sys_platform != "emscripten", but you have uvicorn 0.27.0 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 19:47:33   Installing /tmp/repo/requirements.txt
+ERROR: Cannot install -r /tmp/repo/requirements.txt (line 7) and langchain==0.3.7 because these package versions have conflicting dependencies.
+ERROR: ResolutionImpossible: for help visit https://pip.pypa.io/en/latest/topics/dependency-resolution/#dealing-with-dependency-conflicts
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 19:48:14 Step 5: Detecting entry point ...
+[stratum] 19:48:17   Detection reasoning: 24 candidate(s) evaluated
+[stratum] 19:48:17   Winner: evaluation/llm_judge.py (score=10)
+[stratum] 19:48:17   Runner-up: agent_with_rules.py (score=10)
+[stratum] 19:48:17   Entry point: /tmp/repo/evaluation/llm_judge.py (score=10)
+[stratum] 19:48:17 Step 6: Configuring PYTHONPATH ...
+[stratum] 19:48:17   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 19:48:17 Step 7: Executing Tier 1 (native) ...
+[stratum] 19:48:17   Attempt 1/5: python llm_judge.py
+[stratum] 19:48:58   Tier 1 result: SUCCESS (exit_code=0)
+[stratum] 19:48:58 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 19:48:58 Step 9: Writing final output ...
+[stratum] 19:48:58   Final status: SUCCESS (tier=1, exit_code=0)
+[stratum] 19:49:51 ============================================
+[stratum] 19:49:51   Repo:        https://github.com/nuglifeleoji/Options-Analytics-Agent
+[stratum] 19:49:51   Status:      SUCCESS
+[stratum] 19:49:51   Tier:        1
+[stratum] 19:49:51   Entry:       /tmp/repo/evaluation/llm_judge.py
+[stratum] 19:49:51   Events:      17
+[stratum] 19:49:51   Duration:    224s
+[stratum] 19:49:51   Run ID:      96edfa26f0ba45ca
+[stratum] 19:49:51   Framework:   langgraph
+[stratum] 19:49:51   Run Number:  1
+[stratum] 19:49:51 ============================================

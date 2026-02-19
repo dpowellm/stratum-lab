@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/Divyansh487/TradingAgents-CN",
+  "repo_full_name": "Divyansh487/TradingAgents-CN",
+  "run_number": 1,
+  "run_id": "c50561011bb846ea",
+  "exit_code": 1,
+  "status": "PARTIAL_SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/examples/demo_deepseek_analysis.py",
+  "framework_detected": "langgraph",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 31,
+  "timestamp": "2026-02-17T14:03:46.240644+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

@@ -1,0 +1,189 @@
+╭───────────────────────── 🚀 Crew Execution Started ──────────────────────────╮
+│                                                                              │
+│  Crew Execution Started                                                      │
+│  Name:                                                                       │
+│  crew                                                                        │
+│  ID:                                                                         │
+│  29d192cb-f34f-4e6e-8144-0e87810c5d4b                                        │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── 📋 Task Started ───────────────────────────────╮
+│                                                                              │
+│  Task Started                                                                │
+│  Name: Research: 'CrewAI basics and use cases'. List 3 key facts or use      │
+│  cases.                                                                      │
+│  ID: f1d1fd9c-2eea-46d0-9121-1add8c367847                                    │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── 🤖 Agent Started ──────────────────────────────╮
+│                                                                              │
+│  Agent: Researcher                                                           │
+│                                                                              │
+│  Task: Research: 'CrewAI basics and use cases'. List 3 key facts or use      │
+│  cases.                                                                      │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭──────────────────────────────── ❌ LLM Error ────────────────────────────────╮
+│                                                                              │
+│  LLM Call Failed                                                             │
+│  Error: Model your OPENAI_MODEL_NAME here not found: Error code: 404 -       │
+│  {'error': {'message': 'The model `your OPENAI_MODEL_NAME here` does not     │
+│  exist.', 'type': 'NotFoundError', 'param': 'model', 'code': 404}}           │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+[CrewAIEventsBus] Warning: Event pairing mismatch. 'llm_call_failed' closed 
+'agent_execution_started' (expected 'llm_call_started')
+[91mAn unknown error occurred. Please check the details below.[0m
+[91mError details: Model your OPENAI_MODEL_NAME here not found: Error code: 404 - {'error': {'message': 'The model `your OPENAI_MODEL_NAME here` does not exist.', 'type': 'NotFoundError', 'param': 'model', 'code': 404}}[0m
+[91mAn unknown error occurred. Please check the details below.[0m
+[91mError details: Model your OPENAI_MODEL_NAME here not found: Error code: 404 - {'error': {'message': 'The model `your OPENAI_MODEL_NAME here` does not exist.', 'type': 'NotFoundError', 'param': 'model', 'code': 404}}[0m
+╭──────────────────────────────── ❌ LLM Error ────────────────────────────────╮
+│                                                                              │
+│  LLM Call Failed                                                             │
+│  Error: OpenAI API call failed: Model your OPENAI_MODEL_NAME here not        │
+│  found: Error code: 404 - {'error': {'message': 'The model `your             │
+│  OPENAI_MODEL_NAME here` does not exist.', 'type': 'NotFoundError',          │
+│  'param': 'model', 'code': 404}}                                             │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── 🤖 Agent Started ──────────────────────────────╮
+│                                                                              │
+│  Agent: Researcher                                                           │
+│                                                                              │
+│  Task: Research: 'CrewAI basics and use cases'. List 3 key facts or use      │
+│  cases.                                                                      │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+[CrewAIEventsBus] Warning: Event pairing mismatch. 'llm_call_failed' closed 
+'agent_execution_started' (expected 'llm_call_started')
+[91mAn unknown error occurred. Please check the details below.[0m
+[91mError details: Model your OPENAI_MODEL_NAME here not found: Error code: 404 - {'error': {'message': 'The model `your OPENAI_MODEL_NAME here` does not exist.', 'type': 'NotFoundError', 'param': 'model', 'code': 404}}[0m
+[91mAn unknown error occurred. Please check the details below.[0m
+[91mError details: Model your OPENAI_MODEL_NAME here not found: Error code: 404 - {'error': {'message': 'The model `your OPENAI_MODEL_NAME here` does not exist.', 'type': 'NotFoundError', 'param': 'model', 'code': 404}}[0m
+╭──────────────────────────────── ❌ LLM Error ────────────────────────────────╮
+│                                                                              │
+│  LLM Call Failed                                                             │
+│  Error: Model your OPENAI_MODEL_NAME here not found: Error code: 404 -       │
+│  {'error': {'message': 'The model `your OPENAI_MODEL_NAME here` does not     │
+│  exist.', 'type': 'NotFoundError', 'param': 'model', 'code': 404}}           │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭──────────────────────────────── ❌ LLM Error ────────────────────────────────╮
+│                                                                              │
+│  LLM Call Failed                                                             │
+│  Error: OpenAI API call failed: Model your OPENAI_MODEL_NAME here not        │
+│  found: Error code: 404 - {'error': {'message': 'The model `your             │
+│  OPENAI_MODEL_NAME here` does not exist.', 'type': 'NotFoundError',          │
+│  'param': 'model', 'code': 404}}                                             │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── 🤖 Agent Started ──────────────────────────────╮
+│                                                                              │
+│  Agent: Researcher                                                           │
+│                                                                              │
+│  Task: Research: 'CrewAI basics and use cases'. List 3 key facts or use      │
+│  cases.                                                                      │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+[CrewAIEventsBus] Warning: Event pairing mismatch. 'llm_call_failed' closed 
+'agent_execution_started' (expected 'llm_call_started')
+[91mAn unknown error occurred. Please check the details below.[0m
+[91mError details: Model your OPENAI_MODEL_NAME here not found: Error code: 404 - {'error': {'message': 'The model `your OPENAI_MODEL_NAME here` does not exist.', 'type': 'NotFoundError', 'param': 'model', 'code': 404}}[0m
+[91mAn unknown error occurred. Please check the details below.[0m
+[91mError details: Model your OPENAI_MODEL_NAME here not found: Error code: 404 - {'error': {'message': 'The model `your OPENAI_MODEL_NAME here` does not exist.', 'type': 'NotFoundError', 'param': 'model', 'code': 404}}[0m
+[CrewAIEventsBus] Warning: Event pairing mismatch. 'agent_execution_error' 
+closed 'task_started' (expected 'agent_execution_started')
+╭──────────────────────────────── ❌ LLM Error ────────────────────────────────╮
+│                                                                              │
+│  LLM Call Failed                                                             │
+│  Error: OpenAI API call failed: Model your OPENAI_MODEL_NAME here not        │
+│  found: Error code: 404 - {'error': {'message': 'The model `your             │
+│  OPENAI_MODEL_NAME here` does not exist.', 'type': 'NotFoundError',          │
+│  'param': 'model', 'code': 404}}                                             │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭──────────────────────────────── ❌ LLM Error ────────────────────────────────╮
+│                                                                              │
+│  LLM Call Failed                                                             │
+│  Error: Model your OPENAI_MODEL_NAME here not found: Error code: 404 -       │
+│  {'error': {'message': 'The model `your OPENAI_MODEL_NAME here` does not     │
+│  exist.', 'type': 'NotFoundError', 'param': 'model', 'code': 404}}           │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+[CrewAIEventsBus] Warning: Event pairing mismatch. 'task_failed' closed 
+'crew_kickoff_started' (expected 'task_started')
+╭────────────────────────────── 📋 Task Failure ───────────────────────────────╮
+│                                                                              │
+│  Task Failed                                                                 │
+│  Name:                                                                       │
+│  Research: 'CrewAI basics and use cases'. List 3 key facts or use cases.     │
+│  Agent:                                                                      │
+│  Researcher                                                                  │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+[CrewAIEventsBus] Warning: Ending event 'crew_kickoff_failed' emitted with empty
+scope stack. Missing starting event?
+╭──────────────────────────────── Crew Failure ────────────────────────────────╮
+│                                                                              │
+│  Crew Execution Failed                                                       │
+│  Name:                                                                       │
+│  crew                                                                        │
+│  ID:                                                                         │
+│  29d192cb-f34f-4e6e-8144-0e87810c5d4b                                        │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭─────────────────────────────── Tracing Status ───────────────────────────────╮
+│                                                                              │
+│  Info: Tracing is disabled.                                                  │
+│                                                                              │
+│  To enable tracing, do any one of these:                                     │
+│  • Set tracing=True in your Crew/Flow code                                   │
+│  • Set CREWAI_TRACING_ENABLED=true in your project's .env file               │
+│  • Run: crewai traces enable                                                 │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+╭────────────────────────────── Execution Traces ──────────────────────────────╮
+│                                                                              │
+│  🔍 Detailed execution traces are available!                                 │
+│                                                                              │
+│  View insights including:                                                    │
+│    • Agent decision-making process                                           │
+│    • Task execution flow and timing                                          │
+│    • Tool usage details                                                      │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Would you like to view your execution traces? [y/N] (20s timeout): 
+
+╭────────────────────────── Tracing Preference Saved ──────────────────────────╮
+│                                                                              │
+│  Info: Tracing has been disabled.                                            │
+│                                                                              │
+│  Your preference has been saved. Future Crew/Flow executions will not        │
+│  collect traces.                                                             │
+│                                                                              │
+│  To enable tracing later, do any one of these:                               │
+│  • Set tracing=True in your Crew/Flow code                                   │
+│  • Set CREWAI_TRACING_ENABLED=true in your project's .env file               │
+│  • Run: crewai traces enable                                                 │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+

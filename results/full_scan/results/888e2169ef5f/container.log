@@ -1,0 +1,40 @@
+[stratum] 01:26:26 Step 1: Cloning https://github.com/Mar-Issah/langchain-agents ...
+[stratum] 01:26:27 Phase 0: Scanning defensive patterns...
+[stratum] 01:26:39 Phase 0: Complete
+[stratum] 01:26:39 Step 2: Setting environment variables ...
+[stratum] 01:26:51   RUN_ID=b14be374f59c42d9  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 01:26:51 Step 3: Handling .env files ...
+[stratum] 01:26:51   Creating /tmp/repo/.env from /tmp/repo/.env.example
+[stratum] 01:26:51 Step 4: Installing dependencies ...
+[stratum] 01:26:51   Installing /tmp/repo/requirements.txt
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 01:27:26 Step 5: Detecting entry point ...
+[stratum] 01:27:27   Detection reasoning: 5 candidate(s) evaluated
+[stratum] 01:27:27   Winner: simple_chatbot.py (score=10)
+[stratum] 01:27:27   Runner-up: basic_calculator.py (score=7)
+[stratum] 01:27:27   Entry point: /tmp/repo/simple_chatbot.py (score=10)
+[stratum] 01:27:27 Step 6: Configuring PYTHONPATH ...
+[stratum] 01:27:27   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 01:27:27 Step 7: Executing Tier 1 (native) ...
+[stratum] 01:27:27   Attempt 1/5: python simple_chatbot.py
+[stratum] 01:27:39   Auto-installing: langchain_anthropic -> pip install langchain-anthropic
+[stratum] 01:27:56   Installed langchain-anthropic -- retrying ...
+[stratum] 01:27:56   Attempt 2/5: python simple_chatbot.py
+[stratum] 01:28:11   Tier 1 result: PARTIAL_SUCCESS (exit_code=1)
+[stratum] 01:28:11 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 01:28:11 Step 9: Writing final output ...
+[stratum] 01:28:11   Final status: PARTIAL_SUCCESS (tier=1, exit_code=1)
+[stratum] 01:28:36 ============================================
+[stratum] 01:28:36   Repo:        https://github.com/Mar-Issah/langchain-agents
+[stratum] 01:28:36   Status:      PARTIAL_SUCCESS
+[stratum] 01:28:36   Tier:        1
+[stratum] 01:28:36   Entry:       /tmp/repo/simple_chatbot.py
+[stratum] 01:28:36   Events:      15
+[stratum] 01:28:36   Duration:    118s
+[stratum] 01:28:36   Run ID:      b14be374f59c42d9
+[stratum] 01:28:36   Framework:   langgraph
+[stratum] 01:28:36   Run Number:  1
+[stratum] 01:28:36 ============================================

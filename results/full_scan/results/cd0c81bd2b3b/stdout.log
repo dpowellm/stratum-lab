@@ -1,0 +1,54 @@
+
+============================================================
+LLM Provider Configuration Test
+============================================================
+
+📋 Supported Providers:
+  • openai: gpt-4o, gpt-4o-mini, gpt-4-turbo...
+  • anthropic: claude-3-5-sonnet-20241022, claude-3-5-haiku-20241022, claude-3-opus-20240229...
+  • google: gemini-1.5-pro, gemini-1.5-flash, gemini-2.5-flash...
+
+🔑 API Keys Status:
+  • OpenAI:    ✅ Set
+  • Anthropic: ✅ Set
+  • Google:    ✅ Set
+
+🤖 Agent LLM Configuration:
+  ✅ Orchestrator → openai:gpt-4o-mini
+  ✅ Research     → openai:gpt-4o-mini
+  ✅ Writing      → openai:gpt-4o-mini
+  ✅ Code         → openai:gpt-4o-mini
+  ✅ General      → openai:gpt-4o-mini
+  ✅ Aggregator   → openai:gpt-4o-mini
+
+🌡️  Temperature Settings:
+  • Orchestrator: 0.0
+  • Research:     0.3
+  • Writing:      0.7
+  • Code:         0.2
+  • Aggregator:   0.5
+
+🧪 Testing LLM Creation:
+  ✅ Orchestrator → Created openai:gpt-4o-mini
+  ✅ Research     → Created openai:gpt-4o-mini
+  ✅ Writing      → Created openai:gpt-4o-mini
+  ✅ Code         → Created openai:gpt-4o-mini
+  ✅ General      → Created openai:gpt-4o-mini
+  ✅ Aggregator   → Created openai:gpt-4o-mini
+
+============================================================
+Summary: 6 ✅  0 ⚠️  0 ❌
+============================================================
+
+✅ All LLM configurations are valid!
+
+============================================================
+Simple Inference Test
+============================================================
+
+Testing with: openai:gpt-4o-mini
+
+Response:  "Greetings from the multi-agent system!"
+
+✅ Inference successful!
+

@@ -1,0 +1,42 @@
+[stratum] 11:08:38 Step 1: Cloning https://github.com/Emarhnuel/Property_gemini ...
+[stratum] 11:08:39 Phase 0: Scanning defensive patterns...
+[stratum] 11:09:01 Phase 0: Complete
+[stratum] 11:09:01 Step 2: Setting environment variables ...
+[stratum] 11:09:24   RUN_ID=f5bad434d0024c9b  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 11:09:24 Step 3: Handling .env files ...
+[stratum] 11:09:25   Creating default /tmp/repo/.env
+[stratum] 11:09:25 Step 4: Installing dependencies ...
+[stratum] 11:09:25   Installing repo package (editable)
+langchain-openai 1.1.9 requires openai<3.0.0,>=1.109.1, but you have openai 1.83.0 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 11:23:26 Step 5: Detecting entry point ...
+[stratum] 11:23:27   Detection reasoning: 1 candidate(s) evaluated
+[stratum] 11:23:27   Winner: src/real_ai_agents/main.py (score=13)
+[stratum] 11:23:27   Entry point: /tmp/repo/src/real_ai_agents/main.py (score=13)
+[stratum] 11:23:27 Step 6: Configuring PYTHONPATH ...
+[stratum] 11:23:27   Installing package at /tmp/repo
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 11:25:46   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 11:25:46 Step 7: Executing Tier 1 (native) ...
+[stratum] 11:25:46   Attempt 1/5: python main.py
+[stratum] 11:26:27   Tier 1 result: PARTIAL_SUCCESS (exit_code=1)
+[stratum] 11:26:27 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 11:26:27 Step 9: Writing final output ...
+[stratum] 11:26:27   Final status: PARTIAL_SUCCESS (tier=1, exit_code=1)
+[stratum] 11:27:14 ============================================
+[stratum] 11:27:14   Repo:        https://github.com/Emarhnuel/Property_gemini
+[stratum] 11:27:14   Status:      PARTIAL_SUCCESS
+[stratum] 11:27:14   Tier:        1
+[stratum] 11:27:14   Entry:       /tmp/repo/src/real_ai_agents/main.py
+[stratum] 11:27:14   Events:      30
+[stratum] 11:27:14   Duration:    1093s
+[stratum] 11:27:14   Run ID:      f5bad434d0024c9b
+[stratum] 11:27:14   Framework:   crewai
+[stratum] 11:27:14   Run Number:  1
+[stratum] 11:27:14 ============================================

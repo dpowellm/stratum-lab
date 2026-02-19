@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/Ahmad-Nayfeh/crewai-multi-phase-workshop",
+  "repo_full_name": "Ahmad-Nayfeh/crewai-multi-phase-workshop",
+  "run_number": 1,
+  "run_id": "2d0844d1e9184cc6",
+  "exit_code": 1,
+  "status": "PARTIAL_SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/phases/phase0_hello_crew.py",
+  "framework_detected": "crewai",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 22,
+  "timestamp": "2026-02-17T09:40:24.664910+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

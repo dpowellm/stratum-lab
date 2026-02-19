@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/Emarhnuel/Property_gemini",
+  "repo_full_name": "Emarhnuel/Property_gemini",
+  "run_number": 1,
+  "run_id": "f5bad434d0024c9b",
+  "exit_code": 1,
+  "status": "PARTIAL_SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/src/real_ai_agents/main.py",
+  "framework_detected": "crewai",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 30,
+  "timestamp": "2026-02-17T11:27:11.210935+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

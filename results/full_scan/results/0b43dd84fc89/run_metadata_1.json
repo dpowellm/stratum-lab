@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/extrawest/multi_agent_workflow_demo_in_langgraph",
+  "repo_full_name": "extrawest/multi_agent_workflow_demo_in_langgraph",
+  "run_number": 1,
+  "run_id": "ba18b12865d84284",
+  "exit_code": 0,
+  "status": "SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/scripts/multi_agent_collaboration.py",
+  "framework_detected": "langgraph",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 9,
+  "timestamp": "2026-02-17T08:39:55.806352+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

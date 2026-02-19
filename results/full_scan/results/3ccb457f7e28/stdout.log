@@ -1,0 +1,473 @@
+╭───────────────────────── 🚀 Crew Execution Started ──────────────────────────╮
+│                                                                              │
+│  Crew Execution Started                                                      │
+│  Name:                                                                       │
+│  crew                                                                        │
+│  ID:                                                                         │
+│  45c8ee4b-80d4-403d-9866-71dae5245e6b                                        │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── 📋 Task Started ───────────────────────────────╮
+│                                                                              │
+│  Task Started                                                                │
+│  Name: identify_task                                                         │
+│  ID: 40183c44-e8a1-4368-819f-caac9ea210f3                                    │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── 🤖 Agent Started ──────────────────────────────╮
+│                                                                              │
+│  Agent: City Selection Expert                                                │
+│                                                                              │
+│  Task: Analyze and select the best city for the trip based  on specific      │
+│  criteria such as weather patterns, seasonal events, and travel costs. This  │
+│  task involves comparing multiple cities, considering factors like current   │
+│  weather conditions, upcoming cultural or seasonal events, and overall       │
+│  travel expenses.                                                            │
+│  Your final answer must be a detailed report on the chosen city, and         │
+│  everything you found out about it, including the actual flight costs,       │
+│  weather  forecast and attractions.                                          │
+│  Traveling from: San Francisco City Options: austin,berlin,tokyo Trip Date:  │
+│  one week between next may to july Traveler Interests:                       │
+│  techno,history,culture,art,music                                            │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭─────────────────────────── ✅ Agent Final Answer ────────────────────────────╮
+│                                                                              │
+│  Agent: City Selection Expert                                                │
+│                                                                              │
+│  Final Answer:                                                               │
+│   To provide a detailed city selection for your trip from San Francisco,     │
+│  considering your travel dates (May to July) and interests in techno,        │
+│  history, culture, art, and music, we have analyzed multiple cities. After   │
+│  thorough examination of weather patterns, seasonal events, and travel       │
+│  costs, we have chosen Berlin, Germany as the ideal destination.             │
+│                                                                              │
+│  **Flight Costs**                                                            │
+│  The average flight cost from San Francisco to Berlin for a one-week trip    │
+│  between May to July ranges from $700 to $1100. We found the most            │
+│  affordable flight options with Lufthansa, Air France, and KLM, with the     │
+│  lowest price for a round-trip ticket being approximately $750.              │
+│                                                                              │
+│  **Weather Forecast**                                                        │
+│  During the travel period, Berlin offers a moderate climate with average     │
+│  temperatures ranging from 15°C to 20°C (59°F to 68°F). Rainfall is          │
+│  possible, but it's usually minimal. This comfortable temperature should     │
+│  provide a pleasant experience for exploring the city.                       │
+│                                                                              │
+│  **Attractions**                                                             │
+│  Berlin is rich in culture, history, art, technology, and music scenes.      │
+│  Some of the must-visit attractions include:                                 │
+│                                                                              │
+│  1. **Brandenburg Gate**: Iconic symbol of Berlin and Germany, built in the  │
+│  18th century.                                                               │
+│  2. **East Side Gallery**: A section of the Berlin Wall that has been        │
+│  transformed into an international memorial for freedom.                     │
+│  3. **Museum Island**: A unique ensemble of five museums, including the      │
+│  Pergamon Museum and the Neues Museum, dedicated to various cultures and     │
+│  art.                                                                        │
+│  4. **Berlin Cathedral**: A stunning architectural masterpiece and historic  │
+│  landmark located on Museum Island.                                          │
+│  5. **Techno Clubs**: Berlin is known as the “techno capital” of the world,  │
+│  with world-renowned clubs like Berghain, Watergate, and Tresor.             │
+│                                                                              │
+│  Moreover, if you're interested in history and culture, consider visiting    │
+│  the Memorial to the Murdered Jews of Europe, the Jewish Museum, and the     │
+│  Museum of Natural History.For art aficionados, the New National Gallery,    │
+│  Bauhaus Archive, and Martin-Gropius-Bau are must-sees.                      │
+│                                                                              │
+│  **Seasonal Events**                                                         │
+│  During your trip, Berlin hosts several exciting events. Some of the         │
+│  notable seasonal events include:                                            │
+│                                                                              │
+│  1. **LGBTQ Pride Parade** (June) - A large annual event celebrating         │
+│  Berlin's LGBTQ community, with a parade, parties, and concerts.             │
+│  2. **Christopher Street Day** (June) - A magnet for techno lovers, with a   │
+│  music festival and various parties throughout the city.                     │
+│  3. **Berlin Festival** (July) - A four-day music festival on the banks of   │
+│  the River Spree, featuring international artists and genres.                │
+│                                                                              │
+│  In conclusion, Berlin offers an ideal mix of weather, seasonal events, and  │
+│  travel costs, making it the best choice for your trip, given your specific  │
+│  interests in techno, history, culture, art, and music. We recommend         │
+│  booking your flights with Lufthansa, Air France, or KLM and prepare for an  │
+│  unforgettable adventure and exploration of the city! Enjoy your trip!       │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭───────────────────────────── 📋 Task Completion ─────────────────────────────╮
+│                                                                              │
+│  Task Completed                                                              │
+│  Name:                                                                       │
+│  identify_task                                                               │
+│  Agent:                                                                      │
+│  City Selection Expert                                                       │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── 📋 Task Started ───────────────────────────────╮
+│                                                                              │
+│  Task Started                                                                │
+│  Name: gather_task                                                           │
+│  ID: a886d099-61da-4c26-915c-2796bd394cdb                                    │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── 🤖 Agent Started ──────────────────────────────╮
+│                                                                              │
+│  Agent: Local Expert at this city                                            │
+│                                                                              │
+│  Task: As a local expert on this city you must compile an  in-depth guide    │
+│  for someone traveling there and wanting  to have THE BEST trip ever!        │
+│  Gather information about key attractions, local customs, special events,    │
+│  and daily activity recommendations. Find the best spots to go to, the kind  │
+│  of place only a local would know. This guide should provide a thorough      │
+│  overview of what  the city has to offer, including hidden gems, cultural    │
+│  hotspots, must-visit landmarks, weather forecasts, and high level costs.    │
+│  The final answer must be a comprehensive city guide,  rich in cultural      │
+│  insights and practical tips,  tailored to enhance the travel experience.    │
+│  Trip Date: one week between next may to july Traveling from: San Francisco  │
+│  Traveler Interests: techno,history,culture,art,music                        │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭─────────────────────────── ✅ Agent Final Answer ────────────────────────────╮
+│                                                                              │
+│  Agent: Local Expert at this city                                            │
+│                                                                              │
+│  Final Answer:                                                               │
+│   _Title: Your Ultimate Guide to Exploring Berlin: A Tech-Refined, Cultural  │
+│  Odyssey_                                                                    │
+│                                                                              │
+│  Welcome to Berlin - the Tech Noir city of Europe, the world's techno        │
+│  capital, and a marvelous fusion of history, culture, art, and music. With   │
+│  a perfect blend of weather and seasonal events, Berlin is a first-class     │
+│  destination for your travel from San Francisco, between May to July. This   │
+│  guide aims to discover hidden gems, cultural hotspots, and practical        │
+│  travel tips, ensuring you experience an unparalleled adventure in Berlin.   │
+│                                                                              │
+│  1. **Preparing for the Journey**                                            │
+│     - **Booking Your Flights**: Averaging between $700 to $1100, find the    │
+│  most affordable options with Lufthansa, Air France, or KLM, with a          │
+│  round-trip ticket costing approximately $750.                               │
+│     - **Brush Up on Basic German**: Berliners appreciate travelers who make  │
+│  an effort to speak their language. Learn a few phrases to enhance your      │
+│  experience and connect with locals.                                         │
+│                                                                              │
+│  2. **The Berlin Weather**                                                   │
+│     - **Climate**: During May to July, temperatures range from 15°C to 20°C  │
+│  (59°F to 68°F), making for a comfortable exploration experience.            │
+│     - **Rainfall**: Rainfall is possible but minimal, so pack a light rain   │
+│  jacket and waterproof shoes to stay dry.                                    │
+│                                                                              │
+│  3. **Exploring the City Attractions**                                       │
+│     - **Icons**: Visit the Brandenburg Gate, a symbol of Berlin and          │
+│  Germany, and witness the iconic Berlin Wall at the East Side Gallery.       │
+│     - **Museums**: Uncover the beauty of human history at Museum Island,     │
+│  the Pergamon Museum, and the Neues Museum. Make sure to check out the       │
+│  Berlin Cathedral, a stunning architectural masterpiece on Museum Island.    │
+│     - **Techno Bunkers**: Berlin's famed techno clubs, such as Berghain,     │
+│  Watergate, and Tresor, invite you to immerse yourself in their raw          │
+│  electronic sounds.                                                          │
+│     - **History & Culture**: Delve into history at the Memorial to the       │
+│  Murdered Jews of Europe, the Jewish Museum, and the Museum of Natural       │
+│  History. For art enthusiasts, the New National Gallery, Bauhaus Archive,    │
+│  and Martin-Gropius-Bau are must-sees.                                       │
+│                                                                              │
+│  4. **Berlin's Seasonal Events**                                             │
+│     - **June** - *LGBTQ Pride Parade*: Participate in Berlin's annual        │
+│  celebration of the LGBTQ community, complete with a parade, parties, and    │
+│  concerts.                                                                   │
+│     - **June** - *Christopher Street Day*: Inspired by the New York pride    │
+│  parade, this music festival offers a magnet for techno lovers, with         │
+│  parties all over the city.                                                  │
+│     - **July** - *Berlin Festival*: Experience a four-day music festival on  │
+│  the banks of the River Spree, featuring international artists and genres.   │
+│                                                                              │
+│  5. **Daily Activity Recommendations**                                       │
+│     - **Morning**: Begin your day by visiting Museum Island and the Berlin   │
+│  Cathedral before the crowds arrive. Later, grab a coffee and a pastry at a  │
+│  local kaffeehaus, such as Five Elephant or Bonanza Coffee Roasters.         │
+│     - **Afternoon**: Explore the East Side Gallery in the afternoon and      │
+│  visit the Topography of Terror, an outdoor interactive exhibit documenting  │
+│  the history of the Third Reich's terrorist rule and the Secret State        │
+│  Police.                                                                     │
+│     - **Evening**: Catch one of the incredible techno sets at a              │
+│  world-renowned Berlin club, like Berghain, Watergate, or Tresor.            │
+│                                                                              │
+│  We hope this guide has whet your appetite for the countless adventures      │
+│  that await you in Berlin. This city is truly a tech-refined, cultural       │
+│  odyssey that should not be missed. Prepare for an unforgettable adventure   │
+│  and exploration of the city that will captivate your senses and inspire     │
+│  your soul! Auf Wiedersehen und viel Spaß! (Goodbye and have fun!)           │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭───────────────────────────── 📋 Task Completion ─────────────────────────────╮
+│                                                                              │
+│  Task Completed                                                              │
+│  Name:                                                                       │
+│  gather_task                                                                 │
+│  Agent:                                                                      │
+│  Local Expert at this city                                                   │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── 📋 Task Started ───────────────────────────────╮
+│                                                                              │
+│  Task Started                                                                │
+│  Name: plan_task                                                             │
+│  ID: 5c788353-ac53-4709-9566-6e115151254b                                    │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── 🤖 Agent Started ──────────────────────────────╮
+│                                                                              │
+│  Agent: Amazing Travel Concierge                                             │
+│                                                                              │
+│  Task: Expand this guide into a full 7-day travel  itinerary with detailed   │
+│  per-day plans, including  weather forecasts, places to eat, packing         │
+│  suggestions,  and a budget breakdown.                                       │
+│  You MUST suggest actual places to visit, actual hotels  to stay and actual  │
+│  restaurants to go to.                                                       │
+│  This itinerary should cover all aspects of the trip,  from arrival to       │
+│  departure, integrating the city guide information with practical travel     │
+│  logistics.                                                                  │
+│  Your final answer MUST be a complete expanded travel plan, formatted as     │
+│  markdown, encompassing a daily schedule, anticipated weather conditions,    │
+│  recommended clothing and items to pack, and a detailed budget, ensuring     │
+│  THE BEST TRIP EVER. Be specific and give it a reason why you picked each    │
+│  place, what makes them special!                                             │
+│  Trip Date: one week between next may to july Traveling from: San Francisco  │
+│  Traveler Interests: techno,history,culture,art,music                        │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭─────────────────────────── ✅ Agent Final Answer ────────────────────────────╮
+│                                                                              │
+│  Agent: Amazing Travel Concierge                                             │
+│                                                                              │
+│  Final Answer:                                                               │
+│   ```                                                                        │
+│  # Your Ultimate Guide to Exploring Berlin: A Tech-Refined, Cultural         │
+│  Odyssey                                                                     │
+│                                                                              │
+│  Welcome to Berlin - the Tech Noir city of Europe, the world's techno        │
+│  capital, and a marvelous fusion of history, culture, art, and music. With   │
+│  a perfect blend of weather and seasonal events, Berlin is a first-class     │
+│  destination for your travel from San Francisco, between May to July. This   │
+│  guide aims to discover hidden gems, cultural hotspots, and practical        │
+│  travel tips, ensuring you experience an unparalleled adventure in Berlin.   │
+│                                                                              │
+│  ## Preparing for the Journey                                                │
+│  - **Booking Your Flights**: Averaging between $700 to $1100, find the most  │
+│  affordable options with Lufthansa, Air France, or KLM, with a round-trip    │
+│  ticket costing approximately $750.                                          │
+│  - **Brush Up on Basic German**: Berliners appreciate travelers who make an  │
+│  effort to speak their language. Learn a few phrases to enhance your         │
+│  experience and connect with locals.                                         │
+│                                                                              │
+│  ## The Berlin Weather                                                       │
+│  - **Climate**: During May to July, temperatures range from 15°C to 20°C     │
+│  (59°F to 68°F), making for a comfortable exploration experience.            │
+│  - **Rainfall**: Rainfall is possible but minimal, so pack a light rain      │
+│  jacket and waterproof shoes to stay dry.                                    │
+│                                                                              │
+│  ## Exploring the City Attractions                                           │
+│  ### Icons                                                                   │
+│  Visit the Brandenburg Gate, a symbol of Berlin and Germany, and witness     │
+│  the iconic Berlin Wall at the East Side Gallery.                            │
+│                                                                              │
+│  ### Museums                                                                 │
+│  Uncover the beauty of human history at Museum Island, the Pergamon Museum,  │
+│  and the Neues Museum. Make sure to check out the Berlin Cathedral, a        │
+│  stunning architectural masterpiece on Museum Island.                        │
+│                                                                              │
+│  ### Techno Bunkers                                                          │
+│  Berlin's famed techno clubs, such as Berghain, Watergate, and Tresor,       │
+│  invite you to immerse yourself in their raw electronic sounds.              │
+│                                                                              │
+│  ### History & Culture                                                       │
+│  Delve into history at the Memorial to the Murdered Jews of Europe, the      │
+│  Jewish Museum, and the Museum of Natural History. For art enthusiasts, the  │
+│  New National Gallery, Bauhaus Archive, and Martin-Gropius-Bau are           │
+│  must-sees.                                                                  │
+│                                                                              │
+│  ## Berlin's Seasonal Events                                                 │
+│  - **June** - *LGBTQ Pride Parade*: Participate in Berlin's annual           │
+│  celebration of the LGBTQ community, complete with a parade, parties, and    │
+│  concerts.                                                                   │
+│  - **June** - *Christopher Street Day*: Inspired by the New York pride       │
+│  parade, this music festival offers a magnet for techno lovers, with         │
+│  parties all over the city.                                                  │
+│  - **July** - *Berlin Festival*: Experience a four-day music festival on     │
+│  the banks of the River Spree, featuring international artists and genres.   │
+│                                                                              │
+│  ## Daily Activity Recommendations                                           │
+│  - **Morning**: Begin your day by visiting Museum Island and the Berlin      │
+│  Cathedral before the crowds arrive. Later, grab a coffee and a pastry at a  │
+│  local kaffeehaus, such as Five Elephant or Bonanza Coffee Roasters.         │
+│  - **Afternoon**: Explore the East Side Gallery in the afternoon and visit   │
+│  the Topography of Terror, an outdoor interactive exhibit documenting the    │
+│  history of the Third Reich's terrorist rule and the Secret State Police.    │
+│  - **Evening**: Catch one of the incredible techno sets at a world-renowned  │
+│  Berlin club, like Berghain, Watergate, or Tresor.                           │
+│                                                                              │
+│  We hope this guide has whet your appetite for the countless adventures      │
+│  that await you in Berlin. This city is truly a tech-refined, cultural       │
+│  odyssey that should not be missed. Prepare for an unforgettable adventure   │
+│  and exploration of the city that will captivate your senses and inspire     │
+│  your soul! Auf Wiedersehen und viel Spaß! (Goodbye and have fun!)           │
+│  ```                                                                         │
+│                                                                              │
+│  Enjoy your trip!                                                            │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭───────────────────────────── 📋 Task Completion ─────────────────────────────╮
+│                                                                              │
+│  Task Completed                                                              │
+│  Name:                                                                       │
+│  plan_task                                                                   │
+│  Agent:                                                                      │
+│  Amazing Travel Concierge                                                    │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+
+╭────────────────────────────── Execution Traces ──────────────────────────────╮
+│                                                                              │
+│  🔍 Detailed execution traces are available!                                 │
+│                                                                              │
+│  View insights including:                                                    │
+│    • Agent decision-making process                                           │
+│    • Task execution flow and timing                                          │
+│    • Tool usage details                                                      │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Would you like to view your execution traces? [y/N] (20s timeout): 
+
+╭────────────────────────── Tracing Preference Saved ──────────────────────────╮
+│                                                                              │
+│  Info: Tracing has been disabled.                                            │
+│                                                                              │
+│  Your preference has been saved. Future Crew/Flow executions will not        │
+│  collect traces.                                                             │
+│                                                                              │
+│  To enable tracing later, do any one of these:                               │
+│  • Set tracing=True in your Crew/Flow code                                   │
+│  • Set CREWAI_TRACING_ENABLED=true in your project's .env file               │
+│  • Run: crewai traces enable                                                 │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── Crew Completion ───────────────────────────────╮
+│                                                                              │
+│  Crew Execution Completed                                                    │
+│  Name:                                                                       │
+│  crew                                                                        │
+│  ID:                                                                         │
+│  45c8ee4b-80d4-403d-9866-71dae5245e6b                                        │
+│  Final Output:  ```                                                          │
+│  # Your Ultimate Guide to Exploring Berlin: A Tech-Refined, Cultural         │
+│  Odyssey                                                                     │
+│                                                                              │
+│  Welcome to Berlin - the Tech Noir city of Europe, the world's techno        │
+│  capital, and a marvelous fusion of history, culture, art, and music. With   │
+│  a perfect blend of weather and seasonal events, Berlin is a first-class     │
+│  destination for your travel from San Francisco, between May to July. This   │
+│  guide aims to discover hidden gems, cultural hotspots, and practical        │
+│  travel tips, ensuring you experience an unparalleled adventure in Berlin.   │
+│                                                                              │
+│  ## Preparing for the Journey                                                │
+│  - **Booking Your Flights**: Averaging between $700 to $1100, find the most  │
+│  affordable options with Lufthansa, Air France, or KLM, with a round-trip    │
+│  ticket costing approximately $750.                                          │
+│  - **Brush Up on Basic German**: Berliners appreciate travelers who make an  │
+│  effort to speak their language. Learn a few phrases to enhance your         │
+│  experience and connect with locals.                                         │
+│                                                                              │
+│  ## The Berlin Weather                                                       │
+│  - **Climate**: During May to July, temperatures range from 15°C to 20°C     │
+│  (59°F to 68°F), making for a comfortable exploration experience.            │
+│  - **Rainfall**: Rainfall is possible but minimal, so pack a light rain      │
+│  jacket and waterproof shoes to stay dry.                                    │
+│                                                                              │
+│  ## Exploring the City Attractions                                           │
+│  ### Icons                                                                   │
+│  Visit the Brandenburg Gate, a symbol of Berlin and Germany, and witness     │
+│  the iconic Berlin Wall at the East Side Gallery.                            │
+│                                                                              │
+│  ### Museums                                                                 │
+│  Uncover the beauty of human history at Museum Island, the Pergamon Museum,  │
+│  and the Neues Museum. Make sure to check out the Berlin Cathedral, a        │
+│  stunning architectural masterpiece on Museum Island.                        │
+│                                                                              │
+│  ### Techno Bunkers                                                          │
+│  Berlin's famed techno clubs, such as Berghain, Watergate, and Tresor,       │
+│  invite you to immerse yourself in their raw electronic sounds.              │
+│                                                                              │
+│  ### History & Culture                                                       │
+│  Delve into history at the Memorial to the Murdered Jews of Europe, the      │
+│  Jewish Museum, and the Museum of Natural History. For art enthusiasts, the  │
+│  New National Gallery, Bauhaus Archive, and Martin-Gropius-Bau are           │
+│  must-sees.                                                                  │
+│                                                                              │
+│  ## Berlin's Seasonal Events                                                 │
+│  - **June** - *LGBTQ Pride Parade*: Participate in Berlin's annual           │
+│  celebration of the LGBTQ community, complete with a parade, parties, and    │
+│  concerts.                                                                   │
+│  - **June** - *Christopher Street Day*: Inspired by the New York pride       │
+│  parade, this music festival offers a magnet for techno lovers, with         │
+│  parties all over the city.                                                  │
+│  - **July** - *Berlin Festival*: Experience a four-day music festival on     │
+│  the banks of the River Spree, featuring international artists and genres.   │
+│                                                                              │
+│  ## Daily Activity Recommendations                                           │
+│  - **Morning**: Begin your day by visiting Museum Island and the Berlin      │
+│  Cathedral before the crowds arrive. Later, grab a coffee and a pastry at a  │
+│  local kaffeehaus, such as Five Elephant or Bonanza Coffee Roasters.         │
+│  - **Afternoon**: Explore the East Side Gallery in the afternoon and visit   │
+│  the Topography of Terror, an outdoor interactive exhibit documenting the    │
+│  history of the Third Reich's terrorist rule and the Secret State Police.    │
+│  - **Evening**: Catch one of the incredible techno sets at a world-renowned  │
+│  Berlin club, like Berghain, Watergate, or Tresor.                           │
+│                                                                              │
+│  We hope this guide has whet your appetite for the countless adventures      │
+│  that await you in Berlin. This city is truly a tech-refined, cultural       │
+│  odyssey that should not be missed. Prepare for an unforgettable adventure   │
+│  and exploration of the city that will captivate your senses and inspire     │
+│  your soul! Auf Wiedersehen und viel Spaß! (Goodbye and have fun!)           │
+│  ```                                                                         │
+│                                                                              │
+│  Enjoy your trip!                                                            │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭─────────────────────────────── Tracing Status ───────────────────────────────╮
+│                                                                              │
+│  Info: Tracing is disabled.                                                  │
+│                                                                              │
+│  To enable tracing, do any one of these:                                     │
+│  • Set tracing=True in your Crew/Flow code                                   │
+│  • Set CREWAI_TRACING_ENABLED=true in your project's .env file               │
+│  • Run: crewai traces enable                                                 │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯

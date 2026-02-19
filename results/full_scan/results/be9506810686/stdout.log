@@ -1,0 +1,220 @@
+╭─────────────────────────── Crew Execution Started ───────────────────────────╮
+│                                                                              │
+│  Crew Execution Started                                                      │
+│  Name: crew                                                                  │
+│  ID: 017d69e5-2868-4dda-be92-3ae4f67694b1                                    │
+│  Tool Args:                                                                  │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+🚀 Crew: crew
+└── 📋 Task: research_task (ID: 6b82f072-8c0d-42d7-a3da-e07a9933673e)
+    Status: Executing Task...╭────────────────────────────── 🤖 Agent Started ──────────────────────────────╮
+│                                                                              │
+│  Agent: Senior Financial Researcher for Amazon                               │
+│                                                                              │
+│  Task: Conduct thorough research on Amazon. Focus on:                        │
+│    1) Company profile & segments (what they sell, where they operate)        │
+│    2) Current status & financial health (latest FY/Q metrics)                │
+│    3) Historical performance (last 3–5 years: revenue, margin, FCF)          │
+│    4) Competitive landscape (top 3–5 competitors, differentiation)           │
+│    5) Major challenges & opportunities (product, regulatory, macro)          │
+│    6) Recent news & events (last 6–12 months)                                │
+│    7) Outlook signals & near-term catalysts (product launches, guidance)     │
+│  Requirements:                                                               │
+│    - Cite sources inline as [1], [2], etc., and provide a Sources section    │
+│  with URLs.                                                                  │
+│    - Prefer primary sources (10-K/20-F, investor decks, earnings call        │
+│  transcripts) over blogs.                                                    │
+│    - Note any data gaps or uncertainties as "Limitations".                   │
+│    - Do NOT make trading recommendations.                                    │
+│  Output format (Markdown):                                                   │
+│    # Amazon: Research Dossier                                                │
+│    ## Snapshot                                                               │
+│    - Ticker / Exchange / HQ:                                                 │
+│    - Segments / Products:                                                    │
+│    - Geographies:                                                            │
+│    ## Key KPIs (Last 5 FY if available)                                      │
+│    | Metric | FY-4 | FY-3 | FY-2 | FY-1 | FY |                               │
+│    |---|---:|---:|---:|---:|---:|                                            │
+│    | Revenue |  |  |  |  |  |                                                │
+│    | Gross Margin % |  |  |  |  |  |                                         │
+│    | Operating Margin % |  |  |  |  |  |                                     │
+│    | Free Cash Flow |  |  |  |  |  |                                         │
+│    | Net Debt / (Cash) |  |  |  |  |  |                                      │
+│    ## Competitive Landscape                                                  │
+│    - Competitor A (positioning, share, moat) [ref]                           │
+│    - Competitor B …                                                          │
+│    ## Challenges & Opportunities                                             │
+│    - Challenge:                                                              │
+│    - Opportunity:                                                            │
+│    ## Recent News (6–12 months)                                              │
+│    - Date — Headline — Why it matters [ref]                                  │
+│    ## Outlook Signals & Catalysts                                            │
+│    - Catalyst / timing / impact hypothesis                                   │
+│    ## Limitations                                                            │
+│    - Data gaps / assumptions                                                 │
+│    ## Sources                                                                │
+│    - [1] …                                                                   │
+│    - [2] …                                                                   │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+🚀 Crew: crew
+└── 📋 Task: research_task (ID: 6b82f072-8c0d-42d7-a3da-e07a9933673e)
+    Status: Executing Task...
+    └── 🔧 Failed Search the internet with Serper (1)╭───────────────────────────────── Tool Error ─────────────────────────────────╮
+│                                                                              │
+│  Tool Usage Failed                                                           │
+│  Name: Search the internet with Serper                                       │
+│  Error: 403 Client Error: Forbidden for url:                                 │
+│  https://google.serper.dev/search                                            │
+│  Tool Args:                                                                  │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+🚀 Crew: crew
+└── 📋 Task: research_task (ID: 6b82f072-8c0d-42d7-a3da-e07a9933673e)
+    Status: Executing Task...
+    └── 🔧 Failed Search the internet with Serper (2)╭───────────────────────────────── Tool Error ─────────────────────────────────╮
+│                                                                              │
+│  Tool Usage Failed                                                           │
+│  Name: Search the internet with Serper                                       │
+│  Error: 403 Client Error: Forbidden for url:                                 │
+│  https://google.serper.dev/search                                            │
+│  Tool Args:                                                                  │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+🚀 Crew: crew
+└── 📋 Task: research_task (ID: 6b82f072-8c0d-42d7-a3da-e07a9933673e)
+    Status: Executing Task...
+    └── 🔧 Failed Search the internet with Serper (3)╭───────────────────────────────── Tool Error ─────────────────────────────────╮
+│                                                                              │
+│  Tool Usage Failed                                                           │
+│  Name: Search the internet with Serper                                       │
+│  Error: 403 Client Error: Forbidden for url:                                 │
+│  https://google.serper.dev/search                                            │
+│  Tool Args:                                                                  │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+[91m
+
+I encountered an error while trying to use the tool. This was the error: 403 Client Error: Forbidden for url: https://google.serper.dev/search.
+ Tool Search the internet with Serper accepts these inputs: Tool Name: Search the internet with Serper
+Tool Arguments: {'search_query': {'description': 'Mandatory search query you want to use to search the internet', 'type': 'str'}}
+Tool Description: A tool that can be used to search the internet with a search_query. Supports different search types: 'search' (default), 'news'
+[0m
+╭────────────────────────── 🔧 Agent Tool Execution ───────────────────────────╮
+│                                                                              │
+│  Agent: Senior Financial Researcher for Amazon                               │
+│                                                                              │
+│  Thought: I should start by researching Amazon's company profile, current    │
+│  financial health, historical performance, competitive landscape, major      │
+│  challenges & opportunities, recent news & events, and outlook signals &     │
+│  near-term catalysts.                                                        │
+│                                                                              │
+│  Using Tool: Search the internet with Serper                                 │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭───────────────────────────────── Tool Input ─────────────────────────────────╮
+│                                                                              │
+│  {                                                                           │
+│    "search_query": "'Amazon company profile' '10-K' 'FY-2021'"               │
+│  }                                                                           │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────── Tool Output ─────────────────────────────────╮
+│                                                                              │
+│                                                                              │
+│  I encountered an error while trying to use the tool. This was the error:    │
+│  403 Client Error: Forbidden for url: https://google.serper.dev/search.      │
+│   Tool Search the internet with Serper accepts these inputs: Tool Name:      │
+│  Search the internet with Serper                                             │
+│  Tool Arguments: {'search_query': {'description': 'Mandatory search query    │
+│  you want to use to search the internet', 'type': 'str'}}                    │
+│  Tool Description: A tool that can be used to search the internet with a     │
+│  search_query. Supports different search types: 'search' (default), 'news'.  │
+│  Moving on then. I MUST either use a tool (use one at time) OR give my best  │
+│  final answer not both at the same time. When responding, I must use the     │
+│  following format:                                                           │
+│                                                                              │
+│  ```                                                                         │
+│  Thought: you should always think about what to do                           │
+│  Action: the action to take, should be one of [Search the internet with      │
+│  Serper]                                                                     │
+│  Action Input: the input to the action, dictionary enclosed in curly braces  │
+│  Observation: the result of the action                                       │
+│  ```                                                                         │
+│  This Thought/Action/Action Input/Result can repeat N times. Once I know     │
+│  the final answer, I must return the following format:                       │
+│                                                                              │
+│  ```                                                                         │
+│  Thought: I now can give a great answer                                      │
+│  Final Answer: Your final answer must be the great and the most complete as  │
+│  possible, it must be outcome described                                      │
+│                                                                              │
+│  ```                                                                         │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+🚀 Crew: crew
+└── 📋 Task: research_task (ID: 6b82f072-8c0d-42d7-a3da-e07a9933673e)
+    Status: Executing Task...
+    ├── 🔧 Failed Search the internet with Serper (3)
+    └── ❌ LLM Failed╭───────────────────────────────── LLM Error ──────────────────────────────────╮
+│                                                                              │
+│  ❌ LLM Call Failed                                                          │
+│  Error: litellm.BadRequestError: OpenAIException - Cannot set                │
+│  `add_generation_prompt` to True when the last message is from the           │
+│  assistant. Consider using `continue_final_message` instead.                 │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+🚀 Crew: crew
+└── 📋 Task: research_task (ID: 6b82f072-8c0d-42d7-a3da-e07a9933673e)
+    Assigned to: Senior Financial Researcher for Amazon
+    
+    Status: ❌ Failed
+    ├── 🔧 Failed Search the internet with Serper (3)
+    └── ❌ LLM Failed╭──────────────────────────────── Task Failure ────────────────────────────────╮
+│                                                                              │
+│  Task Failed                                                                 │
+│  Name: research_task                                                         │
+│  Agent: Senior Financial Researcher for Amazon                               │
+│                                                                              │
+│  Tool Args:                                                                  │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭──────────────────────────────── Crew Failure ────────────────────────────────╮
+│                                                                              │
+│  Crew Execution Failed                                                       │
+│  Name: crew                                                                  │
+│  ID: 017d69e5-2868-4dda-be92-3ae4f67694b1                                    │
+│  Tool Args:                                                                  │
+│  Final Output:                                                               │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+
+╭────────────────────────────── Execution Traces ──────────────────────────────╮
+│                                                                              │
+│  🔍 Detailed execution traces are available!                                 │
+│                                                                              │
+│  View insights including:                                                    │
+│    • Agent decision-making process                                           │
+│    • Task execution flow and timing                                          │
+│    • Tool usage details                                                      │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Would you like to view your execution traces? [y/N] (20s timeout): 

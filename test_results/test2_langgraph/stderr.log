@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/tmp/repo/scripts/test_modules.py", line 198, in main
+    test_document_models()
+  File "/tmp/repo/scripts/test_modules.py", line 155, in test_document_models
+    from src.api.routes.documents import (
+  File "/tmp/repo/src/api/routes/__init__.py", line 3, in <module>
+    from src.api.routes.council import router as council_router
+  File "/tmp/repo/src/api/routes/council.py", line 20, in <module>
+    from src.models.database.base import get_session
+  File "/tmp/repo/src/models/__init__.py", line 3, in <module>
+    from src.models.database.base import Base
+  File "/tmp/repo/src/models/database/__init__.py", line 3, in <module>
+    from src.models.database.audit import AuditLog, HITLReviewItem
+ModuleNotFoundError: No module named 'src.models.database.audit'

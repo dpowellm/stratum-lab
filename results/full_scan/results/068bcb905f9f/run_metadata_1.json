@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/rosidotidev/SynDAI",
+  "repo_full_name": "rosidotidev/SynDAI",
+  "run_number": 1,
+  "run_id": "cc5b5873962a4da7",
+  "exit_code": 1,
+  "status": "PARTIAL_SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/main_sd_with_ref_data_crew.py",
+  "framework_detected": "crewai",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 16,
+  "timestamp": "2026-02-17T04:18:50.649627+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

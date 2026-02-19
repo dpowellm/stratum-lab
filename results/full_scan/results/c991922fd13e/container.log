@@ -1,0 +1,38 @@
+[stratum] 02:13:08 Step 1: Cloning https://github.com/garethhallberg/crewaiwithmeandclaude ...
+[stratum] 02:13:17 Phase 0: Scanning defensive patterns...
+[stratum] 02:13:31 Phase 0: Complete
+[stratum] 02:13:31 Step 2: Setting environment variables ...
+[stratum] 02:13:44   RUN_ID=fbc92124ad8f4338  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 02:13:44 Step 3: Handling .env files ...
+[stratum] 02:13:44   Creating default /tmp/repo/.env
+[stratum] 02:13:44 Step 4: Installing dependencies ...
+[stratum] 02:13:44   Installing /tmp/repo/requirements.txt
+litellm 1.81.13 requires openai>=2.8.0, but you have openai 1.83.0 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 02:15:16 Step 5: Detecting entry point ...
+[stratum] 02:15:20   Detection reasoning: 64 candidate(s) evaluated
+[stratum] 02:15:20   Winner: 002_planning_stage_2.py (score=10)
+[stratum] 02:15:20   Runner-up: 009_fix_registration_tough_love.py (score=10)
+[stratum] 02:15:20   Entry point: /tmp/repo/002_planning_stage_2.py (score=10)
+[stratum] 02:15:20 Step 6: Configuring PYTHONPATH ...
+[stratum] 02:15:20   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 02:15:20 Step 7: Executing Tier 1 (native) ...
+[stratum] 02:15:20   Attempt 1/5: python 002_planning_stage_2.py
+[stratum] 02:18:05   Tier 1 result: PARTIAL_SUCCESS (exit_code=1)
+[stratum] 02:18:05 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 02:18:05 Step 9: Writing final output ...
+[stratum] 02:18:05   Final status: PARTIAL_SUCCESS (tier=1, exit_code=1)
+[stratum] 02:18:38 ============================================
+[stratum] 02:18:38   Repo:        https://github.com/garethhallberg/crewaiwithmeandclaude
+[stratum] 02:18:38   Status:      PARTIAL_SUCCESS
+[stratum] 02:18:38   Tier:        1
+[stratum] 02:18:38   Entry:       /tmp/repo/002_planning_stage_2.py
+[stratum] 02:18:38   Events:      46
+[stratum] 02:18:38   Duration:    315s
+[stratum] 02:18:38   Run ID:      fbc92124ad8f4338
+[stratum] 02:18:38   Framework:   crewai
+[stratum] 02:18:38   Run Number:  1
+[stratum] 02:18:38 ============================================

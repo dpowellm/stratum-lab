@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/abh2050/langgraph_data_analytics_agents",
+  "status": "SUCCESS",
+  "exit_code": 0,
+  "entry_point": "/tmp/repo/test_memory.py",
+  "tier": 1,
+  "event_count": 14,
+  "duration_seconds": 230,
+  "run_id": "cdf2246d9b3b4f66",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": ""
+}

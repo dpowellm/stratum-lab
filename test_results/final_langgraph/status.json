@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/DevJadhav/agentic-doc-extraction-system",
+  "status": "TIER2_SUCCESS",
+  "exit_code": 0,
+  "entry_point": "/tmp/repo/scripts/test_modules.py",
+  "tier": 2,
+  "event_count": 15,
+  "duration_seconds": 524,
+  "run_id": "4dff78fe52d94902",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "stratum_patcher: langchain_patch activating\nstratum_patcher: langchain_patch: Chain.invoke patched\nstratum_patcher: langchain_patch: Chain.ainvoke patched\nstratum_patcher: langchain_patch: BaseChatModel._generate patched\nstratum_patcher: langchain_patch activated\nstratum_patcher: patcher.status: 8 ok, 0 skipped \u2014 {'generic': 'ok', 'openai': 'ok', 'anthropic': 'ok', 'litellm': 'ok', 'crewai': 'ok', 'langgraph': 'ok', 'autogen': 'ok', 'langchain': 'ok'}\nTraceback (most recent call last):\n  File \"/tmp/repo/scripts/test_modules.py\", line 198, in main\n    test_document_models()\n  File \"/tmp/repo/scripts/test_modules.py\", line 155, in test_document_models\n    from src.api.routes.documents import (\n  File \"/tmp/repo/src/api/routes/__init__.py\", line 3, in <module>\n    from src.api.routes.council import router as council_router\n  File \"/tmp/repo/src/api/routes/council.py\", line 20, in <module>\n    from src.models.database.base import get_session\n  File \"/tmp/repo/src/models/__init__.py\", line 3, in <module>\n    from src.models.database.base import Base\n  File \"/tmp/repo/src/models/database/__init__.py\", line 3, in <module>\n    from src.models.database.audit import AuditLog, HITLReviewItem\nModuleNotFoundError: No module named 'src.models.database.audit'\n"
+}

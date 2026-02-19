@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/binbakhsh/QBO-CrewAI",
+  "status": "SUCCESS",
+  "exit_code": 0,
+  "entry_point": "/tmp/repo/app/agents/orchestrator.py",
+  "tier": 1,
+  "event_count": 2,
+  "duration_seconds": 82,
+  "run_id": "b992b90a8f174f11",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": ""
+}

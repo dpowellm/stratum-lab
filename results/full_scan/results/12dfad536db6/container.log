@@ -1,0 +1,40 @@
+[stratum] 20:18:29 Step 1: Cloning https://github.com/exi-0/Multi-AI-Agent-Systems-with-crewAI ...
+[stratum] 20:18:30 Phase 0: Scanning defensive patterns...
+[stratum] 20:18:52 Phase 0: Complete
+[stratum] 20:18:52 Step 2: Setting environment variables ...
+[stratum] 20:19:16   RUN_ID=cd96171fb2b240c4  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 20:19:16 Step 3: Handling .env files ...
+[stratum] 20:19:16   Creating default /tmp/repo/.env
+[stratum] 20:19:16 Step 4: Installing dependencies ...
+[stratum] 20:19:16   Installing /tmp/repo/requirements.txt
+litellm 1.81.13 requires openai>=2.8.0, but you have openai 1.109.1 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 20:23:48 Step 5: Detecting entry point ...
+[stratum] 20:23:49   Detection reasoning: 12 candidate(s) evaluated
+[stratum] 20:23:49   Winner: Project_Progress_Report.py (score=10)
+[stratum] 20:23:49   Runner-up: Research_and_Write.py (score=10)
+[stratum] 20:23:49   Entry point: /tmp/repo/Project_Progress_Report.py (score=10)
+[stratum] 20:23:49 Step 6: Configuring PYTHONPATH ...
+[stratum] 20:23:49   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 20:23:49 Step 7: Executing Tier 1 (native) ...
+[stratum] 20:23:49   Attempt 1/5: python Project_Progress_Report.py
+[stratum] 20:25:18   Tier 1 result: SUCCESS (exit_code=0)
+[stratum] 20:25:18 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 20:25:18 Step 9: Writing final output ...
+[stratum] 20:25:18   Final status: SUCCESS (tier=1, exit_code=0)
+/usr/local/lib/python3.11/site-packages/pydantic/_internal/_generate_schema.py:918: UserWarning: Mixing V1 models and V2 models (or constructs, like `TypeAdapter`) is not supported. Please upgrade `CrewAgentExecutor` to V2.
+  warn(
+[stratum] 20:26:06 ============================================
+[stratum] 20:26:06   Repo:        https://github.com/exi-0/Multi-AI-Agent-Systems-with-crewAI
+[stratum] 20:26:06   Status:      SUCCESS
+[stratum] 20:26:06   Tier:        1
+[stratum] 20:26:06   Entry:       /tmp/repo/Project_Progress_Report.py
+[stratum] 20:26:06   Events:      23
+[stratum] 20:26:06   Duration:    434s
+[stratum] 20:26:06   Run ID:      cd96171fb2b240c4
+[stratum] 20:26:06   Framework:   crewai
+[stratum] 20:26:06   Run Number:  1
+[stratum] 20:26:06 ============================================

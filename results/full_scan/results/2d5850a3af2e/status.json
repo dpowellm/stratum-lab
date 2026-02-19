@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/KataDavidXD/Agent-Git-Comparison",
+  "status": "PARTIAL_SUCCESS",
+  "exit_code": 1,
+  "entry_point": "/tmp/repo/src/llm_client.py",
+  "tier": 1,
+  "event_count": 14,
+  "duration_seconds": 210,
+  "run_id": "ca266fab162a4970",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "Traceback (most recent call last):\n  File \"/tmp/repo/src/llm_client.py\", line 130, in generate\n    response.raise_for_status()\n  File \"/usr/local/lib/python3.11/site-packages/requests/models.py\", line 1026, in raise_for_status\n    raise HTTPError(http_error_msg, response=self)\nrequests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: https://api.openai.com/v1/chat/completions\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/tmp/repo/src/llm_client.py\", line 215, in <module>\n    response2 = llm2.generate(\"Hello, how are you?\")\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/repo/src/llm_client.py\", line 143, in generate\n    raise RuntimeError(f\"LLM API request failed: {e}\")\nRuntimeError: LLM API request failed: 401 Client Error: Unauthorized for url: https://api.openai.com/v1/chat/completions\n"
+}

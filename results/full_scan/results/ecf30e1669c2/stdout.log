@@ -1,0 +1,48 @@
+🧪 Testing Memory-Enhanced Chat System
+==================================================
+
+1️⃣ First interaction:
+[RouterAgent] Routing query: Hello! I'm new here.
+[RouterAgent] LLM routed to: pandas
+[QueryContextAgent] Processing query: Hello! I'm new here.
+[ConversationMemoryAgent] Processed 1 messages for session test_session
+[ConversationMemoryAgent] Context: New conversation or simple query
+[PandasAgent] Processing query: Hello! I'm new here.
+[PandasAgent] Has data: False
+[PandasAgent] Result length: 267 characters
+   Response: I'd love to help you analyze data! However, I don't see any dataset uploaded yet. Please upload a CSV or Excel file using the file uploader in the sidebar, and then I can provide detailed analysis, create visualizations, and answer specific questions about your data.
+   Context aware: False
+
+2️⃣ Follow-up interaction:
+[RouterAgent] Routing query: What can you do with CSV files?
+[RouterAgent] LLM routed to: pandas
+[QueryContextAgent] Processing query: What can you do with CSV files?
+[ConversationMemoryAgent] Processed 3 messages for session test_session
+[ConversationMemoryAgent] Context: The user has introduced themselves and expressed interest in using the data analytics assistant. They have been informed about the need to upload a CSV or Excel file for analysis. The user has now asked about the capabilities of the assistant with CSV files.
+[PandasAgent] Processing query: What can you do with CSV files?
+[PandasAgent] Has data: False
+[PandasAgent] Result length: 267 characters
+   Response: Continuing from our previous analysis...
+
+I'd love to help you analyze data! However, I don't see any dataset uploaded yet. Please upload a CSV or Excel file using the file uploader in the sidebar, and then I can provide detailed analysis, create visualizations, and answer specific questions about your data.
+   Context aware: True
+
+3️⃣ Third interaction:
+[RouterAgent] Routing query: Thanks! How do I get started?
+[RouterAgent] LLM routed to: pandas
+[QueryContextAgent] Processing query: Thanks! How do I get started?
+[ConversationMemoryAgent] Processed 5 messages for session test_session
+[ConversationMemoryAgent] Context: The user has expressed interest in analyzing data using the assistant. They were informed about the requirement to upload a CSV or Excel file for analysis and were given a brief overview of the services provided. The user has now asked for guidance on how to get started.
+[PandasAgent] Processing query: Thanks! How do I get started?
+[PandasAgent] Has data: False
+[PandasAgent] Result length: 267 characters
+   Response: Continuing from our previous analysis...
+
+I'd love to help you analyze data! However, I don't see any dataset uploaded yet. Please upload a CSV or Excel file using the file uploader in the sidebar, and then I can provide detailed analysis, create visualizations, and answer specific questions about your data.
+   Context aware: True
+
+✅ Memory system test completed!
+
+🧠 Memory Context Generated:
+   Summary: The user has expressed interest in analyzing data using the assistant. They were informed about the requirement to upload a CSV or Excel file for analysis and were given a brief overview of the services provided. The user has now asked for guidance on how to get started.
+   Relationship: This query is related to the initial query about analyzing data, as it is a follow-up question regarding the process.

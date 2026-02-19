@@ -1,0 +1,65 @@
+[stratum] 06:36:54 Step 1: Cloning https://github.com/AteetVatan/ai-global-signal-grid ...
+[stratum] 06:36:56 Phase 0: Scanning defensive patterns...
+[stratum] 06:37:22 Phase 0: Complete
+[stratum] 06:37:22 Step 2: Setting environment variables ...
+[stratum] 06:37:44   RUN_ID=1cef03ca6848425d  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 06:37:44 Step 3: Handling .env files ...
+[stratum] 06:37:44   Creating /tmp/repo/api_server/.env from /tmp/repo/api_server/env.example
+[stratum] 06:37:44   Creating /tmp/repo/agent_hub/.env from /tmp/repo/agent_hub/env.example
+[stratum] 06:37:44   Creating /tmp/repo/.env from /tmp/repo/env.example
+[stratum] 06:37:44 Step 4: Installing dependencies ...
+[stratum] 06:37:44   Installing /tmp/repo/api_server/requirements.txt
+anthropic 0.79.0 requires httpx<1,>=0.25.0, but you have httpx 0.24.1 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 06:40:14   Installing /tmp/repo/agent_hub/requirements.txt
+litellm 1.81.13 requires aiohttp>=3.10, but you have aiohttp 3.9.1 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 06:56:58   Installing /tmp/repo/requirements.txt
+litellm 1.81.13 requires openai>=2.8.0, but you have openai 1.109.1 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 06:58:51   Installing repo package (editable)
+ERROR: Package 'ai-global-signal-grid' requires a different Python: 3.11.14 not in '>=3.12'
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 07:00:31 Step 5: Detecting entry point ...
+[stratum] 07:00:36   Detection reasoning: 8 candidate(s) evaluated
+[stratum] 07:00:36   Winner: poc_files/custom_gpt_google.py (score=10)
+[stratum] 07:00:36   Runner-up: poc_files/google_rss_generator.py (score=5)
+[stratum] 07:00:36   Entry point: /tmp/repo/poc_files/custom_gpt_google.py (score=10)
+[stratum] 07:00:36 Step 6: Configuring PYTHONPATH ...
+[stratum] 07:00:36   Installing package at /tmp/repo
+ERROR: Package 'ai-global-signal-grid' requires a different Python: 3.11.14 not in '>=3.12'
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 07:02:08   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 07:02:08 Step 7: Executing Tier 1 (native) ...
+[stratum] 07:02:08   Attempt 1/5: python custom_gpt_google.py
+[stratum] 07:02:32   Auto-installing: lagent -> pip install lagent
+[stratum] 07:06:43   Installed lagent -- retrying ...
+[stratum] 07:06:43   Attempt 2/5: python custom_gpt_google.py
+[stratum] 07:07:23   Tier 1 result: PARTIAL_SUCCESS (exit_code=1)
+[stratum] 07:07:23 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 07:07:23 Step 9: Writing final output ...
+[stratum] 07:07:23   Final status: PARTIAL_SUCCESS (tier=1, exit_code=1)
+[stratum] 07:08:25 ============================================
+[stratum] 07:08:25   Repo:        https://github.com/AteetVatan/ai-global-signal-grid
+[stratum] 07:08:25   Status:      PARTIAL_SUCCESS
+[stratum] 07:08:25   Tier:        1
+[stratum] 07:08:25   Entry:       /tmp/repo/poc_files/custom_gpt_google.py
+[stratum] 07:08:25   Events:      45
+[stratum] 07:08:25   Duration:    1862s
+[stratum] 07:08:25   Run ID:      1cef03ca6848425d
+[stratum] 07:08:25   Framework:   autogen
+[stratum] 07:08:25   Run Number:  1
+[stratum] 07:08:25 ============================================

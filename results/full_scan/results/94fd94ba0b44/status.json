@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/HSH-85/langgraph-ai-agent",
+  "status": "SUCCESS",
+  "exit_code": 0,
+  "entry_point": "/tmp/repo/main.py",
+  "tier": 1,
+  "event_count": 12,
+  "duration_seconds": 165,
+  "run_id": "e27bd3e595124e0a",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "/tmp/repo/nodes.py:128: LangChainDeprecationWarning: The class `Chroma` was deprecated in LangChain 0.2.9 and will be removed in 1.0. An updated version of the class exists in the `langchain-chroma package and should be used instead. To use it run `pip install -U `langchain-chroma` and import as `from `langchain_chroma import Chroma``.\n  vectorstore = Chroma(\n"
+}

@@ -1,0 +1,48 @@
+[stratum] 13:44:12 Step 1: Cloning https://github.com/Divyansh487/TradingAgents-CN ...
+[stratum] 13:44:15 Phase 0: Scanning defensive patterns...
+[stratum] 13:44:37 Phase 0: Complete
+[stratum] 13:44:37 Step 2: Setting environment variables ...
+[stratum] 13:44:58   RUN_ID=c50561011bb846ea  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 13:44:58 Step 3: Handling .env files ...
+[stratum] 13:44:58   Creating /tmp/repo/.env from /tmp/repo/.env.example
+[stratum] 13:44:58 Step 4: Installing dependencies ...
+[stratum] 13:44:58   Installing /tmp/repo/requirements.txt
+litellm 1.81.13 requires openai>=2.8.0, but you have openai 1.109.1 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 13:58:09   Installing repo package (editable)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 14:00:03 Step 5: Detecting entry point ...
+[stratum] 14:00:44   Detection reasoning: 329 candidate(s) evaluated
+[stratum] 14:00:44   Winner: examples/demo_deepseek_analysis.py (score=10)
+[stratum] 14:00:44   Runner-up: scripts/test_qianfan_connect.py (score=10)
+[stratum] 14:00:44   Entry point: /tmp/repo/examples/demo_deepseek_analysis.py (score=10)
+[stratum] 14:00:44 Step 6: Configuring PYTHONPATH ...
+[stratum] 14:00:44   Installing package at /tmp/repo
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 14:02:27   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 14:02:27 Step 7: Executing Tier 1 (native) ...
+[stratum] 14:02:27   Attempt 1/5: python demo_deepseek_analysis.py
+[stratum] 14:03:00   Tier 1 result: PARTIAL_SUCCESS (exit_code=1)
+[stratum] 14:03:00 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 14:03:00 Step 9: Writing final output ...
+[stratum] 14:03:00   Final status: PARTIAL_SUCCESS (tier=1, exit_code=1)
+[stratum] 14:03:49 ============================================
+[stratum] 14:03:49   Repo:        https://github.com/Divyansh487/TradingAgents-CN
+[stratum] 14:03:49   Status:      PARTIAL_SUCCESS
+[stratum] 14:03:49   Tier:        1
+[stratum] 14:03:49   Entry:       /tmp/repo/examples/demo_deepseek_analysis.py
+[stratum] 14:03:49   Events:      31
+[stratum] 14:03:49   Duration:    1153s
+[stratum] 14:03:49   Run ID:      c50561011bb846ea
+[stratum] 14:03:49   Framework:   langgraph
+[stratum] 14:03:49   Run Number:  1
+[stratum] 14:03:49 ============================================

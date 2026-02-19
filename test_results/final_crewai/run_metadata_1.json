@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/binbakhsh/QBO-CrewAI",
+  "repo_full_name": "binbakhsh/QBO-CrewAI",
+  "run_number": 1,
+  "run_id": "dc1adf8ada034577",
+  "exit_code": 0,
+  "status": "TIER2_SUCCESS",
+  "tier": 2,
+  "entry_point": "/tmp/repo/app/agents/orchestrator.py",
+  "framework_detected": "crewai",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 11,
+  "timestamp": "2026-02-18T18:42:01.078119+00:00",
+  "timeout_seconds": 600,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

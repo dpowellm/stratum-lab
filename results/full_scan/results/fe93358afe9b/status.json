@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/sanket1105/LangGraph",
+  "status": "PARTIAL_SUCCESS",
+  "exit_code": 1,
+  "entry_point": "/tmp/repo/Agents/Drafter.py",
+  "tier": 1,
+  "event_count": 9,
+  "duration_seconds": 189,
+  "run_id": "ac77aa9e7f9746e4",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "  File \"/tmp/repo/Agents/Drafter.py\", line 148, in run_document_agent\n    for step in app.stream(state, stream_mode=\"values\"):\n  File \"/usr/local/lib/python3.11/site-packages/langgraph/pregel/main.py\", line 2646, in stream\n    for _ in runner.tick(\n  File \"/usr/local/lib/python3.11/site-packages/langgraph/pregel/_runner.py\", line 167, in tick\n    run_with_retry(\n  File \"/usr/local/lib/python3.11/site-packages/langgraph/pregel/_retry.py\", line 42, in run_with_retry\n    return task.proc.invoke(task.input, config)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/langgraph/_internal/_runnable.py\", line 656, in invoke\n    input = context.run(step.invoke, input, config, **kwargs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/langgraph/_internal/_runnable.py\", line 400, in invoke\n    ret = self.func(*args, **kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/repo/Agents/Drafter.py\", line 81, in our_agent\n    user_input = input(\"\\n What changes you would like to make to this document?\")\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nEOFError: EOF when reading a line\nDuring task with name 'agent' and id '6123bf1b-8c35-3e03-524d-dcdfbac1df0b'\n"
+}

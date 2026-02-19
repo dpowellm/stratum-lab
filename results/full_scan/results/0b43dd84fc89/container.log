@@ -1,0 +1,37 @@
+[stratum] 08:36:27 Step 1: Cloning https://github.com/extrawest/multi_agent_workflow_demo_in_langgraph ...
+[stratum] 08:36:28 Phase 0: Scanning defensive patterns...
+[stratum] 08:36:53 Phase 0: Complete
+[stratum] 08:36:53 Step 2: Setting environment variables ...
+[stratum] 08:37:21   RUN_ID=ba18b12865d84284  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 08:37:21 Step 3: Handling .env files ...
+[stratum] 08:37:21   Creating default /tmp/repo/.env
+[stratum] 08:37:21 Step 4: Installing dependencies ...
+[stratum] 08:37:21   Installing /tmp/repo/requirements.txt
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 08:38:41 Step 5: Detecting entry point ...
+[stratum] 08:38:42   Detection reasoning: 3 candidate(s) evaluated
+[stratum] 08:38:42   Winner: scripts/multi_agent_collaboration.py (score=10)
+[stratum] 08:38:42   Runner-up: scripts/hierarchical_agent_teams.py (score=10)
+[stratum] 08:38:42   Entry point: /tmp/repo/scripts/multi_agent_collaboration.py (score=10)
+[stratum] 08:38:42 Step 6: Configuring PYTHONPATH ...
+[stratum] 08:38:42   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 08:38:42 Step 7: Executing Tier 1 (native) ...
+[stratum] 08:38:42   Attempt 1/5: python multi_agent_collaboration.py
+[stratum] 08:39:18   Tier 1 result: SUCCESS (exit_code=0)
+[stratum] 08:39:18 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 08:39:18 Step 9: Writing final output ...
+[stratum] 08:39:18   Final status: SUCCESS (tier=1, exit_code=0)
+[stratum] 08:39:58 ============================================
+[stratum] 08:39:58   Repo:        https://github.com/extrawest/multi_agent_workflow_demo_in_langgraph
+[stratum] 08:39:58   Status:      SUCCESS
+[stratum] 08:39:58   Tier:        1
+[stratum] 08:39:58   Entry:       /tmp/repo/scripts/multi_agent_collaboration.py
+[stratum] 08:39:58   Events:      9
+[stratum] 08:39:58   Duration:    191s
+[stratum] 08:39:58   Run ID:      ba18b12865d84284
+[stratum] 08:39:58   Framework:   langgraph
+[stratum] 08:39:58   Run Number:  1
+[stratum] 08:39:58 ============================================

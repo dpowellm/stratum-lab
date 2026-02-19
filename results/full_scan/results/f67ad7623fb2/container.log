@@ -1,0 +1,35 @@
+[stratum] 05:38:12 Step 1: Cloning https://github.com/RyanWangZf/BioDSA ...
+[stratum] 05:38:14 Phase 0: Scanning defensive patterns...
+[stratum] 05:38:47 Phase 0: Complete
+[stratum] 05:38:47 Step 2: Setting environment variables ...
+[stratum] 05:39:17   RUN_ID=d2d8ee99f5404268  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 05:39:17 Step 3: Handling .env files ...
+[stratum] 05:39:17   Creating /tmp/repo/.env from /tmp/repo/.env.example
+[stratum] 05:39:17 Step 4: Installing dependencies ...
+[stratum] 05:39:17 Step 5: Detecting entry point ...
+[stratum] 05:39:32   Detection reasoning: 31 candidate(s) evaluated
+[stratum] 05:39:32   Winner: biodsa/tool_wrappers/websearch/agentic.py (score=5)
+[stratum] 05:39:32   Runner-up: biodsa/agents/base_agent.py (score=2)
+[stratum] 05:39:32   Entry point: /tmp/repo/biodsa/tool_wrappers/websearch/agentic.py (score=5)
+[stratum] 05:39:32 Step 6: Configuring PYTHONPATH ...
+[stratum] 05:39:32   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 05:39:32 Step 7: Executing Tier 1 (native) ...
+[stratum] 05:39:32   Attempt 1/5: python agentic.py
+[stratum] 05:40:00   Auto-installing: langchain_anthropic -> pip install langchain-anthropic
+[stratum] 05:40:41   Installed langchain-anthropic -- retrying ...
+[stratum] 05:40:41   Attempt 2/5: python agentic.py
+[stratum] 05:41:15   Tier 1 result: PARTIAL_SUCCESS (exit_code=1)
+[stratum] 05:41:15 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 05:41:15 Step 9: Writing final output ...
+[stratum] 05:41:15   Final status: PARTIAL_SUCCESS (tier=1, exit_code=1)
+[stratum] 05:42:22 ============================================
+[stratum] 05:42:22   Repo:        https://github.com/RyanWangZf/BioDSA
+[stratum] 05:42:22   Status:      PARTIAL_SUCCESS
+[stratum] 05:42:22   Tier:        1
+[stratum] 05:42:22   Entry:       /tmp/repo/biodsa/tool_wrappers/websearch/agentic.py
+[stratum] 05:42:22   Events:      14
+[stratum] 05:42:22   Duration:    215s
+[stratum] 05:42:22   Run ID:      d2d8ee99f5404268
+[stratum] 05:42:22   Framework:   langgraph
+[stratum] 05:42:22   Run Number:  1
+[stratum] 05:42:22 ============================================

@@ -1,0 +1,23 @@
+Traceback (most recent call last):
+  File "/tmp/repo/Agents/Drafter.py", line 156, in <module>
+    run_document_agent()
+  File "/tmp/repo/Agents/Drafter.py", line 148, in run_document_agent
+    for step in app.stream(state, stream_mode="values"):
+  File "/usr/local/lib/python3.11/site-packages/langgraph/pregel/main.py", line 2646, in stream
+    for _ in runner.tick(
+  File "/usr/local/lib/python3.11/site-packages/langgraph/pregel/_runner.py", line 167, in tick
+    run_with_retry(
+  File "/usr/local/lib/python3.11/site-packages/langgraph/pregel/_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/langgraph/_internal/_runnable.py", line 656, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/langgraph/_internal/_runnable.py", line 400, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/repo/Agents/Drafter.py", line 81, in our_agent
+    user_input = input("\n What changes you would like to make to this document?")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+EOFError: EOF when reading a line
+During task with name 'agent' and id '6123bf1b-8c35-3e03-524d-dcdfbac1df0b'

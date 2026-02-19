@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/BirenMer/agentic-ai-learning",
+  "repo_full_name": "BirenMer/agentic-ai-learning",
+  "run_number": 1,
+  "run_id": "e2bf0c869c0743be",
+  "exit_code": 0,
+  "status": "SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/multi-agent-architectures/supervisor-agent-with-agent-as-tools/invoke_supervisor_agent.py",
+  "framework_detected": "langgraph",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 26,
+  "timestamp": "2026-02-18T00:54:25.636738+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

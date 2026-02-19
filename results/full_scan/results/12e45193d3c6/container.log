@@ -1,0 +1,47 @@
+[stratum] 22:39:17 Step 1: Cloning https://github.com/yswa-var/LocoForge ...
+[stratum] 22:39:18 Phase 0: Scanning defensive patterns...
+[stratum] 22:39:42 Phase 0: Complete
+[stratum] 22:39:42 Step 2: Setting environment variables ...
+[stratum] 22:40:06   RUN_ID=22a968ef6113403c  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 22:40:06 Step 3: Handling .env files ...
+[stratum] 22:40:06   Creating default /tmp/repo/.env
+[stratum] 22:40:06 Step 4: Installing dependencies ...
+[stratum] 22:40:06   Installing /tmp/repo/nosql_db_ops/requirements.txt
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 22:40:45   Installing /tmp/repo/requirements.txt
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 22:42:08   Installing /tmp/repo/my_agent/requirements.txt
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 22:42:40 Step 5: Detecting entry point ...
+[stratum] 22:42:46   Detection reasoning: 48 candidate(s) evaluated
+[stratum] 22:42:46   Winner: test_langgraph_sql_handling.py (score=10)
+[stratum] 22:42:46   Runner-up: test_sql_agent_langgraph.py (score=10)
+[stratum] 22:42:46   Entry point: /tmp/repo/test_langgraph_sql_handling.py (score=10)
+[stratum] 22:42:46 Step 6: Configuring PYTHONPATH ...
+[stratum] 22:42:46   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 22:42:46 Step 7: Executing Tier 1 (native) ...
+[stratum] 22:42:46   Attempt 1/5: python test_langgraph_sql_handling.py
+[stratum] 22:43:27   Tier 1 result: SUCCESS (exit_code=0)
+[stratum] 22:43:27 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 22:43:27 Step 9: Writing final output ...
+[stratum] 22:43:27   Final status: SUCCESS (tier=1, exit_code=0)
+[stratum] 22:44:13 ============================================
+[stratum] 22:44:13   Repo:        https://github.com/yswa-var/LocoForge
+[stratum] 22:44:13   Status:      SUCCESS
+[stratum] 22:44:13   Tier:        1
+[stratum] 22:44:13   Entry:       /tmp/repo/test_langgraph_sql_handling.py
+[stratum] 22:44:13   Events:      11
+[stratum] 22:44:13   Duration:    272s
+[stratum] 22:44:13   Run ID:      22a968ef6113403c
+[stratum] 22:44:13   Framework:   langgraph
+[stratum] 22:44:13   Run Number:  1
+[stratum] 22:44:13 ============================================

@@ -1,0 +1,68 @@
+[stratum] 18:42:03 Step 1: Cloning https://github.com/DevJadhav/agentic-doc-extraction-system ...
+[stratum] 18:42:05 Phase 0: Scanning defensive patterns...
+[stratum] 18:42:17 Phase 0: Complete
+[stratum] 18:42:17 Step 2: Setting environment variables ...
+[stratum] 18:42:27   RUN_ID=4dff78fe52d94902  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 18:42:27 Step 3: Handling .env files ...
+[stratum] 18:42:27   Creating /tmp/repo/.env from /tmp/repo/.env.example
+[stratum] 18:42:27 Step 4: Installing dependencies ...
+[stratum] 18:42:27   Installing repo package (editable)
+stratum_patcher: patcher.status: 8 ok, 0 skipped — {'generic': 'ok', 'openai': 'ok', 'anthropic': 'ok', 'litellm': 'ok', 'crewai': 'ok', 'langgraph': 'ok', 'autogen': 'ok', 'langchain': 'ok'}
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 18:46:30 Step 5: Detecting entry point ...
+[stratum] 18:46:34   Detection reasoning: 14 candidate(s) evaluated
+[stratum] 18:46:34   Winner: scripts/test_modules.py (score=2)
+[stratum] 18:46:34   Runner-up: scripts/test_syntax.py (score=2)
+[stratum] 18:46:34   Entry point: /tmp/repo/scripts/test_modules.py (score=2)
+[stratum] 18:46:34 Step 6: Configuring PYTHONPATH ...
+[stratum] 18:46:34   Installing package at /tmp/repo
+stratum_patcher: patcher.status: 8 ok, 0 skipped — {'generic': 'ok', 'openai': 'ok', 'anthropic': 'ok', 'litellm': 'ok', 'crewai': 'ok', 'langgraph': 'ok', 'autogen': 'ok', 'langchain': 'ok'}
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 18:47:58   PYTHONPATH=/tmp/repo:/tmp/repo/src:/opt/stratum:
+[stratum] 18:47:58 Step 7: Executing Tier 1 (native) ...
+[stratum] 18:47:58   Attempt 1/5: python test_modules.py
+[stratum] 18:48:19   Auto-installing: src -> pip install src
+[stratum] 18:49:41   Failed to install src -- unresolvable
+[stratum] 18:49:41   Tier 1 result: UNRESOLVABLE_IMPORT (exit_code=1)
+[stratum] 18:49:41 Step 8: Tier 1 failed (UNRESOLVABLE_IMPORT) -- invoking Tier 2 synthetic harness ...
+[stratum] 18:50:47   Tier 2 succeeded! (events captured)
+[stratum] 18:50:47 Step 9: Writing final output ...
+[stratum] 18:50:47   Final status: TIER2_SUCCESS (tier=2, exit_code=0)
+stratum_patcher: langgraph_patch activating
+stratum_patcher: langgraph_patch: CompiledGraph.invoke patched
+stratum_patcher: langgraph_patch: CompiledGraph.stream patched
+stratum_patcher: langgraph_patch: CompiledGraph.ainvoke patched
+stratum_patcher: langgraph_patch: StateGraph.add_node patched
+stratum_patcher: langgraph_patch: StateGraph.add_conditional_edges patched
+stratum_patcher: langgraph_patch activated
+stratum_patcher: autogen_patch: found new API (BaseChatAgent)
+stratum_patcher: autogen_patch activating
+stratum_patcher: autogen_patch: receive FAILED: type object 'BaseChatAgent' has no attribute 'receive'
+stratum_patcher: autogen_patch: BaseChatAgent.on_messages patched (new API)
+stratum_patcher: autogen_patch: BaseChatAgent.on_messages_stream patched (new API)
+stratum_patcher: autogen_patch: AssistantAgent.on_messages_stream patched (new API)
+stratum_patcher: autogen_patch: BaseChatAgent.run patched (new API)
+stratum_patcher: autogen_patch activated
+stratum_patcher: langchain_patch activating
+stratum_patcher: langchain_patch: Chain.invoke patched
+stratum_patcher: langchain_patch: Chain.ainvoke patched
+stratum_patcher: langchain_patch: BaseChatModel._generate patched
+stratum_patcher: langchain_patch activated
+stratum_patcher: patcher.status: 8 ok, 0 skipped — {'generic': 'ok', 'openai': 'ok', 'anthropic': 'ok', 'litellm': 'ok', 'crewai': 'ok', 'langgraph': 'ok', 'autogen': 'ok', 'langchain': 'ok'}
+[stratum] 18:51:27 ============================================
+[stratum] 18:51:27   Repo:        https://github.com/DevJadhav/agentic-doc-extraction-system
+[stratum] 18:51:27   Status:      TIER2_SUCCESS
+[stratum] 18:51:27   Tier:        2
+[stratum] 18:51:27   Entry:       /tmp/repo/scripts/test_modules.py
+[stratum] 18:51:27   Events:      18
+[stratum] 18:51:27   Duration:    544s
+[stratum] 18:51:27   Run ID:      4dff78fe52d94902
+[stratum] 18:51:27   Framework:   langgraph
+[stratum] 18:51:27   Run Number:  1
+[stratum] 18:51:27 ============================================

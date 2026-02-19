@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/gaureshgururaj/crew_newsletter",
+  "status": "PARTIAL_SUCCESS",
+  "exit_code": 1,
+  "entry_point": "/tmp/repo/src/assignment/main.py",
+  "tier": 1,
+  "event_count": 22,
+  "duration_seconds": 1103,
+  "run_id": "286cdce3b8c448a4",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "  File \"/usr/local/lib/python3.11/site-packages/litellm/utils.py\", line 1205, in wrapper\n    result = original_function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/litellm/main.py\", line 3427, in completion\n    raise exception_type(\n          ^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py\", line 2301, in exception_type\n    raise e\n  File \"/usr/local/lib/python3.11/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py\", line 447, in exception_type\n    raise BadRequestError(\nlitellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Cannot set `add_generation_prompt` to True when the last message is from the assistant. Consider using `continue_final_message` instead.\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/tmp/repo/src/assignment/main.py\", line 37, in <module>\n    run()\n  File \"/tmp/repo/src/assignment/main.py\", line 34, in run\n    raise Exception(f\"An error occurred while running the crew: {e}\")\nException: An error occurred while running the crew: litellm.BadRequestError: OpenAIException - Cannot set `add_generation_prompt` to True when the last message is from the assistant. Consider using `continue_final_message` instead.\n"
+}

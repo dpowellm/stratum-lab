@@ -1,0 +1,49 @@
+[stratum] 10:24:01 Step 1: Cloning https://github.com/Spador/CrewAI_Projects ...
+[stratum] 10:24:03 Phase 0: Scanning defensive patterns...
+[stratum] 10:24:26 Phase 0: Complete
+[stratum] 10:24:26 Step 2: Setting environment variables ...
+[stratum] 10:24:49   RUN_ID=7c5029645c1849a7  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 10:24:49 Step 3: Handling .env files ...
+[stratum] 10:24:50   Creating default /tmp/repo/.env
+[stratum] 10:24:50 Step 4: Installing dependencies ...
+[stratum] 10:24:50   Installing /tmp/repo/requirements.txt
+
+note: This error originates from a subprocess, and is likely not a problem with pip.
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 10:26:07   Installing repo package (editable)
+
+note: This error originates from a subprocess, and is likely not a problem with pip.
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 10:27:11 Step 5: Detecting entry point ...
+[stratum] 10:27:12   Detection reasoning: 7 candidate(s) evaluated
+[stratum] 10:27:12   Winner: financial_researcher/src/financial_researcher/main.py (score=5)
+[stratum] 10:27:12   Runner-up: engineering_team/src/engineering_team/main.py (score=5)
+[stratum] 10:27:12   Entry point: /tmp/repo/financial_researcher/src/financial_researcher/main.py (score=5)
+[stratum] 10:27:12 Step 6: Configuring PYTHONPATH ...
+[stratum] 10:27:13   Installing package at /tmp/repo/financial_researcher
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 10:30:22   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 10:30:22 Step 7: Executing Tier 1 (native) ...
+[stratum] 10:30:22   Attempt 1/5: python main.py
+[stratum] 10:31:04   Tier 1 result: PARTIAL_SUCCESS (exit_code=1)
+[stratum] 10:31:04 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 10:31:04 Step 9: Writing final output ...
+[stratum] 10:31:04   Final status: PARTIAL_SUCCESS (tier=1, exit_code=1)
+[stratum] 10:31:53 ============================================
+[stratum] 10:31:53   Repo:        https://github.com/Spador/CrewAI_Projects
+[stratum] 10:31:53   Status:      PARTIAL_SUCCESS
+[stratum] 10:31:53   Tier:        1
+[stratum] 10:31:53   Entry:       /tmp/repo/financial_researcher/src/financial_researcher/main.py
+[stratum] 10:31:53   Events:      34
+[stratum] 10:31:53   Duration:    449s
+[stratum] 10:31:53   Run ID:      7c5029645c1849a7
+[stratum] 10:31:53   Framework:   autogen
+[stratum] 10:31:53   Run Number:  1
+[stratum] 10:31:53 ============================================

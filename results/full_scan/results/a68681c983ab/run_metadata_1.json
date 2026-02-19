@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/gaureshgururaj/crew_newsletter",
+  "repo_full_name": "gaureshgururaj/crew_newsletter",
+  "run_number": 1,
+  "run_id": "286cdce3b8c448a4",
+  "exit_code": 1,
+  "status": "PARTIAL_SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/src/assignment/main.py",
+  "framework_detected": "crewai",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 25,
+  "timestamp": "2026-02-17T07:36:08.048198+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

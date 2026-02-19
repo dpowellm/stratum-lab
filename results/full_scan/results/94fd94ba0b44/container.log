@@ -1,0 +1,37 @@
+[stratum] 21:15:51 Step 1: Cloning https://github.com/HSH-85/langgraph-ai-agent ...
+[stratum] 21:15:52 Phase 0: Scanning defensive patterns...
+[stratum] 21:16:17 Phase 0: Complete
+[stratum] 21:16:17 Step 2: Setting environment variables ...
+[stratum] 21:16:39   RUN_ID=e27bd3e595124e0a  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 21:16:39 Step 3: Handling .env files ...
+[stratum] 21:16:39   Creating default /tmp/repo/.env
+[stratum] 21:16:39 Step 4: Installing dependencies ...
+[stratum] 21:16:39   Installing /tmp/repo/requirements.txt
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 21:17:58 Step 5: Detecting entry point ...
+[stratum] 21:17:59   Detection reasoning: 3 candidate(s) evaluated
+[stratum] 21:17:59   Winner: main.py (score=15)
+[stratum] 21:17:59   Runner-up: compare_versions.py (score=10)
+[stratum] 21:17:59   Entry point: /tmp/repo/main.py (score=15)
+[stratum] 21:17:59 Step 6: Configuring PYTHONPATH ...
+[stratum] 21:17:59   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 21:17:59 Step 7: Executing Tier 1 (native) ...
+[stratum] 21:17:59   Attempt 1/5: python main.py
+[stratum] 21:18:35   Tier 1 result: SUCCESS (exit_code=0)
+[stratum] 21:18:36 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 21:18:36 Step 9: Writing final output ...
+[stratum] 21:18:36   Final status: SUCCESS (tier=1, exit_code=0)
+[stratum] 21:19:28 ============================================
+[stratum] 21:19:28   Repo:        https://github.com/HSH-85/langgraph-ai-agent
+[stratum] 21:19:28   Status:      SUCCESS
+[stratum] 21:19:28   Tier:        1
+[stratum] 21:19:28   Entry:       /tmp/repo/main.py
+[stratum] 21:19:28   Events:      15
+[stratum] 21:19:28   Duration:    196s
+[stratum] 21:19:28   Run ID:      e27bd3e595124e0a
+[stratum] 21:19:28   Framework:   langgraph
+[stratum] 21:19:28   Run Number:  1
+[stratum] 21:19:28 ============================================

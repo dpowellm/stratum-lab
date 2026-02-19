@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/Emarhnuel/Property_gemini",
+  "status": "PARTIAL_SUCCESS",
+  "exit_code": 1,
+  "entry_point": "/tmp/repo/src/real_ai_agents/main.py",
+  "tier": 1,
+  "event_count": 27,
+  "duration_seconds": 1069,
+  "run_id": "f5bad434d0024c9b",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "  File \"/usr/local/lib/python3.11/site-packages/crewai/agents/crew_agent_executor.py\", line 207, in invoke\n    formatted_answer = self._invoke_loop()\n                       ^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/crewai/agents/crew_agent_executor.py\", line 305, in _invoke_loop\n    return self._invoke_loop_native_tools()\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/crewai/agents/crew_agent_executor.py\", line 579, in _invoke_loop_native_tools\n    raise e\n  File \"/usr/local/lib/python3.11/site-packages/crewai/agents/crew_agent_executor.py\", line 480, in _invoke_loop_native_tools\n    formatted_answer = handle_max_iterations_exceeded(\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/crewai/utilities/agent_utils.py\", line 246, in handle_max_iterations_exceeded\n    answer = llm.call(\n             ^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/crewai/llms/providers/bedrock/completion.py\", line 460, in call\n    return self._handle_converse(\n           ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/crewai/llms/providers/bedrock/completion.py\", line 891, in _handle_converse\n    raise ConnectionError(error_msg) from e\nConnectionError: Bedrock connection error: Unable to locate credentials\n"
+}

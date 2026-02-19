@@ -1,0 +1,27 @@
+============================================================
+Agentic Document Extraction - Module Tests
+============================================================
+
+Testing settings module...
+  ✓ AppSettings defaults work
+  ✓ CouncilSettings defaults work
+  ✓ Settings module OK
+
+Testing OCR interface...
+  ✓ BoundingBox works
+  ✓ TextBlock works
+  ✓ TableData works
+  ✓ MockOCRService works
+  ✓ OCR interface OK
+
+Testing consensus engine...
+  ✓ Unanimous consensus works
+  ✓ Conflict resolution works
+  ✓ Result serialization works
+  ✓ Consensus engine OK
+
+Testing document models...
+
+============================================================
+TEST FAILED: No module named 'src.models.database.audit'
+============================================================

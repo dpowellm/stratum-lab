@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/nalbarr/hello-crewai-graphs",
+  "repo_full_name": "nalbarr/hello-crewai-graphs",
+  "run_number": 1,
+  "run_id": "31b5a835354b47b9",
+  "exit_code": 0,
+  "status": "SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/research_write_article.py",
+  "framework_detected": "crewai",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 23,
+  "timestamp": "2026-02-17T03:20:17.592141+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

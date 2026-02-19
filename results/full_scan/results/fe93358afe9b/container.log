@@ -1,0 +1,38 @@
+[stratum] 01:39:25 Step 1: Cloning https://github.com/sanket1105/LangGraph ...
+[stratum] 01:39:27 Phase 0: Scanning defensive patterns...
+[stratum] 01:39:40 Phase 0: Complete
+[stratum] 01:39:40 Step 2: Setting environment variables ...
+[stratum] 01:39:53   RUN_ID=ac77aa9e7f9746e4  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 01:39:53 Step 3: Handling .env files ...
+[stratum] 01:39:53   Creating default /tmp/repo/.env
+[stratum] 01:39:53 Step 4: Installing dependencies ...
+[stratum] 01:39:53   Installing /tmp/repo/requirements.txt
+instructor 1.12.0 requires openai<2.0.0,>=1.70.0, but you have openai 2.21.0 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 01:42:18 Step 5: Detecting entry point ...
+[stratum] 01:42:19   Detection reasoning: 7 candidate(s) evaluated
+[stratum] 01:42:19   Winner: Agents/Drafter.py (score=10)
+[stratum] 01:42:19   Runner-up: Agents/Bot.py (score=7)
+[stratum] 01:42:19   Entry point: /tmp/repo/Agents/Drafter.py (score=10)
+[stratum] 01:42:19 Step 6: Configuring PYTHONPATH ...
+[stratum] 01:42:19   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 01:42:19 Step 7: Executing Tier 1 (native) ...
+[stratum] 01:42:19   Attempt 1/5: python Drafter.py
+[stratum] 01:42:34   Tier 1 result: PARTIAL_SUCCESS (exit_code=1)
+[stratum] 01:42:34 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 01:42:34 Step 9: Writing final output ...
+[stratum] 01:42:34   Final status: PARTIAL_SUCCESS (tier=1, exit_code=1)
+[stratum] 01:43:00 ============================================
+[stratum] 01:43:00   Repo:        https://github.com/sanket1105/LangGraph
+[stratum] 01:43:00   Status:      PARTIAL_SUCCESS
+[stratum] 01:43:00   Tier:        1
+[stratum] 01:43:00   Entry:       /tmp/repo/Agents/Drafter.py
+[stratum] 01:43:00   Events:      12
+[stratum] 01:43:00   Duration:    202s
+[stratum] 01:43:00   Run ID:      ac77aa9e7f9746e4
+[stratum] 01:43:00   Framework:   langgraph
+[stratum] 01:43:00   Run Number:  1
+[stratum] 01:43:00 ============================================

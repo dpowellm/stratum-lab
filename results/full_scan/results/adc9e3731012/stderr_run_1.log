@@ -1,0 +1,124 @@
+ERROR:root:LiteLLM call failed: litellm.NotFoundError: NotFoundError: OpenAIException - The model `ollama/llama3.2` does not exist.
+ERROR:root:LiteLLM call failed: litellm.NotFoundError: NotFoundError: OpenAIException - The model `ollama/llama3.2` does not exist.
+ERROR:root:LiteLLM call failed: litellm.NotFoundError: NotFoundError: OpenAIException - The model `ollama/llama3.2` does not exist.
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/litellm/llms/openai/openai.py", line 844, in completion
+    raise e
+  File "/usr/local/lib/python3.11/site-packages/litellm/llms/openai/openai.py", line 772, in completion
+    ) = self.make_sync_openai_chat_completion_request(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/litellm/litellm_core_utils/logging_utils.py", line 237, in sync_wrapper
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/litellm/llms/openai/openai.py", line 502, in make_sync_openai_chat_completion_request
+    raise e
+  File "/usr/local/lib/python3.11/site-packages/litellm/llms/openai/openai.py", line 477, in make_sync_openai_chat_completion_request
+    raw_response = openai_client.chat.completions.with_raw_response.create(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/openai/_legacy_response.py", line 364, in wrapped
+    return cast(LegacyAPIResponse[R], func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/stratum_patcher/openai_patch.py", line 183, in wrapper
+    return original(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/openai/_utils/_utils.py", line 286, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/openai/resources/chat/completions/completions.py", line 1192, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/openai/_base_client.py", line 1297, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/openai/_base_client.py", line 1070, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.NotFoundError: Error code: 404 - {'error': {'message': 'The model `ollama/llama3.2` does not exist.', 'type': 'NotFoundError', 'param': 'model', 'code': 404}}
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/litellm/main.py", line 2594, in completion
+    raise e
+  File "/usr/local/lib/python3.11/site-packages/litellm/main.py", line 2566, in completion
+    response = openai_chat_completions.completion(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/litellm/llms/openai/openai.py", line 855, in completion
+    raise OpenAIError(
+litellm.llms.openai.common_utils.OpenAIError: Error code: 404 - {'error': {'message': 'The model `ollama/llama3.2` does not exist.', 'type': 'NotFoundError', 'param': 'model', 'code': 404}}
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/repo/multiagent_system/crew.py", line 320, in <module>
+    main()
+  File "/tmp/repo/multiagent_system/crew.py", line 308, in main
+    result = crew.run()
+             ^^^^^^^^^^
+  File "/tmp/repo/multiagent_system/crew.py", line 237, in run
+    result = crew.kickoff()
+             ^^^^^^^^^^^^^^
+  File "/opt/stratum_patcher/crewai_patch.py", line 77, in wrapper
+    result = original(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/crew.py", line 553, in kickoff
+    result = self._run_sequential_process()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/crew.py", line 660, in _run_sequential_process
+    return self._execute_tasks(self.tasks)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/crew.py", line 758, in _execute_tasks
+    task_output = task.execute_sync(
+                  ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/task.py", line 192, in execute_sync
+    return self._execute_core(agent, context, tools)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/task.py", line 250, in _execute_core
+    result = agent.execute_task(
+             ^^^^^^^^^^^^^^^^^^^
+  File "/opt/stratum_patcher/crewai_patch.py", line 159, in wrapper
+    result = original(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/agent.py", line 357, in execute_task
+    result = self.execute_task(task, context, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/stratum_patcher/crewai_patch.py", line 159, in wrapper
+    result = original(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/agent.py", line 357, in execute_task
+    result = self.execute_task(task, context, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/stratum_patcher/crewai_patch.py", line 159, in wrapper
+    result = original(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/agent.py", line 356, in execute_task
+    raise e
+  File "/usr/local/lib/python3.11/site-packages/crewai/agent.py", line 345, in execute_task
+    result = self.agent_executor.invoke(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/agents/crew_agent_executor.py", line 102, in invoke
+    formatted_answer = self._invoke_loop()
+                       ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/agents/crew_agent_executor.py", line 193, in _invoke_loop
+    raise e
+  File "/usr/local/lib/python3.11/site-packages/crewai/agents/crew_agent_executor.py", line 115, in _invoke_loop
+    answer = self.llm.call(
+             ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/llm.py", line 164, in call
+    response = litellm.completion(**params)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/stratum_patcher/litellm_patch.py", line 97, in wrapper
+    result = original(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/litellm/utils.py", line 1748, in wrapper
+    raise e
+  File "/usr/local/lib/python3.11/site-packages/litellm/utils.py", line 1569, in wrapper
+    result = original_function(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/litellm/main.py", line 4305, in completion
+    raise exception_type(
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2398, in exception_type
+    raise e
+  File "/usr/local/lib/python3.11/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 525, in exception_type
+    raise NotFoundError(
+litellm.exceptions.NotFoundError: litellm.NotFoundError: NotFoundError: OpenAIException - The model `ollama/llama3.2` does not exist.

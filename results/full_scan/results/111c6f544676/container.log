@@ -1,0 +1,50 @@
+[stratum] 22:21:16 Step 1: Cloning https://github.com/ashharr/CrewAI-Implementation ...
+[stratum] 22:21:17 Phase 0: Scanning defensive patterns...
+[stratum] 22:21:41 Phase 0: Complete
+[stratum] 22:21:41 Step 2: Setting environment variables ...
+[stratum] 22:22:03   RUN_ID=e5e81bcb104b4581  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 22:22:03 Step 3: Handling .env files ...
+[stratum] 22:22:03   Creating /tmp/repo/.env from /tmp/repo/.env.example
+[stratum] 22:22:03 Step 4: Installing dependencies ...
+[stratum] 22:22:03   Installing /tmp/repo/requirements.txt
+litellm 1.81.13 requires openai>=2.8.0, but you have openai 1.83.0 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 22:23:33   Installing repo package (editable)
+note: This is an issue with the package mentioned above, not pip.
+hint: See above for details.
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 22:24:39 Step 5: Detecting entry point ...
+[stratum] 22:24:41   Detection reasoning: 9 candidate(s) evaluated
+[stratum] 22:24:41   Winner: src/workflows/official/content_creation/content_creation_crew.py (score=5)
+[stratum] 22:24:41   Runner-up: scripts/start_dev.py (score=2)
+[stratum] 22:24:41   Entry point: /tmp/repo/src/workflows/official/content_creation/content_creation_crew.py (score=5)
+[stratum] 22:24:41 Step 6: Configuring PYTHONPATH ...
+[stratum] 22:24:41   Installing package at /tmp/repo
+note: This is an issue with the package mentioned above, not pip.
+hint: See above for details.
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 22:25:33   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 22:25:33 Step 7: Executing Tier 1 (native) ...
+[stratum] 22:25:33   Attempt 1/5: python content_creation_crew.py
+[stratum] 22:27:16   Tier 1 result: SUCCESS (exit_code=0)
+[stratum] 22:27:16 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 22:27:16 Step 9: Writing final output ...
+[stratum] 22:27:16   Final status: SUCCESS (tier=1, exit_code=0)
+[stratum] 22:28:00 ============================================
+[stratum] 22:28:00   Repo:        https://github.com/ashharr/CrewAI-Implementation
+[stratum] 22:28:00   Status:      SUCCESS
+[stratum] 22:28:00   Tier:        1
+[stratum] 22:28:00   Entry:       /tmp/repo/src/workflows/official/content_creation/content_creation_crew.py
+[stratum] 22:28:00   Events:      26
+[stratum] 22:28:00   Duration:    383s
+[stratum] 22:28:00   Run ID:      e5e81bcb104b4581
+[stratum] 22:28:00   Framework:   crewai
+[stratum] 22:28:00   Run Number:  1
+[stratum] 22:28:00 ============================================

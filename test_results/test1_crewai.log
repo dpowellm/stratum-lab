@@ -1,0 +1,38 @@
+[stratum] 04:37:22 Step 1: Cloning https://github.com/binbakhsh/QBO-CrewAI ...
+[stratum] 04:37:22 Phase 0: Scanning defensive patterns...
+[stratum] 04:37:32 Phase 0: Complete
+[stratum] 04:37:32 Step 2: Setting environment variables ...
+[stratum] 04:37:42   RUN_ID=b992b90a8f174f11  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 04:37:42 Step 3: Handling .env files ...
+[stratum] 04:37:42   Creating /tmp/repo/.env from /tmp/repo/.env.example
+[stratum] 04:37:42 Step 4: Installing dependencies ...
+[stratum] 04:37:42   Installing /tmp/repo/requirements.txt
+litellm 1.81.13 requires openai>=2.8.0, but you have openai 1.83.0 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 04:38:33 Step 5: Detecting entry point ...
+[stratum] 04:38:34   Detection reasoning: 3 candidate(s) evaluated
+[stratum] 04:38:34   Winner: app/agents/orchestrator.py (score=7)
+[stratum] 04:38:34   Runner-up: setup_oauth.py (score=2)
+[stratum] 04:38:34   Entry point: /tmp/repo/app/agents/orchestrator.py (score=7)
+[stratum] 04:38:34 Step 6: Configuring PYTHONPATH ...
+[stratum] 04:38:34   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 04:38:34 Step 7: Executing Tier 1 (native) ...
+[stratum] 04:38:34   Attempt 1/5: python orchestrator.py
+[stratum] 04:38:44   Tier 1 result: SUCCESS (exit_code=0)
+[stratum] 04:38:44 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 04:38:44 Step 9: Writing final output ...
+[stratum] 04:38:44   Final status: SUCCESS (tier=1, exit_code=0)
+[stratum] 04:39:04 ============================================
+[stratum] 04:39:04   Repo:        https://github.com/binbakhsh/QBO-CrewAI
+[stratum] 04:39:04   Status:      SUCCESS
+[stratum] 04:39:04   Tier:        1
+[stratum] 04:39:04   Entry:       /tmp/repo/app/agents/orchestrator.py
+[stratum] 04:39:04   Events:      6
+[stratum] 04:39:04   Duration:    92s
+[stratum] 04:39:04   Run ID:      b992b90a8f174f11
+[stratum] 04:39:04   Framework:   crewai
+[stratum] 04:39:04   Run Number:  1
+[stratum] 04:39:04 ============================================

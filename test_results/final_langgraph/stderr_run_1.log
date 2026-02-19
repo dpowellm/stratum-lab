@@ -1,0 +1,35 @@
+stratum_patcher: langgraph_patch activating
+stratum_patcher: langgraph_patch: CompiledGraph.invoke patched
+stratum_patcher: langgraph_patch: CompiledGraph.stream patched
+stratum_patcher: langgraph_patch: CompiledGraph.ainvoke patched
+stratum_patcher: langgraph_patch: StateGraph.add_node patched
+stratum_patcher: langgraph_patch: StateGraph.add_conditional_edges patched
+stratum_patcher: langgraph_patch activated
+stratum_patcher: autogen_patch: found new API (BaseChatAgent)
+stratum_patcher: autogen_patch activating
+stratum_patcher: autogen_patch: receive FAILED: type object 'BaseChatAgent' has no attribute 'receive'
+stratum_patcher: autogen_patch: BaseChatAgent.on_messages patched (new API)
+stratum_patcher: autogen_patch: BaseChatAgent.on_messages_stream patched (new API)
+stratum_patcher: autogen_patch: AssistantAgent.on_messages_stream patched (new API)
+stratum_patcher: autogen_patch: BaseChatAgent.run patched (new API)
+stratum_patcher: autogen_patch activated
+stratum_patcher: langchain_patch activating
+stratum_patcher: langchain_patch: Chain.invoke patched
+stratum_patcher: langchain_patch: Chain.ainvoke patched
+stratum_patcher: langchain_patch: BaseChatModel._generate patched
+stratum_patcher: langchain_patch activated
+stratum_patcher: patcher.status: 8 ok, 0 skipped — {'generic': 'ok', 'openai': 'ok', 'anthropic': 'ok', 'litellm': 'ok', 'crewai': 'ok', 'langgraph': 'ok', 'autogen': 'ok', 'langchain': 'ok'}
+Traceback (most recent call last):
+  File "/tmp/repo/scripts/test_modules.py", line 198, in main
+    test_document_models()
+  File "/tmp/repo/scripts/test_modules.py", line 155, in test_document_models
+    from src.api.routes.documents import (
+  File "/tmp/repo/src/api/routes/__init__.py", line 3, in <module>
+    from src.api.routes.council import router as council_router
+  File "/tmp/repo/src/api/routes/council.py", line 20, in <module>
+    from src.models.database.base import get_session
+  File "/tmp/repo/src/models/__init__.py", line 3, in <module>
+    from src.models.database.base import Base
+  File "/tmp/repo/src/models/database/__init__.py", line 3, in <module>
+    from src.models.database.audit import AuditLog, HITLReviewItem
+ModuleNotFoundError: No module named 'src.models.database.audit'

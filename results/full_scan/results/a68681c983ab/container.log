@@ -1,0 +1,43 @@
+[stratum] 07:16:48 Step 1: Cloning https://github.com/gaureshgururaj/crew_newsletter ...
+[stratum] 07:16:49 Phase 0: Scanning defensive patterns...
+[stratum] 07:17:15 Phase 0: Complete
+[stratum] 07:17:15 Step 2: Setting environment variables ...
+[stratum] 07:17:37   RUN_ID=286cdce3b8c448a4  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 07:17:37 Step 3: Handling .env files ...
+[stratum] 07:17:37   Creating default /tmp/repo/.env
+[stratum] 07:17:37 Step 4: Installing dependencies ...
+[stratum] 07:17:37   Installing repo package (editable)
+typer-slim 0.24.0 requires typer>=0.24.0, but you have typer 0.21.2 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 07:32:03 Step 5: Detecting entry point ...
+[stratum] 07:32:03   Detection reasoning: 2 candidate(s) evaluated
+[stratum] 07:32:03   Winner: src/assignment/main.py (score=13)
+[stratum] 07:32:03   Runner-up: src/assignment/ui.py (score=7)
+[stratum] 07:32:03   Entry point: /tmp/repo/src/assignment/main.py (score=13)
+[stratum] 07:32:03 Step 6: Configuring PYTHONPATH ...
+[stratum] 07:32:03   Installing package at /tmp/repo
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 07:34:32   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 07:34:32 Step 7: Executing Tier 1 (native) ...
+[stratum] 07:34:32   Attempt 1/5: python main.py
+[stratum] 07:35:11   Tier 1 result: PARTIAL_SUCCESS (exit_code=1)
+[stratum] 07:35:11 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 07:35:11 Step 9: Writing final output ...
+[stratum] 07:35:11   Final status: PARTIAL_SUCCESS (tier=1, exit_code=1)
+[stratum] 07:36:12 ============================================
+[stratum] 07:36:12   Repo:        https://github.com/gaureshgururaj/crew_newsletter
+[stratum] 07:36:12   Status:      PARTIAL_SUCCESS
+[stratum] 07:36:12   Tier:        1
+[stratum] 07:36:12   Entry:       /tmp/repo/src/assignment/main.py
+[stratum] 07:36:12   Events:      25
+[stratum] 07:36:12   Duration:    1132s
+[stratum] 07:36:12   Run ID:      286cdce3b8c448a4
+[stratum] 07:36:12   Framework:   crewai
+[stratum] 07:36:12   Run Number:  1
+[stratum] 07:36:12 ============================================

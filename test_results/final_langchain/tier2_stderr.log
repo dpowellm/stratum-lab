@@ -1,0 +1,59 @@
+stratum_patcher: langgraph_patch activating
+stratum_patcher: langgraph_patch: CompiledGraph.invoke patched
+stratum_patcher: langgraph_patch: CompiledGraph.stream patched
+stratum_patcher: langgraph_patch: CompiledGraph.ainvoke patched
+stratum_patcher: langgraph_patch: StateGraph.add_node patched
+stratum_patcher: langgraph_patch: Graph.add_node patched
+stratum_patcher: langgraph_patch: StateGraph.add_conditional_edges patched
+stratum_patcher: langgraph_patch activated
+stratum_patcher: autogen_patch: found new API (BaseChatAgent)
+stratum_patcher: autogen_patch activating
+stratum_patcher: autogen_patch: receive FAILED: type object 'BaseChatAgent' has no attribute 'receive'
+stratum_patcher: autogen_patch: BaseChatAgent.on_messages patched (new API)
+stratum_patcher: autogen_patch: BaseChatAgent.on_messages_stream patched (new API)
+stratum_patcher: autogen_patch: AssistantAgent.on_messages_stream patched (new API)
+stratum_patcher: autogen_patch: BaseChatAgent.run patched (new API)
+stratum_patcher: autogen_patch activated
+stratum_patcher: langchain_patch activating
+stratum_patcher: langchain_patch: Chain.invoke patched
+stratum_patcher: langchain_patch: Chain.ainvoke patched
+stratum_patcher: langchain_patch: BaseChatModel._generate patched
+stratum_patcher: langchain_patch activated
+stratum_patcher: patcher.status: 8 ok, 0 skipped — {'generic': 'ok', 'openai': 'ok', 'anthropic': 'ok', 'litellm': 'ok', 'crewai': 'ok', 'langgraph': 'ok', 'autogen': 'ok', 'langchain': 'ok'}
+[synthetic] Scanning /tmp/repo for framework patterns...
+[synthetic] Detected: {'crewai': 3, 'langgraph': 17, 'openai': 2} -- using langgraph
+[synthetic] Selected variant: branching (for langgraph)
+[synthetic] Extracted 10 graph nodes: ['market_research', 'investment_analysis', 'chatbot', 'firecrawl_search', 'portfolio_optimization', 'execution_planning', 'validation', 'final_output', 'fetch_articles', 'fetch_arxives']
+[synthetic] Generated script has syntax error: unexpected indent (<synthetic>, line 5)
+[synthetic] Falling back to minimal script
+[synthetic] Generated /tmp/synthetic_run.py (1155 bytes)
+[synthetic] Script preview:
+import os
+os.environ["OPENAI_BASE_URL"] = 'https://aishvbx8prhm6k-8000.proxy.runpod.net/v1'
+os.environ["OPENAI_API_KEY"] = 'sk-placeholder'
+os.environ["STRATUM_REPO_ROOT"] = '/tmp/repo'
+from langgraph.graph import StateGraph, START, END
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage, SystemMessage
+llm = ChatOpenAI(model='mistralai/Mistral-7B-Instruct-v0.3', base_url='https://aishvbx8prhm6k-8000.proxy.runpod.net/v1', api_key='sk-placeholder')
+def node_a(s...
+[synthetic] Exit code: 0
+[synthetic] stdout: Graph completed (fallback): ['input', 'a_out', 'b_out']
+
+[synthetic] stderr: stratum_patcher: langgraph_patch activating
+stratum_patcher: langgraph_patch: CompiledGraph.invoke patched
+stratum_patcher: langgraph_patch: CompiledGraph.stream patched
+stratum_patcher: langgraph_patch: CompiledGraph.ainvoke patched
+stratum_patcher: langgraph_patch: StateGraph.add_node patched
+stratum_patcher: langgraph_patch: Graph.add_node patched
+stratum_patcher: langgraph_patch: StateGraph.add_conditional_edges patched
+stratum_patcher: langgraph_patch activated
+stratum_patcher: autogen_patch: found new API (BaseChatAgent)
+stratum_patcher: autogen_patch activating
+stratum_patcher: autogen_patch: receive FAILED: type object 'BaseChatAgent' has no attribute 'receive'
+stratum_patcher: autogen_patch: BaseChatAgent.on_messages patched (new API)
+stratum_patcher: autogen_patch: BaseChatAgent.on_messages_stream patched (new API)
+stratum_patcher: autogen_patch: AssistantAgent.on_messages_stream patched (new API)
+stratum_patcher: autogen_patch: BaseChatAgent.run patched (new API)
+stratum_pat
+[synthetic] Captured 25 events

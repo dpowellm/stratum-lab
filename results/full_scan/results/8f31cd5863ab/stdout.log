@@ -1,0 +1,96 @@
+
+========== INITIALIZING qwen2.5:3b ==========
+
+✓ Initialized qwen2.5:3b with tool support
+
+========== INITIALIZING neural-chat:7b ==========
+
+ℹ Initialized neural-chat:7b in prompt-only mode (no tool support)
+
+========== INITIALIZING mistral:7b-instruct ==========
+
+ℹ Initialized mistral:7b-instruct in prompt-only mode (no tool support)
+
+========== INITIALIZING llama2:7b ==========
+
+ℹ Initialized llama2:7b in prompt-only mode (no tool support)
+
+========== RUN qwen2.5:3b ==========
+
+
+========== qwen2.5:3b :: TRANSCRIPT ==========
+
+✗ qwen2.5:3b failed: APIConnectionError: Connection error.
+
+========== RUN neural-chat:7b ==========
+
+✗ neural-chat:7b failed: APIConnectionError: Connection error.
+
+========== RUN mistral:7b-instruct ==========
+
+✗ mistral:7b-instruct failed: APIConnectionError: Connection error.
+
+========== RUN llama2:7b ==========
+
+✗ llama2:7b failed: APIConnectionError: Connection error.
+
+========== EXPERIMENT SUMMARY ==========
+
+Success rate: 0/4 models (0.0%)
+
+========== PER-MODEL RESULTS ==========
+
+{
+  "qwen2.5:3b": {
+    "decision_json": null,
+    "latency_sec": 2.14,
+    "error": "APIConnectionError: Connection error.",
+    "transcript_len": 0,
+    "success": false,
+    "used_tools": false
+  },
+  "neural-chat:7b": {
+    "decision_json": null,
+    "latency_sec": 1.238,
+    "error": "APIConnectionError: Connection error.",
+    "transcript_len": 0,
+    "success": false,
+    "used_tools": false
+  },
+  "mistral:7b-instruct": {
+    "decision_json": null,
+    "latency_sec": 1.41,
+    "error": "APIConnectionError: Connection error.",
+    "transcript_len": 0,
+    "success": false,
+    "used_tools": false
+  },
+  "llama2:7b": {
+    "decision_json": null,
+    "latency_sec": 1.352,
+    "error": "APIConnectionError: Connection error.",
+    "transcript_len": 0,
+    "success": false,
+    "used_tools": false
+  }
+}
+
+========== BEST MODEL (scored) ==========
+
+Scores: {
+  "qwen2.5:3b": 0.0,
+  "neural-chat:7b": 0.2,
+  "mistral:7b-instruct": 0.1619,
+  "llama2:7b": 0.1747
+}
+Selected best model for production: neural-chat:7b
+
+========== JUDGE VERDICT (raw) ==========
+
+{"winner_model": "qwen2.5:3b", "reasoning": "Judge evaluation failed: Connection error.", "per_model_notes": {}, "rankings": ["qwen2.5:3b", "neural-chat:7b", "mistral:7b-instruct", "llama2:7b"], "pick": "Unable to complete evaluation due to error"}
+
+========== SUMMARY ==========
+
+Winner: qwen2.5:3b
+Pick:   Unable to complete evaluation due to error
+Why:    Judge evaluation failed: Connection error.

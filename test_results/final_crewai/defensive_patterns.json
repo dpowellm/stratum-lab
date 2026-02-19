@@ -1,0 +1,1122 @@
+{
+  "repo_full_name": "repo",
+  "scan_version": "1.0",
+  "scan_timestamp": "2026-02-18T18:39:53Z",
+  "files_scanned": 21,
+  "files_skipped": 0,
+  "total_patterns_found": 79,
+  "delegation_boundaries_found": 1,
+  "patterns": [
+    {
+      "file_path": "setup_oauth.py",
+      "line_number": 182,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": false,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/sheets_api.py",
+      "line_number": 63,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": false,
+        "has_reraise": true,
+        "except_body_lines": 1
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/sheets_api.py",
+      "line_number": 90,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "HttpError"
+        ],
+        "has_logging": false,
+        "has_fallback": false,
+        "has_reraise": true,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": true
+    },
+    {
+      "file_path": "app/tools/sheets_api.py",
+      "line_number": 139,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "HttpError"
+        ],
+        "has_logging": false,
+        "has_fallback": false,
+        "has_reraise": true,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": true
+    },
+    {
+      "file_path": "app/tools/sheets_api.py",
+      "line_number": 193,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "HttpError"
+        ],
+        "has_logging": false,
+        "has_fallback": false,
+        "has_reraise": true,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/sheets_api.py",
+      "line_number": 226,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "HttpError"
+        ],
+        "has_logging": false,
+        "has_fallback": false,
+        "has_reraise": true,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": true
+    },
+    {
+      "file_path": "app/tools/sheets_api.py",
+      "line_number": 274,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/sheets_api.py",
+      "line_number": 266,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "ValueError"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 1
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/sheets_api.py",
+      "line_number": 327,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/sheets_api.py",
+      "line_number": 374,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/sheets_api.py",
+      "line_number": 426,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": true
+    },
+    {
+      "file_path": "app/tools/sheets_api.py",
+      "line_number": 435,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "HttpError"
+        ],
+        "has_logging": false,
+        "has_fallback": false,
+        "has_reraise": true,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": true
+    },
+    {
+      "file_path": "app/tools/sheets_api.py",
+      "line_number": 268,
+      "pattern_category": "input_sanitization",
+      "pattern_detail": {
+        "mechanism": "strip",
+        "target_variable": "",
+        "from_external_source": false
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/telemetry.py",
+      "line_number": 242,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": true,
+        "except_body_lines": 3
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/telemetry.py",
+      "line_number": 288,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": true,
+        "except_body_lines": 11
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/telemetry.py",
+      "line_number": 304,
+      "pattern_category": "input_sanitization",
+      "pattern_detail": {
+        "mechanism": "sanitize_reference",
+        "target_variable": "",
+        "from_external_source": false
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/telemetry.py",
+      "line_number": 322,
+      "pattern_category": "input_sanitization",
+      "pattern_detail": {
+        "mechanism": "sanitize_reference",
+        "target_variable": "",
+        "from_external_source": true
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/telemetry.py",
+      "line_number": 337,
+      "pattern_category": "input_sanitization",
+      "pattern_detail": {
+        "mechanism": "sanitize_reference",
+        "target_variable": "",
+        "from_external_source": true
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/validation.py",
+      "line_number": 21,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "ValidationIssue"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/validation.py",
+      "line_number": 29,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "ValidationResult"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/validation.py",
+      "line_number": 149,
+      "pattern_category": "input_sanitization",
+      "pattern_detail": {
+        "mechanism": "type_check",
+        "target_variable": "",
+        "from_external_source": false
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/validation.py",
+      "line_number": 198,
+      "pattern_category": "input_sanitization",
+      "pattern_detail": {
+        "mechanism": "type_check",
+        "target_variable": "",
+        "from_external_source": false
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/validation.py",
+      "line_number": 365,
+      "pattern_category": "input_sanitization",
+      "pattern_detail": {
+        "mechanism": "type_check",
+        "target_variable": "",
+        "from_external_source": false
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/util.py",
+      "line_number": 189,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "retry_on"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": true,
+        "except_body_lines": 13
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/util.py",
+      "line_number": 133,
+      "pattern_category": "rate_limiting_backoff",
+      "pattern_detail": {
+        "mechanism": "exponential_backoff",
+        "has_exponential": true,
+        "near_api_call": false
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/util.py",
+      "line_number": 168,
+      "pattern_category": "rate_limiting_backoff",
+      "pattern_detail": {
+        "mechanism": "backoff_decorator",
+        "has_exponential": true,
+        "near_api_call": false
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/util.py",
+      "line_number": 193,
+      "pattern_category": "rate_limiting_backoff",
+      "pattern_detail": {
+        "mechanism": "exponential_backoff",
+        "has_exponential": true,
+        "near_api_call": false
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/util.py",
+      "line_number": 203,
+      "pattern_category": "rate_limiting_backoff",
+      "pattern_detail": {
+        "mechanism": "sleep",
+        "has_exponential": false,
+        "near_api_call": false
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/qbo_api.py",
+      "line_number": 93,
+      "pattern_category": "timeout_iteration_guards",
+      "pattern_detail": {
+        "parameter": "timeout",
+        "value": 30,
+        "value_assessment": "effective"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/qbo_api.py",
+      "line_number": 144,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "httpx.HTTPStatusError"
+        ],
+        "has_logging": false,
+        "has_fallback": false,
+        "has_reraise": true,
+        "except_body_lines": 6
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/qbo_api.py",
+      "line_number": 151,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": false,
+        "has_reraise": true,
+        "except_body_lines": 5
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/qbo_api.py",
+      "line_number": 226,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "httpx.HTTPStatusError"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": true,
+        "except_body_lines": 13
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/qbo_api.py",
+      "line_number": 241,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "httpx.RequestError"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": true,
+        "except_body_lines": 10
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/qbo_api.py",
+      "line_number": 444,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "QBOException"
+        ],
+        "has_logging": false,
+        "has_fallback": false,
+        "has_reraise": false,
+        "except_body_lines": 3
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/qbo_api.py",
+      "line_number": 36,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "TokenResponse"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/qbo_api.py",
+      "line_number": 216,
+      "pattern_category": "rate_limiting_backoff",
+      "pattern_detail": {
+        "mechanism": "sleep",
+        "has_exponential": false,
+        "near_api_call": false
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/qbo_api.py",
+      "line_number": 231,
+      "pattern_category": "rate_limiting_backoff",
+      "pattern_detail": {
+        "mechanism": "sleep",
+        "has_exponential": false,
+        "near_api_call": true
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tools/qbo_api.py",
+      "line_number": 245,
+      "pattern_category": "rate_limiting_backoff",
+      "pattern_detail": {
+        "mechanism": "sleep",
+        "has_exponential": false,
+        "near_api_call": true
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/processing_agent.py",
+      "line_number": 90,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 5
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/processing_agent.py",
+      "line_number": 186,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "(ValueError",
+          "TypeError)"
+        ],
+        "has_logging": false,
+        "has_fallback": false,
+        "has_reraise": false,
+        "except_body_lines": 1
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/processing_agent.py",
+      "line_number": 271,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 5
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/processing_agent.py",
+      "line_number": 330,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 5
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/processing_agent.py",
+      "line_number": 19,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "AggregateDataInput"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/processing_agent.py",
+      "line_number": 24,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "ValidateDataInput"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/processing_agent.py",
+      "line_number": 30,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "FormatForSheetsInput"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/sheets_agent.py",
+      "line_number": 106,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 5
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/sheets_agent.py",
+      "line_number": 87,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": false,
+        "has_reraise": false,
+        "except_body_lines": 1
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/sheets_agent.py",
+      "line_number": 150,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 5
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/sheets_agent.py",
+      "line_number": 202,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 6
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/sheets_agent.py",
+      "line_number": 244,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 5
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/sheets_agent.py",
+      "line_number": 18,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "WriteToSheetsInput"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/sheets_agent.py",
+      "line_number": 24,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "ClearSheetInput"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/sheets_agent.py",
+      "line_number": 29,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "VerifyWriteInput"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/qbo_agent.py",
+      "line_number": 87,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 5
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/qbo_agent.py",
+      "line_number": 131,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 5
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/qbo_agent.py",
+      "line_number": 175,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 5
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/qbo_agent.py",
+      "line_number": 219,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 5
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/qbo_agent.py",
+      "line_number": 270,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 5
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/qbo_agent.py",
+      "line_number": 18,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "ExtractPnLInput"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/qbo_agent.py",
+      "line_number": 24,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "ExtractBalanceSheetInput"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/qbo_agent.py",
+      "line_number": 29,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "ExtractARAgingInput"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/qbo_agent.py",
+      "line_number": 34,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "ExtractAPAgingInput"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/qbo_agent.py",
+      "line_number": 39,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "ExtractCDCInput"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/orchestrator.py",
+      "line_number": 123,
+      "pattern_category": "timeout_iteration_guards",
+      "pattern_detail": {
+        "parameter": "max_rpm",
+        "value": 10,
+        "value_assessment": "effective"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/agents/orchestrator.py",
+      "line_number": 161,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 8
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/server/signature.py",
+      "line_number": 67,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/server/signature.py",
+      "line_number": 91,
+      "pattern_category": "input_sanitization",
+      "pattern_detail": {
+        "mechanism": "strip",
+        "target_variable": "",
+        "from_external_source": true
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/server/signature.py",
+      "line_number": 94,
+      "pattern_category": "input_sanitization",
+      "pattern_detail": {
+        "mechanism": "strip",
+        "target_variable": "",
+        "from_external_source": false
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/server/queue.py",
+      "line_number": 120,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 4
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/server/queue.py",
+      "line_number": 177,
+      "pattern_category": "concurrency_controls",
+      "pattern_detail": {
+        "control_type": "queue",
+        "near_shared_state": false
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/server/main.py",
+      "line_number": 109,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": true,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/server/main.py",
+      "line_number": 178,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "HTTPException"
+        ],
+        "has_logging": false,
+        "has_fallback": false,
+        "has_reraise": true,
+        "except_body_lines": 1
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/server/main.py",
+      "line_number": 180,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": true,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/server/main.py",
+      "line_number": 297,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 5
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/server/main.py",
+      "line_number": 33,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "RunWorkflowRequest"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/server/main.py",
+      "line_number": 42,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "WebhookEvent"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tests/test_qbo_api.py",
+      "line_number": 105,
+      "pattern_category": "rate_limiting_backoff",
+      "pattern_detail": {
+        "mechanism": "rate_limit_reference",
+        "has_exponential": false,
+        "near_api_call": true
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tests/test_qbo_api.py",
+      "line_number": 119,
+      "pattern_category": "rate_limiting_backoff",
+      "pattern_detail": {
+        "mechanism": "rate_limit_reference",
+        "has_exponential": false,
+        "near_api_call": false
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tests/test_qbo_api.py",
+      "line_number": 122,
+      "pattern_category": "rate_limiting_backoff",
+      "pattern_detail": {
+        "mechanism": "rate_limit_reference",
+        "has_exponential": false,
+        "near_api_call": true
+      },
+      "near_delegation_boundary": false
+    }
+  ],
+  "summary": {
+    "timeout_iteration_guards": {
+      "count": 2,
+      "near_boundary_count": 0,
+      "effective_count": 2
+    },
+    "exception_handling_topology": {
+      "count": 41,
+      "near_boundary_count": 5,
+      "bare_except_count": 0,
+      "has_logging_count": 2
+    },
+    "output_validation": {
+      "count": 16,
+      "at_boundary_count": 0,
+      "pydantic_count": 16,
+      "typed_dict_count": 0
+    },
+    "concurrency_controls": {
+      "count": 1,
+      "near_shared_state_count": 0
+    },
+    "rate_limiting_backoff": {
+      "count": 10,
+      "has_exponential_count": 3
+    },
+    "input_sanitization": {
+      "count": 9,
+      "from_external_count": 3
+    },
+    "prompt_constraints": {
+      "count": 0,
+      "role_boundary_count": 0,
+      "prohibition_count": 0,
+      "uncertainty_instruction_count": 0
+    }
+  }
+}

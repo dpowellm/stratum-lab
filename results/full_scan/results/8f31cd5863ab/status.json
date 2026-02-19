@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/parasmahajan31/ClaimAdjudicationAgenticAI",
+  "status": "SUCCESS",
+  "exit_code": 0,
+  "entry_point": "/tmp/repo/test_local.py",
+  "tier": 1,
+  "event_count": 14,
+  "duration_seconds": 271,
+  "run_id": "890c4132719443ee",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": ""
+}

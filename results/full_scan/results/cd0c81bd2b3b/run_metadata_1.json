@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/abhihyder/langgraph-multi-agent-system",
+  "repo_full_name": "abhihyder/langgraph-multi-agent-system",
+  "run_number": 1,
+  "run_id": "2f551d8e3a1e48af",
+  "exit_code": 0,
+  "status": "SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/scripts/test_llm_config.py",
+  "framework_detected": "langgraph",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 10,
+  "timestamp": "2026-02-17T15:59:55.441177+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

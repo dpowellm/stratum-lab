@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/rosidotidev/SynDAI",
+  "status": "PARTIAL_SUCCESS",
+  "exit_code": 1,
+  "entry_point": "/tmp/repo/main_sd_with_ref_data_crew.py",
+  "tier": 1,
+  "event_count": 13,
+  "duration_seconds": 172,
+  "run_id": "cc5b5873962a4da7",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "    raise e  # Re-raise the exception after emitting the event\n    ^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/crewai/task.py\", line 678, in _execute_core\n    pydantic_output, json_output = self._export_output(result)\n                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/crewai/task.py\", line 968, in _export_output\n    model_output = convert_to_model(\n                   ^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/crewai/utilities/converter.py\", line 193, in convert_to_model\n    return handle_partial_json(\n           ^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/crewai/utilities/converter.py\", line 260, in handle_partial_json\n    exported_result = model.model_validate_json(match.group())\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/pydantic/main.py\", line 746, in model_validate_json\n    return cls.__pydantic_validator__.validate_json(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\npydantic_core._pydantic_core.ValidationError: 1 validation error for StructuredExecutionPlan\n  Invalid JSON: expected `:` at line 20 column 111 [type=json_invalid, input_value='{\\n  \"instructions\": [\\n...or their retrieval.\"\\n}', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.11/v/json_invalid\n"
+}

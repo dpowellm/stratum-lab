@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/Divyansh487/TradingAgents-CN",
+  "status": "PARTIAL_SUCCESS",
+  "exit_code": 1,
+  "entry_point": "/tmp/repo/examples/demo_deepseek_analysis.py",
+  "tier": 1,
+  "event_count": 27,
+  "duration_seconds": 1128,
+  "run_id": "c50561011bb846ea",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": ""
+}

@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/uebelack/bug-bounty-hunting-ai",
+  "repo_full_name": "uebelack/bug-bounty-hunting-ai",
+  "run_number": 1,
+  "run_id": "20b9d4262a194979",
+  "exit_code": 1,
+  "status": "PARTIAL_SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/src/simple-agent.py",
+  "framework_detected": "langgraph",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 14,
+  "timestamp": "2026-02-18T01:39:07.349094+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

@@ -1,0 +1,232 @@
+╭─────────────────────────── Crew Execution Started ───────────────────────────╮
+│                                                                              │
+│  Crew Execution Started                                                      │
+│  Name: crew                                                                  │
+│  ID: e86b49e0-19fd-4073-a8f0-0485a28bf7b4                                    │
+│  Tool Args:                                                                  │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+🚀 Crew: crew
+└── 📋 Task: orchestrate_pipeline_task (ID: 
+    ceed28db-91e3-4610-9265-ac8baf432f9e)
+    Status: Executing Task...╭────────────────────────────── 🤖 Agent Started ──────────────────────────────╮
+│                                                                              │
+│  Agent: Task Orchestration Coordinator                                       │
+│                                                                              │
+│  Task: Oversee and manage the full execution of the news summarization       │
+│  pipeline. Coordinate all agent tasks in the correct logical sequence,       │
+│  ensuring smooth transitions, timely handoffs, and consistent progress       │
+│  monitoring. Detect and resolve workflow conflicts, task failures, or        │
+│  delays. Maintain a dynamic overview of pipeline state to adapt execution    │
+│  flow as needed. Do not delegate content generation, fact-checking, or       │
+│  formatting tasks—only manage orchestration and status reporting.            │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+🚀 Crew: crew
+└── 📋 Task: orchestrate_pipeline_task (ID: 
+    ceed28db-91e3-4610-9265-ac8baf432f9e)
+    Status: Executing Task...
+    └── 🔧 Failed Delegate work to coworker (1)╭───────────────────────────────── Tool Error ─────────────────────────────────╮
+│                                                                              │
+│  Tool Usage Failed                                                           │
+│  Name: Delegate work to coworker                                             │
+│  Error: Arguments validation failed: 1 validation error for                  │
+│  DelegateWorkToolSchema                                                      │
+│  task                                                                        │
+│    Input should be a valid string [type=string_type,                         │
+│  input_value={'description': 'Gather r... from multiple sources'},           │
+│  input_type=dict]                                                            │
+│      For further information visit                                           │
+│  https://errors.pydantic.dev/2.11/v/string_type                              │
+│  Tool Args:                                                                  │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+🚀 Crew: crew
+└── 📋 Task: orchestrate_pipeline_task (ID: 
+    ceed28db-91e3-4610-9265-ac8baf432f9e)
+    Status: Executing Task...
+    └── 🔧 Failed Delegate work to coworker (2)╭───────────────────────────────── Tool Error ─────────────────────────────────╮
+│                                                                              │
+│  Tool Usage Failed                                                           │
+│  Name: Delegate work to coworker                                             │
+│  Error: Arguments validation failed: 1 validation error for                  │
+│  DelegateWorkToolSchema                                                      │
+│  task                                                                        │
+│    Input should be a valid string [type=string_type,                         │
+│  input_value={'description': 'Gather r... from multiple sources'},           │
+│  input_type=dict]                                                            │
+│      For further information visit                                           │
+│  https://errors.pydantic.dev/2.11/v/string_type                              │
+│  Tool Args:                                                                  │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+🚀 Crew: crew
+└── 📋 Task: orchestrate_pipeline_task (ID: 
+    ceed28db-91e3-4610-9265-ac8baf432f9e)
+    Status: Executing Task...
+    └── 🔧 Failed Delegate work to coworker (3)╭───────────────────────────────── Tool Error ─────────────────────────────────╮
+│                                                                              │
+│  Tool Usage Failed                                                           │
+│  Name: Delegate work to coworker                                             │
+│  Error: Arguments validation failed: 1 validation error for                  │
+│  DelegateWorkToolSchema                                                      │
+│  task                                                                        │
+│    Input should be a valid string [type=string_type,                         │
+│  input_value={'description': 'Gather r... from multiple sources'},           │
+│  input_type=dict]                                                            │
+│      For further information visit                                           │
+│  https://errors.pydantic.dev/2.11/v/string_type                              │
+│  Tool Args:                                                                  │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+[91m
+
+I encountered an error while trying to use the tool. This was the error: Arguments validation failed: 1 validation error for DelegateWorkToolSchema
+task
+  Input should be a valid string [type=string_type, input_value={'description': 'Gather r... from multiple sources'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.11/v/string_type.
+ Tool Delegate work to coworker accepts these inputs: Tool Name: Delegate work to coworker
+Tool Arguments: {'task': {'description': 'The task to delegate', 'type': 'str'}, 'context': {'description': 'The context for the task', 'type': 'str'}, 'coworker': {'description': 'The role/name of the coworker to delegate to', 'type': 'str'}}
+Tool Description: Delegate a specific task to one of the following coworkers: Task Orchestration Coordinator
+
+The input to this tool should be the coworker, the task you want them to do, and ALL necessary context to execute the task, they know nothing about the task, so share absolutely everything you know, don't reference things but instead explain them.
+[0m
+╭────────────────────────── 🔧 Agent Tool Execution ───────────────────────────╮
+│                                                                              │
+│  Agent: Task Orchestration Coordinator                                       │
+│                                                                              │
+│  Thought: I need to oversee and manage the full execution of the news        │
+│  summarization pipeline. To do this, I will coordinate all agent tasks in    │
+│  the correct logical sequence, ensure smooth transitions, timely handoffs,   │
+│  and consistent progress monitoring.                                         │
+│  Thought: First, I need to dispatch the initial task of content gathering    │
+│  to a suitable agent.                                                        │
+│                                                                              │
+│  Using Tool: Delegate work to coworker                                       │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭───────────────────────────────── Tool Input ─────────────────────────────────╮
+│                                                                              │
+│  {                                                                           │
+│    "coworker": "Content Gathering Agent",                                    │
+│    "task": {                                                                 │
+│      "description": "Gather raw news data from multiple sources"             │
+│    },                                                                        │
+│    "context": "The data must be in a standardized format and sourced from    │
+│  reliable outlets"                                                           │
+│  }                                                                           │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭──────────────────────────────── Tool Output ─────────────────────────────────╮
+│                                                                              │
+│                                                                              │
+│  I encountered an error while trying to use the tool. This was the error:    │
+│  Arguments validation failed: 1 validation error for DelegateWorkToolSchema  │
+│  task                                                                        │
+│    Input should be a valid string [type=string_type,                         │
+│  input_value={'description': 'Gather r... from multiple sources'},           │
+│  input_type=dict]                                                            │
+│      For further information visit                                           │
+│  https://errors.pydantic.dev/2.11/v/string_type.                             │
+│   Tool Delegate work to coworker accepts these inputs: Tool Name: Delegate   │
+│  work to coworker                                                            │
+│  Tool Arguments: {'task': {'description': 'The task to delegate', 'type':    │
+│  'str'}, 'context': {'description': 'The context for the task', 'type':      │
+│  'str'}, 'coworker': {'description': 'The role/name of the coworker to       │
+│  delegate to', 'type': 'str'}}                                               │
+│  Tool Description: Delegate a specific task to one of the following          │
+│  coworkers: Task Orchestration Coordinator                                   │
+│                                                                              │
+│  The input to this tool should be the coworker, the task you want them to    │
+│  do, and ALL necessary context to execute the task, they know nothing about  │
+│  the task, so share absolutely everything you know, don't reference things   │
+│  but instead explain them..                                                  │
+│  Moving on then. I MUST either use a tool (use one at time) OR give my best  │
+│  final answer not both at the same time. When responding, I must use the     │
+│  following format:                                                           │
+│                                                                              │
+│  ```                                                                         │
+│  Thought: you should always think about what to do                           │
+│  Action: the action to take, should be one of [Delegate work to coworker,    │
+│  Ask question to coworker]                                                   │
+│  Action Input: the input to the action, dictionary enclosed in curly braces  │
+│  Observation: the result of the action                                       │
+│  ```                                                                         │
+│  This Thought/Action/Action Input/Result can repeat N times. Once I know     │
+│  the final answer, I must return the following format:                       │
+│                                                                              │
+│  ```                                                                         │
+│  Thought: I now can give a great answer                                      │
+│  Final Answer: Your final answer must be the great and the most complete as  │
+│  possible, it must be outcome described                                      │
+│                                                                              │
+│  ```                                                                         │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+🚀 Crew: crew
+└── 📋 Task: orchestrate_pipeline_task (ID: 
+    ceed28db-91e3-4610-9265-ac8baf432f9e)
+    Status: Executing Task...
+    ├── 🔧 Failed Delegate work to coworker (3)
+    └── ❌ LLM Failed╭───────────────────────────────── LLM Error ──────────────────────────────────╮
+│                                                                              │
+│  ❌ LLM Call Failed                                                          │
+│  Error: litellm.BadRequestError: OpenAIException - Cannot set                │
+│  `add_generation_prompt` to True when the last message is from the           │
+│  assistant. Consider using `continue_final_message` instead.                 │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+🚀 Crew: crew
+└── 📋 Task: orchestrate_pipeline_task (ID: 
+    ceed28db-91e3-4610-9265-ac8baf432f9e)
+    Assigned to: Task Orchestration Coordinator
+    
+    Status: ❌ Failed
+    ├── 🔧 Failed Delegate work to coworker (3)
+    └── ❌ LLM Failed╭──────────────────────────────── Task Failure ────────────────────────────────╮
+│                                                                              │
+│  Task Failed                                                                 │
+│  Name: orchestrate_pipeline_task                                             │
+│  Agent: Task Orchestration Coordinator                                       │
+│                                                                              │
+│  Tool Args:                                                                  │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭──────────────────────────────── Crew Failure ────────────────────────────────╮
+│                                                                              │
+│  Crew Execution Failed                                                       │
+│  Name: crew                                                                  │
+│  ID: e86b49e0-19fd-4073-a8f0-0485a28bf7b4                                    │
+│  Tool Args:                                                                  │
+│  Final Output:                                                               │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+
+╭────────────────────────────── Execution Traces ──────────────────────────────╮
+│                                                                              │
+│  🔍 Detailed execution traces are available!                                 │
+│                                                                              │
+│  View insights including:                                                    │
+│    • Agent decision-making process                                           │
+│    • Task execution flow and timing                                          │
+│    • Tool usage details                                                      │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Would you like to view your execution traces? [y/N] (20s timeout): 

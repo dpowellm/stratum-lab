@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/MBehtemam/packtpub-ai-gent-langgraph",
+  "repo_full_name": "MBehtemam/packtpub-ai-gent-langgraph",
+  "run_number": 1,
+  "run_id": "028fc193dc12403d",
+  "exit_code": 1,
+  "status": "PARTIAL_SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/finance_agent.py",
+  "framework_detected": "langgraph",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 25,
+  "timestamp": "2026-02-18T00:44:07.757090+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

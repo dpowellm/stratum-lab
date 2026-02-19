@@ -1,0 +1,119 @@
+Running FiveADayBenchmark:   0%|          | 0/5 [00:00<?, ?task/s]Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/litellm/llms/openai/openai.py", line 844, in completion
+    raise e
+  File "/usr/local/lib/python3.11/site-packages/litellm/llms/openai/openai.py", line 772, in completion
+    ) = self.make_sync_openai_chat_completion_request(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/litellm/litellm_core_utils/logging_utils.py", line 237, in sync_wrapper
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/litellm/llms/openai/openai.py", line 502, in make_sync_openai_chat_completion_request
+    raise e
+  File "/usr/local/lib/python3.11/site-packages/litellm/llms/openai/openai.py", line 477, in make_sync_openai_chat_completion_request
+    raw_response = openai_client.chat.completions.with_raw_response.create(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/openai/_legacy_response.py", line 364, in wrapped
+    return cast(LegacyAPIResponse[R], func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/stratum_patcher/openai_patch.py", line 183, in wrapper
+    return original(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/openai/_utils/_utils.py", line 286, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/openai/resources/chat/completions/completions.py", line 1192, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/openai/_base_client.py", line 1297, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/openai/_base_client.py", line 1070, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': '1 validation error for list[function-wrap[__log_extra_fields__()]]\n  Invalid JSON: expected value at line 1 column 2 [type=json_invalid, input_value=\' Action:\\n{\\n  "name": "...et_transactions"\\n}\\n\\n\', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/json_invalid', 'type': 'BadRequestError', 'param': None, 'code': 400}}
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/litellm/main.py", line 2594, in completion
+    raise e
+  File "/usr/local/lib/python3.11/site-packages/litellm/main.py", line 2566, in completion
+    response = openai_chat_completions.completion(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/litellm/llms/openai/openai.py", line 855, in completion
+    raise OpenAIError(
+litellm.llms.openai.common_utils.OpenAIError: Error code: 400 - {'error': {'message': '1 validation error for list[function-wrap[__log_extra_fields__()]]\n  Invalid JSON: expected value at line 1 column 2 [type=json_invalid, input_value=\' Action:\\n{\\n  "name": "...et_transactions"\\n}\\n\\n\', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/json_invalid', 'type': 'BadRequestError', 'param': None, 'code': 400}}
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/smolagents/agents.py", line 1293, in _step_stream
+    chat_message: ChatMessage = self.model.generate(
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/smolagents/models.py", line 1287, in generate
+    response = self.retryer(self.client.completion, **completion_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/smolagents/utils.py", line 542, in __call__
+    result = fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^
+  File "/opt/stratum_patcher/litellm_patch.py", line 97, in wrapper
+    result = original(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/litellm/utils.py", line 1748, in wrapper
+    raise e
+  File "/usr/local/lib/python3.11/site-packages/litellm/utils.py", line 1569, in wrapper
+    result = original_function(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/litellm/main.py", line 4305, in completion
+    raise exception_type(
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2398, in exception_type
+    raise e
+  File "/usr/local/lib/python3.11/site-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 507, in exception_type
+    raise BadRequestError(
+litellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - 1 validation error for list[function-wrap[__log_extra_fields__()]]
+  Invalid JSON: expected value at line 1 column 2 [type=json_invalid, input_value=' Action:\n{\n  "name": "...et_transactions"\n}\n\n', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.12/v/json_invalid
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/tmp/repo/examples/five_a_day_benchmark/five_a_day_benchmark.py", line 961, in <module>
+    results = benchmark.run(tasks=tasks, agent_data=agent_configs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/repo/maseval/core/benchmark.py", line 1545, in run
+    self._run_sequential(queue, agent_data_lookup)
+  File "/tmp/repo/maseval/core/benchmark.py", line 1268, in _run_sequential
+    report = self._execute_task_repetition(task, agent_data, repeat_idx)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/repo/maseval/core/benchmark.py", line 1104, in _execute_task_repetition
+    final_answers = self.execution_loop(agents_to_run, task, environment, user)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/repo/maseval/core/benchmark.py", line 962, in execution_loop
+    final_answer = self.run_agents(agents, task, environment, query_text)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/repo/examples/five_a_day_benchmark/five_a_day_benchmark.py", line 811, in run_agents
+    answers = [agent.run(query) for agent in agents]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/repo/examples/five_a_day_benchmark/five_a_day_benchmark.py", line 811, in <listcomp>
+    answers = [agent.run(query) for agent in agents]
+               ^^^^^^^^^^^^^^^^
+  File "/tmp/repo/maseval/core/agent.py", line 32, in run
+    result = self._run_agent(query)
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/repo/maseval/interface/agents/smolagents.py", line 407, in _run_agent
+    final_answer = self.agent.run(query)
+                   ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/smolagents/agents.py", line 498, in run
+    steps = list(self._run_stream(task=self.task, max_steps=max_steps, images=images))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/smolagents/agents.py", line 595, in _run_stream
+    raise e
+  File "/usr/local/lib/python3.11/site-packages/smolagents/agents.py", line 577, in _run_stream
+    for output in self._step_stream(action_step):
+  File "/usr/local/lib/python3.11/site-packages/smolagents/agents.py", line 1309, in _step_stream
+    raise AgentGenerationError(f"Error while generating output:\n{e}", self.logger) from e
+smolagents.utils.AgentGenerationError: Error while generating output:
+litellm.BadRequestError: OpenAIException - 1 validation error for list[function-wrap[__log_extra_fields__()]]
+  Invalid JSON: expected value at line 1 column 2 [type=json_invalid, input_value=' Action:\n{\n  "name": "...et_transactions"\n}\n\n', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.12/v/json_invalid
+Running FiveADayBenchmark:   0%|          | 0/5 [00:07<?, ?task/s]

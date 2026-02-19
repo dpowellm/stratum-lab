@@ -1,0 +1,44 @@
+2026-02-17 14:02:54,382 | tradingagents.llm_adapters.deepseek_direct_adapter | INFO     | ✅ DeepSeek直接适配器初始化成功，模型: deepseek-chat
+2026-02-17 14:02:54,382 | __main__             | INFO     | 💭 正在生成回答...
+2026-02-17 14:02:55,392 | tradingagents.llm_adapters.deepseek_direct_adapter | ERROR    | DeepSeek API调用失败: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****here is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-02-17 14:02:55,392 | __main__             | ERROR    | ❌ 简单对话演示失败: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****here is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-02-17 14:02:55,394 | __main__             | ERROR    | ❌ 简单对话演示失败
+2026-02-17 14:02:55,394 | __main__             | INFO     | 
+==================== 推理分析 ====================
+2026-02-17 14:02:55,394 | __main__             | INFO     | 
+🧠 演示DeepSeek V3推理分析...
+2026-02-17 14:02:55,431 | tradingagents.llm_adapters.deepseek_direct_adapter | INFO     | ✅ DeepSeek直接适配器初始化成功，模型: deepseek-chat
+2026-02-17 14:02:55,431 | __main__             | INFO     | 💭 正在进行深度分析...
+2026-02-17 14:02:55,718 | tradingagents.llm_adapters.deepseek_direct_adapter | ERROR    | DeepSeek API调用失败: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****here is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-02-17 14:02:55,718 | __main__             | ERROR    | ❌ 推理分析演示失败: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****here is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-02-17 14:02:55,718 | __main__             | ERROR    | ❌ 推理分析演示失败
+2026-02-17 14:02:55,718 | __main__             | INFO     | 
+==================== 工具调用分析 ====================
+2026-02-17 14:02:55,718 | __main__             | INFO     | 
+📊 演示DeepSeek V3工具调用股票分析...
+2026-02-17 14:02:55,752 | tradingagents.llm_adapters.deepseek_direct_adapter | INFO     | ✅ DeepSeek直接适配器初始化成功，模型: deepseek-chat
+2026-02-17 14:02:55,753 | __main__             | INFO     | 
+❓ 用户问题: 请全面分析苹果公司(AAPL)的投资价值，包括基本面、财务状况和市场情绪
+2026-02-17 14:02:55,753 | __main__             | INFO     | 💭 正在分析...
+2026-02-17 14:02:56,049 | tradingagents.llm_adapters.deepseek_direct_adapter | ERROR    | DeepSeek API调用失败: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****here is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-02-17 14:02:56,049 | __main__             | ERROR    | ❌ 工具调用演示失败: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****here is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-02-17 14:02:56,049 | __main__             | ERROR    | ❌ 工具调用分析演示失败
+2026-02-17 14:02:56,050 | __main__             | INFO     | 
+==================== 完整交易系统 ====================
+2026-02-17 14:02:56,050 | __main__             | INFO     | 
+🎯 演示DeepSeek V3完整交易分析系统...
+2026-02-17 14:02:56,087 | tradingagents.llm_adapters.deepseek_direct_adapter | INFO     | ✅ DeepSeek直接适配器初始化成功，模型: deepseek-chat
+2026-02-17 14:02:56,091 | __main__             | INFO     | 🏗️ 使用DeepSeek进行交易分析...
+2026-02-17 14:02:56,371 | tradingagents.llm_adapters.deepseek_direct_adapter | ERROR    | DeepSeek API调用失败: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****here is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-02-17 14:02:56,372 | __main__             | ERROR    | ❌ 交易系统演示失败: Error code: 401 - {'error': {'message': 'Authentication Fails, Your api key: ****here is invalid', 'type': 'authentication_error', 'param': None, 'code': 'invalid_request_error'}}
+2026-02-17 14:02:56,372 | __main__             | ERROR    | ❌ 完整交易系统演示失败
+2026-02-17 14:02:56,372 | __main__             | INFO     | 
+
+2026-02-17 14:02:56,372 | __main__             | INFO     | 📋 演示总结
+2026-02-17 14:02:56,376 | __main__             | INFO     | =
+2026-02-17 14:02:56,376 | __main__             | INFO     | 成功演示: 0/4
+2026-02-17 14:02:56,376 | __main__             | ERROR    | 
+⚠️ 4 个演示失败
+2026-02-17 14:02:56,376 | __main__             | INFO     | 请检查API密钥配置和网络连接
+2026-02-17 14:02:56,376 | __main__             | ERROR    | 
+❌ 演示失败

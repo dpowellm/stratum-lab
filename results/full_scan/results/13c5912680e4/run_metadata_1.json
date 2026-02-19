@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/agentstack-ai/AgentStack",
+  "repo_full_name": "agentstack-ai/AgentStack",
+  "run_number": 1,
+  "run_id": "fb0435c924c14258",
+  "exit_code": 0,
+  "status": "SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/examples/trip_planner/src/main.py",
+  "framework_detected": "langgraph",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 27,
+  "timestamp": "2026-02-17T20:46:13.078792+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

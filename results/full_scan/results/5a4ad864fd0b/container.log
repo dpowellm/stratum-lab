@@ -1,0 +1,65 @@
+[stratum] 14:47:34 Step 1: Cloning https://github.com/retroryan/agriculture-agent ...
+[stratum] 14:47:35 Phase 0: Scanning defensive patterns...
+[stratum] 14:48:03 Phase 0: Complete
+[stratum] 14:48:03 Step 2: Setting environment variables ...
+[stratum] 14:48:25   RUN_ID=c58bc86cd6d04519  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 14:48:25 Step 3: Handling .env files ...
+[stratum] 14:48:25   Creating /tmp/repo/.env from /tmp/repo/.env.example
+[stratum] 14:48:25 Step 4: Installing dependencies ...
+[stratum] 14:48:25   Installing /tmp/repo/05-advanced-mcp/requirements.txt
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 14:49:01   Installing /tmp/repo/07-advanced-http-agent/requirements.txt
+instructor 1.12.0 requires openai<2.0.0,>=1.70.0, but you have openai 2.21.0 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 14:50:23   Installing /tmp/repo/06-mcp-http/requirements.txt
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 14:50:51   Installing /tmp/repo/03-tools-integration/requirements.txt
+instructor 1.12.0 requires openai<2.0.0,>=1.70.0, but you have openai 2.21.0 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 14:51:52   Installing /tmp/repo/requirements.txt
+instructor 1.12.0 requires openai<2.0.0,>=1.70.0, but you have openai 2.21.0 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 14:52:46   Installing /tmp/repo/04-mcp-architecture/requirements.txt
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 14:53:26 Step 5: Detecting entry point ...
+[stratum] 14:53:35   Detection reasoning: 56 candidate(s) evaluated
+[stratum] 14:53:35   Winner: 03-tools-integration/tool_chaining_demo.py (score=10)
+[stratum] 14:53:35   Runner-up: 02-domain-applications/utils/claude_integration.py (score=7)
+[stratum] 14:53:35   Entry point: /tmp/repo/03-tools-integration/tool_chaining_demo.py (score=10)
+[stratum] 14:53:35 Step 6: Configuring PYTHONPATH ...
+[stratum] 14:53:35   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 14:53:35 Step 7: Executing Tier 1 (native) ...
+[stratum] 14:53:35   Attempt 1/5: python tool_chaining_demo.py
+[stratum] 14:54:15   Tier 1 result: SUCCESS (exit_code=0)
+[stratum] 14:54:15 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 14:54:15 Step 9: Writing final output ...
+[stratum] 14:54:15   Final status: SUCCESS (tier=1, exit_code=0)
+[stratum] 14:55:07 ============================================
+[stratum] 14:55:07   Repo:        https://github.com/retroryan/agriculture-agent
+[stratum] 14:55:07   Status:      SUCCESS
+[stratum] 14:55:07   Tier:        1
+[stratum] 14:55:07   Entry:       /tmp/repo/03-tools-integration/tool_chaining_demo.py
+[stratum] 14:55:07   Events:      24
+[stratum] 14:55:07   Duration:    428s
+[stratum] 14:55:07   Run ID:      c58bc86cd6d04519
+[stratum] 14:55:07   Framework:   langgraph
+[stratum] 14:55:07   Run Number:  1
+[stratum] 14:55:07 ============================================

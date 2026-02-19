@@ -1,0 +1,42 @@
+Traceback (most recent call last):
+  File "/tmp/repo/main_sd_with_ref_data_crew.py", line 55, in <module>
+    run_sd(instructions_v2,schema_file='./data/invoice_schema_v1.sql')
+  File "/tmp/repo/main_sd_with_ref_data_crew.py", line 19, in run_sd
+    output = SDWithRefDataCrew().crew().kickoff(inputs=inputs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/stratum_patcher/crewai_patch.py", line 77, in wrapper
+    result = original(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/crew.py", line 743, in kickoff
+    result = self._run_sequential_process()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/crew.py", line 1150, in _run_sequential_process
+    return self._execute_tasks(self.tasks)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/crew.py", line 1236, in _execute_tasks
+    task_output = task.execute_sync(
+                  ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/task.py", line 499, in execute_sync
+    return self._execute_core(agent, context, tools)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/task.py", line 740, in _execute_core
+    raise e  # Re-raise the exception after emitting the event
+    ^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/task.py", line 678, in _execute_core
+    pydantic_output, json_output = self._export_output(result)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/task.py", line 968, in _export_output
+    model_output = convert_to_model(
+                   ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/utilities/converter.py", line 193, in convert_to_model
+    return handle_partial_json(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/utilities/converter.py", line 260, in handle_partial_json
+    exported_result = model.model_validate_json(match.group())
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/pydantic/main.py", line 746, in model_validate_json
+    return cls.__pydantic_validator__.validate_json(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for StructuredExecutionPlan
+  Invalid JSON: expected `:` at line 20 column 111 [type=json_invalid, input_value='{\n  "instructions": [\n...or their retrieval."\n}', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.11/v/json_invalid

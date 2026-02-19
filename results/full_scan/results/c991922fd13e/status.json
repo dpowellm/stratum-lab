@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/garethhallberg/crewaiwithmeandclaude",
+  "status": "PARTIAL_SUCCESS",
+  "exit_code": 1,
+  "entry_point": "/tmp/repo/002_planning_stage_2.py",
+  "tier": 1,
+  "event_count": 43,
+  "duration_seconds": 297,
+  "run_id": "fbc92124ad8f4338",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "  File \"/usr/local/lib/python3.11/site-packages/crewai/llms/providers/openai/completion.py\", line 1687, in _handle_completion\n    raise e from e\n  File \"/usr/local/lib/python3.11/site-packages/crewai/llms/providers/openai/completion.py\", line 1585, in _handle_completion\n    response: ChatCompletion = self.client.chat.completions.create(**params)\n                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/stratum_patcher/openai_patch.py\", line 238, in wrapper\n    result = original(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/openai/_utils/_utils.py\", line 287, in wrapper\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/openai/resources/chat/completions/completions.py\", line 925, in create\n    return self._post(\n           ^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/openai/_base_client.py\", line 1242, in post\n    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))\n                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/openai/_base_client.py\", line 1037, in request\n    raise self._make_status_error_from_response(err.response) from None\nopenai.BadRequestError: Error code: 400 - {'error': {'message': 'Cannot set `add_generation_prompt` to True when the last message is from the assistant. Consider using `continue_final_message` instead.', 'type': 'BadRequestError', 'param': None, 'code': 400}}\n"
+}

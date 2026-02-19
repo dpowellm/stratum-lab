@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/HiTranh2504/Agentic-Financial-Information-system-using-Langgraph",
+  "status": "SUCCESS",
+  "exit_code": 0,
+  "entry_point": "/tmp/repo/source/sql_agent_implementation.py",
+  "tier": 1,
+  "event_count": 17,
+  "duration_seconds": 294,
+  "run_id": "da18e4e2830e4a5f",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": ""
+}

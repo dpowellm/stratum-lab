@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/Sonlux/ESCAI",
+  "status": "TIER2_SUCCESS",
+  "exit_code": 0,
+  "entry_point": "/tmp/repo/examples/cli_documentation_example.py",
+  "tier": 2,
+  "event_count": 15,
+  "duration_seconds": 587,
+  "run_id": "b60c440912744a5c",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "stratum_patcher: langgraph_patch: CompiledGraph.invoke patched\nstratum_patcher: langgraph_patch: CompiledGraph.stream patched\nstratum_patcher: langgraph_patch: CompiledGraph.ainvoke patched\nstratum_patcher: langgraph_patch: StateGraph.add_node patched\nstratum_patcher: langgraph_patch: StateGraph.add_conditional_edges patched\nstratum_patcher: langgraph_patch activated\nstratum_patcher: autogen_patch: found new API (BaseChatAgent)\nstratum_patcher: autogen_patch activating\nstratum_patcher: autogen_patch: receive FAILED: type object 'BaseChatAgent' has no attribute 'receive'\nstratum_patcher: autogen_patch: BaseChatAgent.on_messages patched (new API)\nstratum_patcher: autogen_patch: BaseChatAgent.on_messages_stream patched (new API)\nstratum_patcher: autogen_patch: AssistantAgent.on_messages_stream patched (new API)\nstratum_patcher: autogen_patch: BaseChatAgent.run patched (new API)\nstratum_patcher: autogen_patch activated\nstratum_patcher: langchain_patch activating\nstratum_patcher: langchain_patch: Chain.invoke patched\nstratum_patcher: langchain_patch: Chain.ainvoke patched\nstratum_patcher: langchain_patch: BaseChatModel._generate patched\nstratum_patcher: langchain_patch activated\nstratum_patcher: patcher.status: 8 ok, 0 skipped \u2014 {'generic': 'ok', 'openai': 'ok', 'anthropic': 'ok', 'litellm': 'ok', 'crewai': 'ok', 'langgraph': 'ok', 'autogen': 'ok', 'langchain': 'ok'}\n"
+}

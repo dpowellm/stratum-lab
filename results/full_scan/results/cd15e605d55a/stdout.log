@@ -1,0 +1,19 @@
+Running 5-A-Day Benchmark
+Framework: smolagents
+Config: singleagent
+Model: gemini-2.5-flash
+Temperature: 0.7
+Seed: None (non-deterministic)
+Task limit: all
+Specific task: all
+
+Loaded 5 tasks and 5 agent configs
+
+Error while generating output:
+litellm.BadRequestError: OpenAIException - 1 validation error for 
+list[function-wrap[__log_extra_fields__()\]]
+  Invalid JSON: expected value at line 1 column 2 [type=json_invalid, 
+input_value=' Action:\n{\n  "name": "...et_transactions"\n}\n\n', 
+input_type=str\]
+    For further information visit 
+https://errors.pydantic.dev/2.12/v/json_invalid

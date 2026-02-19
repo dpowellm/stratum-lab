@@ -1,0 +1,41 @@
+[stratum] 00:40:09 Step 1: Cloning https://github.com/MBehtemam/packtpub-ai-gent-langgraph ...
+[stratum] 00:40:10 Phase 0: Scanning defensive patterns...
+[stratum] 00:40:25 Phase 0: Complete
+[stratum] 00:40:25 Step 2: Setting environment variables ...
+[stratum] 00:40:36   RUN_ID=028fc193dc12403d  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 00:40:36 Step 3: Handling .env files ...
+[stratum] 00:40:36   Creating default /tmp/repo/.env
+[stratum] 00:40:36 Step 4: Installing dependencies ...
+[stratum] 00:40:36   Installing /tmp/repo/requirements.txt
+litellm 1.81.13 requires openai>=2.8.0, but you have openai 1.76.0 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 00:42:17 Step 5: Detecting entry point ...
+[stratum] 00:42:18   Detection reasoning: 3 candidate(s) evaluated
+[stratum] 00:42:18   Winner: finance_agent.py (score=10)
+[stratum] 00:42:18   Runner-up: simple_agent_lngraph_tools.py (score=7)
+[stratum] 00:42:18   Entry point: /tmp/repo/finance_agent.py (score=10)
+[stratum] 00:42:18 Step 6: Configuring PYTHONPATH ...
+[stratum] 00:42:18   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 00:42:18 Step 7: Executing Tier 1 (native) ...
+[stratum] 00:42:18   Attempt 1/5: python finance_agent.py
+[stratum] 00:42:34   Auto-installing: streamlit -> pip install streamlit
+[stratum] 00:43:00   Installed streamlit -- retrying ...
+[stratum] 00:43:00   Attempt 2/5: python finance_agent.py
+[stratum] 00:43:47   Tier 1 result: PARTIAL_SUCCESS (exit_code=1)
+[stratum] 00:43:47 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 00:43:47 Step 9: Writing final output ...
+[stratum] 00:43:47   Final status: PARTIAL_SUCCESS (tier=1, exit_code=1)
+[stratum] 00:44:09 ============================================
+[stratum] 00:44:09   Repo:        https://github.com/MBehtemam/packtpub-ai-gent-langgraph
+[stratum] 00:44:09   Status:      PARTIAL_SUCCESS
+[stratum] 00:44:09   Tier:        1
+[stratum] 00:44:09   Entry:       /tmp/repo/finance_agent.py
+[stratum] 00:44:09   Events:      25
+[stratum] 00:44:09   Duration:    229s
+[stratum] 00:44:09   Run ID:      028fc193dc12403d
+[stratum] 00:44:09   Framework:   langgraph
+[stratum] 00:44:09   Run Number:  1
+[stratum] 00:44:09 ============================================

@@ -1,0 +1,140 @@
+[2026-02-17 22:43:08,384] INFO 🔄 Creating fresh orchestrator instance for LangGraph Studio...
+[2026-02-17 22:43:08,388] INFO Loaded environment from: .env
+[2026-02-17 22:43:08,388] INFO Environment check - MONGO_DB: NOT SET
+[2026-02-17 22:43:08,388] INFO Environment check - OPENAPI_KEY: SET
+[2026-02-17 22:43:08,388] INFO Environment check - POSTGRES_DB_URL: NOT SET
+[2026-02-17 22:43:08,388] INFO 🔄 Initializing SQL agent using manager...
+[2026-02-17 22:43:08,389] INFO Loaded environment from: .env
+[2026-02-17 22:43:08,391] INFO Loaded environment from: /tmp/repo/my_agent/utils/../../.env
+[2026-02-17 22:43:08,392] INFO Environment check - OPENAI_KEY: SET
+[2026-02-17 22:43:08,392] INFO Environment check - POSTGRES_DB_URL: NOT SET
+[2026-02-17 22:43:08,392] ERROR ❌ PostgreSQL database URL not found. Please set POSTGRES_DB_URL
+[2026-02-17 22:43:08,392] ERROR ❌ SQL agent initialization failed via manager
+[2026-02-17 22:43:08,392] WARNING Warning: MONGO_DB environment variable not set
+[2026-02-17 22:43:08,392] WARNING Available environment variables: []
+[2026-02-17 22:43:08,466] WARNING ⚠️  SQL agent not initialized: Unknown error
+[2026-02-17 22:43:08,466] WARNING ⚠️  NoSQL agent not initialized: MONGO_DB environment variable not set
+[2026-02-17 22:43:08,467] WARNING SQL agent not available, routing employee query to data engineer
+[2026-02-17 22:43:23,809] INFO Loaded environment from: .env
+[2026-02-17 22:43:23,809] INFO Environment check - MONGO_DB: NOT SET
+[2026-02-17 22:43:23,810] INFO Environment check - OPENAPI_KEY: SET
+[2026-02-17 22:43:23,810] INFO Environment check - POSTGRES_DB_URL: NOT SET
+[2026-02-17 22:43:23,810] INFO 🔄 Initializing SQL agent using manager...
+[2026-02-17 22:43:23,813] INFO Loaded environment from: .env
+[2026-02-17 22:43:23,814] INFO Loaded environment from: /tmp/repo/my_agent/utils/../../.env
+[2026-02-17 22:43:23,814] INFO Environment check - OPENAI_KEY: SET
+[2026-02-17 22:43:23,814] INFO Environment check - POSTGRES_DB_URL: NOT SET
+[2026-02-17 22:43:23,814] ERROR ❌ PostgreSQL database URL not found. Please set POSTGRES_DB_URL
+[2026-02-17 22:43:23,814] ERROR ❌ SQL agent initialization failed via manager
+[2026-02-17 22:43:23,814] WARNING Warning: MONGO_DB environment variable not set
+[2026-02-17 22:43:23,815] WARNING Available environment variables: []
+[2026-02-17 22:43:23,815] INFO [DEBUG] execute_sql_query - Input query: 'Show all employees'
+[2026-02-17 22:43:23,816] INFO [DEBUG] execute_sql_query - Is direct SQL: False
+[2026-02-17 22:43:23,816] INFO [DEBUG] execute_sql_query - Generating SQL from: Show all employees
+[2026-02-17 22:43:23,819] INFO Loaded environment from: .env
+[2026-02-17 22:43:23,820] INFO Loaded environment from: /tmp/repo/my_agent/utils/../../.env
+[2026-02-17 22:43:23,820] INFO Environment check - OPENAI_KEY: SET
+[2026-02-17 22:43:23,820] INFO Environment check - POSTGRES_DB_URL: NOT SET
+[2026-02-17 22:43:23,821] ERROR ❌ PostgreSQL database URL not found. Please set POSTGRES_DB_URL
+[2026-02-17 22:43:23,821] INFO [DEBUG] execute_sql_query - Generated result: {'success': False, 'error': 'SQL agent initialization failed: PostgreSQL database URL not found. Please set POSTGRES_DB_URL', 'data': [], 'prompt': 'Show all employees'}
+[2026-02-17 22:43:23,905] INFO [DEBUG] Classifying query: Show all employees
+[2026-02-17 22:43:23,905] INFO 🔄 Creating fresh orchestrator instance for LangGraph Studio...
+[2026-02-17 22:43:23,911] INFO Loaded environment from: .env
+[2026-02-17 22:43:23,911] INFO Environment check - MONGO_DB: NOT SET
+[2026-02-17 22:43:23,911] INFO Environment check - OPENAPI_KEY: SET
+[2026-02-17 22:43:23,911] INFO Environment check - POSTGRES_DB_URL: NOT SET
+[2026-02-17 22:43:23,911] INFO 🔄 Initializing SQL agent using manager...
+[2026-02-17 22:43:23,912] INFO Loaded environment from: .env
+[2026-02-17 22:43:23,915] INFO Loaded environment from: /tmp/repo/my_agent/utils/../../.env
+[2026-02-17 22:43:23,916] INFO Environment check - OPENAI_KEY: SET
+[2026-02-17 22:43:23,916] INFO Environment check - POSTGRES_DB_URL: NOT SET
+[2026-02-17 22:43:23,916] ERROR ❌ PostgreSQL database URL not found. Please set POSTGRES_DB_URL
+[2026-02-17 22:43:23,916] ERROR ❌ SQL agent initialization failed via manager
+[2026-02-17 22:43:23,916] WARNING Warning: MONGO_DB environment variable not set
+[2026-02-17 22:43:23,916] WARNING Available environment variables: []
+[2026-02-17 22:43:23,917] WARNING ⚠️  SQL agent not initialized: Unknown error
+[2026-02-17 22:43:23,917] WARNING ⚠️  NoSQL agent not initialized: MONGO_DB environment variable not set
+[2026-02-17 22:43:23,917] INFO [DEBUG] Classification result - Domain: QueryDomain.EMPLOYEE, Intent: QueryIntent.SELECT
+[2026-02-17 22:43:23,922] INFO [DEBUG] Decomposing query: Show all employees for domain: QueryDomain.EMPLOYEE
+[2026-02-17 22:43:23,922] INFO 🔄 Creating fresh orchestrator instance for LangGraph Studio...
+[2026-02-17 22:43:23,924] INFO Loaded environment from: .env
+[2026-02-17 22:43:23,924] INFO Environment check - MONGO_DB: NOT SET
+[2026-02-17 22:43:23,924] INFO Environment check - OPENAPI_KEY: SET
+[2026-02-17 22:43:23,924] INFO Environment check - POSTGRES_DB_URL: NOT SET
+[2026-02-17 22:43:23,924] INFO 🔄 Initializing SQL agent using manager...
+[2026-02-17 22:43:23,928] INFO Loaded environment from: .env
+[2026-02-17 22:43:23,928] INFO Loaded environment from: /tmp/repo/my_agent/utils/../../.env
+[2026-02-17 22:43:23,929] INFO Environment check - OPENAI_KEY: SET
+[2026-02-17 22:43:23,929] INFO Environment check - POSTGRES_DB_URL: NOT SET
+[2026-02-17 22:43:23,929] ERROR ❌ PostgreSQL database URL not found. Please set POSTGRES_DB_URL
+[2026-02-17 22:43:23,929] ERROR ❌ SQL agent initialization failed via manager
+[2026-02-17 22:43:23,929] WARNING Warning: MONGO_DB environment variable not set
+[2026-02-17 22:43:23,929] WARNING Available environment variables: []
+[2026-02-17 22:43:23,930] WARNING ⚠️  SQL agent not initialized: Unknown error
+[2026-02-17 22:43:23,930] WARNING ⚠️  NoSQL agent not initialized: MONGO_DB environment variable not set
+[2026-02-17 22:43:23,930] INFO [DEBUG] Decomposition result: {'employee': 'Show all employees'}
+[2026-02-17 22:43:23,934] INFO 🔄 Creating fresh orchestrator instance for LangGraph Studio...
+[2026-02-17 22:43:23,935] INFO Loaded environment from: .env
+[2026-02-17 22:43:23,936] INFO Environment check - MONGO_DB: NOT SET
+[2026-02-17 22:43:23,936] INFO Environment check - OPENAPI_KEY: SET
+[2026-02-17 22:43:23,936] INFO Environment check - POSTGRES_DB_URL: NOT SET
+[2026-02-17 22:43:23,936] INFO 🔄 Initializing SQL agent using manager...
+[2026-02-17 22:43:23,936] INFO Loaded environment from: .env
+[2026-02-17 22:43:23,939] INFO Loaded environment from: /tmp/repo/my_agent/utils/../../.env
+[2026-02-17 22:43:23,940] INFO Environment check - OPENAI_KEY: SET
+[2026-02-17 22:43:23,941] INFO Environment check - POSTGRES_DB_URL: NOT SET
+[2026-02-17 22:43:23,941] ERROR ❌ PostgreSQL database URL not found. Please set POSTGRES_DB_URL
+[2026-02-17 22:43:23,941] ERROR ❌ SQL agent initialization failed via manager
+[2026-02-17 22:43:23,941] WARNING Warning: MONGO_DB environment variable not set
+[2026-02-17 22:43:23,941] WARNING Available environment variables: []
+[2026-02-17 22:43:23,942] WARNING ⚠️  SQL agent not initialized: Unknown error
+[2026-02-17 22:43:23,942] WARNING ⚠️  NoSQL agent not initialized: MONGO_DB environment variable not set
+[2026-02-17 22:43:23,942] WARNING SQL agent not available, routing employee query to data engineer
+[2026-02-17 22:43:23,946] INFO 🔄 Creating fresh orchestrator instance for LangGraph Studio...
+[2026-02-17 22:43:23,948] INFO Loaded environment from: .env
+[2026-02-17 22:43:23,951] INFO Environment check - MONGO_DB: NOT SET
+[2026-02-17 22:43:23,951] INFO Environment check - OPENAPI_KEY: SET
+[2026-02-17 22:43:23,951] INFO Environment check - POSTGRES_DB_URL: NOT SET
+[2026-02-17 22:43:23,952] INFO 🔄 Initializing SQL agent using manager...
+[2026-02-17 22:43:23,952] INFO Loaded environment from: .env
+[2026-02-17 22:43:23,953] INFO Loaded environment from: /tmp/repo/my_agent/utils/../../.env
+[2026-02-17 22:43:23,953] INFO Environment check - OPENAI_KEY: SET
+[2026-02-17 22:43:23,953] INFO Environment check - POSTGRES_DB_URL: NOT SET
+[2026-02-17 22:43:23,953] ERROR ❌ PostgreSQL database URL not found. Please set POSTGRES_DB_URL
+[2026-02-17 22:43:23,953] ERROR ❌ SQL agent initialization failed via manager
+[2026-02-17 22:43:23,953] WARNING Warning: MONGO_DB environment variable not set
+[2026-02-17 22:43:23,953] WARNING Available environment variables: []
+[2026-02-17 22:43:23,957] WARNING ⚠️  SQL agent not initialized: Unknown error
+[2026-02-17 22:43:23,958] WARNING ⚠️  NoSQL agent not initialized: MONGO_DB environment variable not set
+[2026-02-17 22:43:23,960] INFO 🔄 Creating fresh orchestrator instance for LangGraph Studio...
+[2026-02-17 22:43:23,965] INFO Loaded environment from: .env
+[2026-02-17 22:43:23,965] INFO Environment check - MONGO_DB: NOT SET
+[2026-02-17 22:43:23,965] INFO Environment check - OPENAPI_KEY: SET
+[2026-02-17 22:43:23,965] INFO Environment check - POSTGRES_DB_URL: NOT SET
+[2026-02-17 22:43:23,966] INFO 🔄 Initializing SQL agent using manager...
+[2026-02-17 22:43:23,969] INFO Loaded environment from: .env
+[2026-02-17 22:43:23,970] INFO Loaded environment from: /tmp/repo/my_agent/utils/../../.env
+[2026-02-17 22:43:23,970] INFO Environment check - OPENAI_KEY: SET
+[2026-02-17 22:43:23,970] INFO Environment check - POSTGRES_DB_URL: NOT SET
+[2026-02-17 22:43:23,970] ERROR ❌ PostgreSQL database URL not found. Please set POSTGRES_DB_URL
+[2026-02-17 22:43:23,970] ERROR ❌ SQL agent initialization failed via manager
+[2026-02-17 22:43:23,970] WARNING Warning: MONGO_DB environment variable not set
+[2026-02-17 22:43:23,971] WARNING Available environment variables: []
+[2026-02-17 22:43:23,971] WARNING ⚠️  SQL agent not initialized: Unknown error
+[2026-02-17 22:43:23,972] WARNING ⚠️  NoSQL agent not initialized: MONGO_DB environment variable not set
+[2026-02-17 22:43:23,976] INFO 🔄 Creating fresh orchestrator instance for LangGraph Studio...
+[2026-02-17 22:43:23,978] INFO Loaded environment from: .env
+[2026-02-17 22:43:23,978] INFO Environment check - MONGO_DB: NOT SET
+[2026-02-17 22:43:23,978] INFO Environment check - OPENAPI_KEY: SET
+[2026-02-17 22:43:23,978] INFO Environment check - POSTGRES_DB_URL: NOT SET
+[2026-02-17 22:43:23,981] INFO 🔄 Initializing SQL agent using manager...
+[2026-02-17 22:43:23,982] INFO Loaded environment from: .env
+[2026-02-17 22:43:23,983] INFO Loaded environment from: /tmp/repo/my_agent/utils/../../.env
+[2026-02-17 22:43:23,983] INFO Environment check - OPENAI_KEY: SET
+[2026-02-17 22:43:23,983] INFO Environment check - POSTGRES_DB_URL: NOT SET
+[2026-02-17 22:43:23,983] ERROR ❌ PostgreSQL database URL not found. Please set POSTGRES_DB_URL
+[2026-02-17 22:43:23,983] ERROR ❌ SQL agent initialization failed via manager
+[2026-02-17 22:43:23,983] WARNING Warning: MONGO_DB environment variable not set
+[2026-02-17 22:43:23,983] WARNING Available environment variables: []
+[2026-02-17 22:43:23,984] WARNING ⚠️  SQL agent not initialized: Unknown error
+[2026-02-17 22:43:23,984] WARNING ⚠️  NoSQL agent not initialized: MONGO_DB environment variable not set

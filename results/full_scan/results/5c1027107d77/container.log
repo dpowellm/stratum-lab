@@ -1,0 +1,48 @@
+[stratum] 09:32:08 Step 1: Cloning https://github.com/Ashish265/crewai_projects ...
+[stratum] 09:32:09 Phase 0: Scanning defensive patterns...
+[stratum] 09:32:36 Phase 0: Complete
+[stratum] 09:32:36 Step 2: Setting environment variables ...
+[stratum] 09:33:02   RUN_ID=c0484334b73840b6  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 09:33:02 Step 3: Handling .env files ...
+[stratum] 09:33:02   Creating default /tmp/repo/.env
+[stratum] 09:33:02 Step 4: Installing dependencies ...
+[stratum] 09:33:02   Installing /tmp/repo/.devcontainer/requirements.txt
+litellm 1.81.13 requires openai>=2.8.0, but you have openai 1.83.0 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 09:36:49   Installing repo package (editable)
+ERROR: Package 'crewai-projects' requires a different Python: 3.11.14 not in '<3.13,>=3.12'
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 09:38:18 Step 5: Detecting entry point ...
+[stratum] 09:38:19   Detection reasoning: 4 candidate(s) evaluated
+[stratum] 09:38:19   Winner: src/surprise_trip/main.py (score=13)
+[stratum] 09:38:19   Runner-up: src/game_builder_crew/main.py (score=13)
+[stratum] 09:38:19   Entry point: /tmp/repo/src/surprise_trip/main.py (score=13)
+[stratum] 09:38:19 Step 6: Configuring PYTHONPATH ...
+[stratum] 09:38:19   Installing package at /tmp/repo
+ERROR: Package 'crewai-projects' requires a different Python: 3.11.14 not in '<3.13,>=3.12'
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 09:39:47   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 09:39:47 Step 7: Executing Tier 1 (native) ...
+[stratum] 09:39:47   Attempt 1/5: python main.py
+[stratum] 09:43:29   Tier 1 result: SUCCESS (exit_code=0)
+[stratum] 09:43:29 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 09:43:29 Step 9: Writing final output ...
+[stratum] 09:43:29   Final status: SUCCESS (tier=1, exit_code=0)
+[stratum] 09:44:15 ============================================
+[stratum] 09:44:15   Repo:        https://github.com/Ashish265/crewai_projects
+[stratum] 09:44:15   Status:      SUCCESS
+[stratum] 09:44:15   Tier:        1
+[stratum] 09:44:15   Entry:       /tmp/repo/src/surprise_trip/main.py
+[stratum] 09:44:15   Events:      56
+[stratum] 09:44:15   Duration:    704s
+[stratum] 09:44:15   Run ID:      c0484334b73840b6
+[stratum] 09:44:15   Framework:   crewai
+[stratum] 09:44:15   Run Number:  1
+[stratum] 09:44:15 ============================================

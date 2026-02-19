@@ -1,0 +1,52 @@
+[stratum] 11:42:15 Step 1: Cloning https://github.com/rozy0311/viralops-engine ...
+[stratum] 11:42:16 Phase 0: Scanning defensive patterns...
+[stratum] 11:42:38 Phase 0: Complete
+[stratum] 11:42:38 Step 2: Setting environment variables ...
+[stratum] 11:43:00   RUN_ID=23d1910cd148443f  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 11:43:00 Step 3: Handling .env files ...
+[stratum] 11:43:00   Creating /tmp/repo/.env from /tmp/repo/.env.example
+[stratum] 11:43:00 Step 4: Installing dependencies ...
+[stratum] 11:43:00   Installing /tmp/repo/.github/agent/requirements.txt
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 11:43:29   Installing /tmp/repo/requirements.txt
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 11:45:35   Installing repo package (editable)
+ERROR: No .egg-info directory found in /tmp/pip-pip-egg-info-m7nfrg_m
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 11:47:32 Step 5: Detecting entry point ...
+[stratum] 11:47:36   Detection reasoning: 12 candidate(s) evaluated
+[stratum] 11:47:36   Winner: graph.py (score=10)
+[stratum] 11:47:36   Runner-up: add_v5_topics.py (score=2)
+[stratum] 11:47:36   Entry point: /tmp/repo/graph.py (score=10)
+[stratum] 11:47:36 Step 6: Configuring PYTHONPATH ...
+[stratum] 11:47:36   Installing package at /tmp/repo
+ERROR: No .egg-info directory found in /tmp/pip-pip-egg-info-t5fc5r71
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 11:49:31   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 11:49:31 Step 7: Executing Tier 1 (native) ...
+[stratum] 11:49:31   Attempt 1/5: python graph.py
+[stratum] 11:50:04   Tier 1 result: SUCCESS (exit_code=0)
+[stratum] 11:50:04 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 11:50:04 Step 9: Writing final output ...
+[stratum] 11:50:04   Final status: SUCCESS (tier=1, exit_code=0)
+[stratum] 11:50:54 ============================================
+[stratum] 11:50:54   Repo:        https://github.com/rozy0311/viralops-engine
+[stratum] 11:50:54   Status:      SUCCESS
+[stratum] 11:50:54   Tier:        1
+[stratum] 11:50:54   Entry:       /tmp/repo/graph.py
+[stratum] 11:50:54   Events:      24
+[stratum] 11:50:54   Duration:    493s
+[stratum] 11:50:54   Run ID:      23d1910cd148443f
+[stratum] 11:50:54   Framework:   langgraph
+[stratum] 11:50:54   Run Number:  1
+[stratum] 11:50:54 ============================================

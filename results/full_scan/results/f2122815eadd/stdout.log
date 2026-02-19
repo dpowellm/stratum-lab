@@ -1,0 +1,41 @@
+🔍 Evaluating agent response...
+
+======================================================================
+📊 LLM JUDGE EVALUATION REPORT
+======================================================================
+
+🎯 Overall Score: 9.0/10
+
+📋 Dimension Scores:
+
+  🟢 RELEVANCE: 10/10
+     The response directly addresses the user's query about options data for Apple in December 2025.
+
+  🟢 ACCURACY: 10/10
+     The provided information about the number of options contracts and strike prices appears to be accurate.
+
+  🟢 COMPLETENESS: 9/10
+     The response provides the number of options contracts and strike price ranges, but it does not specify the underlying asset or the bid/ask prices.
+     💡 Suggestion: Consider including the underlying asset (AAPL) and bid/ask prices for a more complete response.
+
+  🟢 HELPFULNESS: 10/10
+     The response is helpful by offering choices to the user on how to receive the data.
+
+📝 Summary:
+   The AI's response is highly relevant, accurate, and helpful, offering the user options data for the specified date and providing choices on how to receive the data. The response could be improved by including the underlying asset (AAPL) and bid/ask prices.
+
+======================================================================
+
+📈 Evaluation Summary:
+{
+  "total_evaluations": 1,
+  "recent_evaluations": 1,
+  "average_overall_score": 9.0,
+  "dimension_averages": {
+    "relevance": 10.0,
+    "accuracy": 10.0,
+    "completeness": 9.0,
+    "helpfulness": 10.0
+  },
+  "timestamp": "2026-02-17T19:48:54.583381"
+}

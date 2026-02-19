@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/itay601/langGraph",
+  "repo_full_name": "itay601/langGraph",
+  "run_number": 1,
+  "run_id": "48af1352dbca4626",
+  "exit_code": 1,
+  "status": "PARTIAL_SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/app/multiAgent/multiAgent.py",
+  "framework_detected": "langgraph",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 8,
+  "timestamp": "2026-02-18T04:54:52.330152+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

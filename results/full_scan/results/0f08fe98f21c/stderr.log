@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "/tmp/repo/finance_agent.py", line 215, in <module>
+    for s in graph.stream(initial_state, thread):
+  File "/opt/stratum_patcher/langgraph_patch.py", line 135, in wrapper
+    for chunk in gen:
+  File "/usr/local/lib/python3.11/site-packages/langgraph/pregel/__init__.py", line 2433, in stream
+    for _ in runner.tick(
+  File "/opt/stratum_patcher/langgraph_patch.py", line 277, in instrumented_action
+    result = original_action(*a, **kw)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/repo/finance_agent.py", line 92, in research_competitors_node
+    content = state["content"] or []
+              ~~~~~^^^^^^^^^^^
+KeyError: 'content'
+During task with name 'research_competitors' and id '1e76d41d-5afb-b9f1-f7fc-fb13d4e1bbc5'

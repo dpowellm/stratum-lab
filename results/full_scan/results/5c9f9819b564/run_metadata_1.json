@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/MSFT-Innovation-Hub-India/LangGraph-Foundry-HostedAgent-TravelAgent",
+  "repo_full_name": "MSFT-Innovation-Hub-India/LangGraph-Foundry-HostedAgent-TravelAgent",
+  "run_number": 1,
+  "run_id": "838fbfe9468f4d60",
+  "exit_code": 0,
+  "status": "SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/test_local.py",
+  "framework_detected": "langgraph",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 20,
+  "timestamp": "2026-02-18T00:45:52.743727+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

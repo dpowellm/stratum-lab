@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/DevJadhav/agentic-doc-extraction-system",
+  "repo_full_name": "DevJadhav/agentic-doc-extraction-system",
+  "run_number": 1,
+  "run_id": "4dff78fe52d94902",
+  "exit_code": 0,
+  "status": "TIER2_SUCCESS",
+  "tier": 2,
+  "entry_point": "/tmp/repo/scripts/test_modules.py",
+  "framework_detected": "langgraph",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 18,
+  "timestamp": "2026-02-18T18:51:24.903953+00:00",
+  "timeout_seconds": 600,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

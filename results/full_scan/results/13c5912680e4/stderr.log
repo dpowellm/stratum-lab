@@ -1,0 +1,3 @@
+🖇 AgentOps: [OPENAI INSTRUMENTOR] Error setting up OpenAI streaming wrappers: No module named 'openai.resources.beta.chat'
+🖇 AgentOps: [34mSession Replay for default trace: https://app.agentops.ai/sessions?trace_id=72cbdf4a811b7726385acf0d24402c59[0m
+🖇 AgentOps: [34mSession Replay for default.session trace: https://app.agentops.ai/sessions?trace_id=72cbdf4a811b7726385acf0d24402c59[0m

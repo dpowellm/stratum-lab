@@ -1,0 +1,46 @@
+[stratum] 13:38:28 Step 1: Cloning https://github.com/HiTranh2504/Agentic-Financial-Information-system-using-Langgraph ...
+[stratum] 13:39:11 Phase 0: Scanning defensive patterns...
+[stratum] 13:39:37 Phase 0: Complete
+[stratum] 13:39:37 Step 2: Setting environment variables ...
+[stratum] 13:40:00   RUN_ID=da18e4e2830e4a5f  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 13:40:00 Step 3: Handling .env files ...
+[stratum] 13:40:00   Creating /tmp/repo/API-chatbot-langgraph/.env from /tmp/repo/API-chatbot-langgraph/.env.example
+[stratum] 13:40:00   Creating /tmp/repo/venv/Lib/site-packages/langsmith/cli/.env from /tmp/repo/venv/Lib/site-packages/langsmith/cli/.env.example
+[stratum] 13:40:00   Creating default /tmp/repo/.env
+[stratum] 13:40:00 Step 4: Installing dependencies ...
+[stratum] 13:40:00   Installing /tmp/repo/API-chatbot-langgraph/requirements.txt
+crewai 1.9.3 requires openai~=1.83.0, but you have openai 2.21.0 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 13:41:09   Installing /tmp/repo/requirements.txt
+ERROR: Could not find a version that satisfies the requirement duckduckgo_search==2025.4.1 (from versions: 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.9.5, 1.0, 1.1, 1.2, 1.3, 1.3.5, 1.4, 1.5, 1.5.1, 1.5.2, 1.6, 1.6.2, 1.7.1, 1.8, 1.8.1, 1.8.2, 2.0.2, 2.1.3, 2.2.0, 2.2.2, 2.3.0, 2.3.1, 2.4.0, 2.5.0, 2.6.0, 2.6.1, 2.7.0, 2.8.0, 2.8.1, 2.8.3, 2.8.4, 2.8.5, 2.8.6, 2.9.0, 2.9.1, 2.9.2, 2.9.3, 2.9.4, 2.9.5, 3.0.2, 3.1.1, 3.2.0, 3.3.0, 3.4.1, 3.5.0, 3.6.0, 3.7.0, 3.7.1, 3.8.0, 3.8.1, 3.8.2, 3.8.3, 3.8.4, 3.8.5, 3.8.6, 3.9.3, 3.9.4, 3.9.5, 3.9.6, 3.9.8, 3.9.9, 3.9.10, 3.9.11, 4.0.0, 4.1.0, 4.1.1, 4.2, 4.3, 4.3.1, 4.4, 4.4.1, 4.4.2, 4.4.3, 4.5.0, 5.0b0, 5.0b1, 5.0, 5.1.0, 5.2.0, 5.2.1, 5.2.2, 5.3.0b1, 5.3.0b2, 5.3.0b3, 5.3.0b4, 5.3.0, 5.3.1b1, 5.3.1, 6.0.0, 6.1.0, 6.1.1, 6.1.2, 6.1.3, 6.1.4, 6.1.5, 6.1.6, 6.1.7, 6.1.8, 6.1.9, 6.1.11, 6.1.12, 6.2.0, 6.2.1, 6.2.2, 6.2.3, 6.2.4, 6.2.5, 6.2.6, 6.2.7, 6.2.8b1, 6.2.8, 6.2.9, 6.2.10, 6.2.11b1, 6.2.12, 6.2.13, 6.3.0, 6.3.1, 6.3.2, 6.3.3, 6.3.4, 6.3.5, 6.3.6, 6.3.7, 6.4.2, 7.0.1, 7.0.2, 7.1.0, 7.1.1, 7.2.0, 7.2.1, 7.3.0, 7.3.1, 7.3.2, 7.4.2, 7.4.3, 7.4.4, 7.4.5, 7.5.0, 7.5.1, 7.5.2, 7.5.3, 7.5.4, 7.5.5, 8.0.0, 8.0.1, 8.0.2, 8.0.3, 8.0.4, 8.0.5, 8.1.0, 8.1.1)
+ERROR: No matching distribution found for duckduckgo_search==2025.4.1
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 13:42:50 Step 5: Detecting entry point ...
+[stratum] 13:42:51   Detection reasoning: 12 candidate(s) evaluated
+[stratum] 13:42:51   Winner: source/sql_agent_implementation.py (score=10)
+[stratum] 13:42:51   Runner-up: source/agentic_langgraph.py (score=2)
+[stratum] 13:42:52   Entry point: /tmp/repo/source/sql_agent_implementation.py (score=10)
+[stratum] 13:42:52 Step 6: Configuring PYTHONPATH ...
+[stratum] 13:42:52   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 13:42:52 Step 7: Executing Tier 1 (native) ...
+[stratum] 13:42:52   Attempt 1/5: python sql_agent_implementation.py
+[stratum] 13:43:21   Tier 1 result: SUCCESS (exit_code=0)
+[stratum] 13:43:21 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 13:43:21 Step 9: Writing final output ...
+[stratum] 13:43:21   Final status: SUCCESS (tier=1, exit_code=0)
+[stratum] 13:44:10 ============================================
+[stratum] 13:44:10   Repo:        https://github.com/HiTranh2504/Agentic-Financial-Information-system-using-Langgraph
+[stratum] 13:44:10   Status:      SUCCESS
+[stratum] 13:44:10   Tier:        1
+[stratum] 13:44:10   Entry:       /tmp/repo/source/sql_agent_implementation.py
+[stratum] 13:44:10   Events:      21
+[stratum] 13:44:10   Duration:    316s
+[stratum] 13:44:10   Run ID:      da18e4e2830e4a5f
+[stratum] 13:44:10   Framework:   langgraph
+[stratum] 13:44:10   Run Number:  1
+[stratum] 13:44:10 ============================================

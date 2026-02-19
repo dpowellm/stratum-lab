@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/yswa-var/LocoForge",
+  "status": "SUCCESS",
+  "exit_code": 0,
+  "entry_point": "/tmp/repo/test_langgraph_sql_handling.py",
+  "tier": 1,
+  "event_count": 8,
+  "duration_seconds": 250,
+  "run_id": "22a968ef6113403c",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "[2026-02-17 22:43:23,970] WARNING Warning: MONGO_DB environment variable not set\n[2026-02-17 22:43:23,971] WARNING Available environment variables: []\n[2026-02-17 22:43:23,971] WARNING \u26a0\ufe0f  SQL agent not initialized: Unknown error\n[2026-02-17 22:43:23,972] WARNING \u26a0\ufe0f  NoSQL agent not initialized: MONGO_DB environment variable not set\n[2026-02-17 22:43:23,976] INFO \ud83d\udd04 Creating fresh orchestrator instance for LangGraph Studio...\n[2026-02-17 22:43:23,978] INFO Loaded environment from: .env\n[2026-02-17 22:43:23,978] INFO Environment check - MONGO_DB: NOT SET\n[2026-02-17 22:43:23,978] INFO Environment check - OPENAPI_KEY: SET\n[2026-02-17 22:43:23,978] INFO Environment check - POSTGRES_DB_URL: NOT SET\n[2026-02-17 22:43:23,981] INFO \ud83d\udd04 Initializing SQL agent using manager...\n[2026-02-17 22:43:23,982] INFO Loaded environment from: .env\n[2026-02-17 22:43:23,983] INFO Loaded environment from: /tmp/repo/my_agent/utils/../../.env\n[2026-02-17 22:43:23,983] INFO Environment check - OPENAI_KEY: SET\n[2026-02-17 22:43:23,983] INFO Environment check - POSTGRES_DB_URL: NOT SET\n[2026-02-17 22:43:23,983] ERROR \u274c PostgreSQL database URL not found. Please set POSTGRES_DB_URL\n[2026-02-17 22:43:23,983] ERROR \u274c SQL agent initialization failed via manager\n[2026-02-17 22:43:23,983] WARNING Warning: MONGO_DB environment variable not set\n[2026-02-17 22:43:23,983] WARNING Available environment variables: []\n[2026-02-17 22:43:23,984] WARNING \u26a0\ufe0f  SQL agent not initialized: Unknown error\n[2026-02-17 22:43:23,984] WARNING \u26a0\ufe0f  NoSQL agent not initialized: MONGO_DB environment variable not set\n"
+}

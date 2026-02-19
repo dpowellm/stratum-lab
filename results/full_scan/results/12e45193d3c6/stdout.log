@@ -1,0 +1,36 @@
+🔧 LangGraph Studio SQL Handling Test
+============================================================
+🧪 Simulating LangGraph Studio Environment
+==================================================
+✅ SQL_AVAILABLE: True
+✅ Routing decision for employee query: data_engineer
+✅ Data Engineer SQL handling: True
+   Query type: sql_guidance
+SQL Agent Status: ❌ Not initialized
+NoSQL Agent Status: ❌ Not initialized
+✅ SQL query result: False
+   Error message: SQL agent initialization failed: PostgreSQL database URL not found. Please set POSTGRES_DB_URL
+
+🧪 Testing Complete Workflow Without SQL Agent
+==================================================
+🔄 Running workflow...
+✅ Workflow completed successfully
+   Final state keys: ['messages', 'current_query', 'query_domain', 'query_intent', 'query_complexity', 'sub_queries', 'sql_results', 'nosql_results', 'combined_results', 'context_history', 'execution_path', 'error_message', 'clarification_suggestions', 'data_engineer_response']
+✅ Response generated: 1 messages
+   Message 1: AIMessage
+   Content: # Query Error
+
+**Original Query:** Show all employees
+
+❌ **Error:** No SQL results available
+
+## Sug...
+
+============================================================
+📋 SUMMARY
+============================================================
+✅ All tests passed! The system handles missing SQL agent gracefully in LangGraph Studio.
+
+============================================================
+🎯 TEST COMPLETE
+============================================================

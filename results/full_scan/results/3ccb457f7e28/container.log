@@ -1,0 +1,60 @@
+[stratum] 19:45:41 Step 1: Cloning https://github.com/nerdzinha/agents ...
+[stratum] 19:45:43 Phase 0: Scanning defensive patterns...
+[stratum] 19:46:05 Phase 0: Complete
+[stratum] 19:46:05 Step 2: Setting environment variables ...
+[stratum] 19:46:27   RUN_ID=219a7064c85d4a6a  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 19:46:27 Step 3: Handling .env files ...
+[stratum] 19:46:27   Creating /tmp/repo/agentstack/frameworks/templates/llamaindex/{{cookiecutter.project_metadata.project_slug}}/.env from /tmp/repo/agentstack/frameworks/templates/llamaindex/{{cookiecutter.project_metadata.project_slug}}/.env.example
+[stratum] 19:46:27   Creating /tmp/repo/agentstack/frameworks/templates/autogen/{{cookiecutter.project_metadata.project_slug}}/.env from /tmp/repo/agentstack/frameworks/templates/autogen/{{cookiecutter.project_metadata.project_slug}}/.env.example
+[stratum] 19:46:27   Creating /tmp/repo/agentstack/frameworks/templates/langgraph/{{cookiecutter.project_metadata.project_slug}}/.env from /tmp/repo/agentstack/frameworks/templates/langgraph/{{cookiecutter.project_metadata.project_slug}}/.env.example
+[stratum] 19:46:27   Creating /tmp/repo/agentstack/frameworks/templates/openai_swarm/{{cookiecutter.project_metadata.project_slug}}/.env from /tmp/repo/agentstack/frameworks/templates/openai_swarm/{{cookiecutter.project_metadata.project_slug}}/.env.example
+[stratum] 19:46:27   Creating /tmp/repo/agentstack/frameworks/templates/crewai/{{cookiecutter.project_metadata.project_slug}}/.env from /tmp/repo/agentstack/frameworks/templates/crewai/{{cookiecutter.project_metadata.project_slug}}/.env.example
+[stratum] 19:46:27   Creating /tmp/repo/examples/sentiment_analyser/.env from /tmp/repo/examples/sentiment_analyser/.env.example
+[stratum] 19:46:27   Creating /tmp/repo/examples/stock_analysis/.env from /tmp/repo/examples/stock_analysis/.env.example
+[stratum] 19:46:27   Creating /tmp/repo/examples/market_monitoring/.env from /tmp/repo/examples/market_monitoring/.env.example
+[stratum] 19:46:27   Creating /tmp/repo/examples/howards_agent/.env from /tmp/repo/examples/howards_agent/.env.example
+[stratum] 19:46:27   Creating /tmp/repo/examples/job_posting/.env from /tmp/repo/examples/job_posting/.env.example
+[stratum] 19:46:27   Creating /tmp/repo/examples/research_assistant/.env from /tmp/repo/examples/research_assistant/.env.example
+[stratum] 19:46:27   Creating /tmp/repo/examples/web_researcher/.env from /tmp/repo/examples/web_researcher/.env.example
+[stratum] 19:46:27   Creating /tmp/repo/examples/stock_market_research/.env from /tmp/repo/examples/stock_market_research/.env.example
+[stratum] 19:46:27   Creating /tmp/repo/examples/trip_planner/.env from /tmp/repo/examples/trip_planner/.env.example
+[stratum] 19:46:27   Creating default /tmp/repo/.env
+[stratum] 19:46:27 Step 4: Installing dependencies ...
+[stratum] 19:46:27   Installing repo package (editable)
+crewai 1.9.3 requires tomli~=2.0.2, but you have tomli 2.4.0 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 19:47:47 Step 5: Detecting entry point ...
+[stratum] 19:47:53   Detection reasoning: 16 candidate(s) evaluated
+[stratum] 19:47:53   Winner: examples/trip_planner/src/main.py (score=8)
+[stratum] 19:47:53   Runner-up: examples/sentiment_analyser/src/main.py (score=8)
+[stratum] 19:47:53   Entry point: /tmp/repo/examples/trip_planner/src/main.py (score=8)
+[stratum] 19:47:53 Step 6: Configuring PYTHONPATH ...
+[stratum] 19:47:53   Installing package at /tmp/repo/examples/trip_planner
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 19:48:52   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 19:48:52 Step 7: Executing Tier 1 (native) ...
+[stratum] 19:48:52   Attempt 1/5: python main.py
+[stratum] 19:49:14   Auto-installing: browserbase -> pip install browserbase
+[stratum] 19:49:42   Installed browserbase -- retrying ...
+[stratum] 19:49:42   Attempt 2/5: python main.py
+[stratum] 19:51:24   Tier 1 result: SUCCESS (exit_code=0)
+[stratum] 19:51:24 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 19:51:24 Step 9: Writing final output ...
+[stratum] 19:51:24   Final status: SUCCESS (tier=1, exit_code=0)
+[stratum] 19:52:04 ============================================
+[stratum] 19:52:04   Repo:        https://github.com/nerdzinha/agents
+[stratum] 19:52:04   Status:      SUCCESS
+[stratum] 19:52:04   Tier:        1
+[stratum] 19:52:04   Entry:       /tmp/repo/examples/trip_planner/src/main.py
+[stratum] 19:52:04   Events:      27
+[stratum] 19:52:04   Duration:    363s
+[stratum] 19:52:04   Run ID:      219a7064c85d4a6a
+[stratum] 19:52:04   Framework:   langgraph
+[stratum] 19:52:04   Run Number:  1
+[stratum] 19:52:04 ============================================

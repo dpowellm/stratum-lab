@@ -1,0 +1,38 @@
+[stratum] 07:03:18 Step 1: Cloning https://github.com/jayshenn/hello-langgraph ...
+[stratum] 07:03:19 Phase 0: Scanning defensive patterns...
+[stratum] 07:03:47 Phase 0: Complete
+[stratum] 07:03:47 Step 2: Setting environment variables ...
+[stratum] 07:04:07   RUN_ID=9e9daa1623ef48ed  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 07:04:07 Step 3: Handling .env files ...
+[stratum] 07:04:07   Creating /tmp/repo/.env from /tmp/repo/.env.example
+[stratum] 07:04:07 Step 4: Installing dependencies ...
+[stratum] 07:04:07   Installing /tmp/repo/requirements.txt
+crewai 1.9.3 requires openai~=1.83.0, but you have openai 2.21.0 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 07:05:55 Step 5: Detecting entry point ...
+[stratum] 07:05:59   Detection reasoning: 31 candidate(s) evaluated
+[stratum] 07:05:59   Winner: Agents/04-Drafter.py (score=10)
+[stratum] 07:05:59   Runner-up: Agents/Tool_Decorator_Explained.py (score=7)
+[stratum] 07:05:59   Entry point: /tmp/repo/Agents/04-Drafter.py (score=10)
+[stratum] 07:05:59 Step 6: Configuring PYTHONPATH ...
+[stratum] 07:05:59   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 07:05:59 Step 7: Executing Tier 1 (native) ...
+[stratum] 07:05:59   Attempt 1/5: python 04-Drafter.py
+[stratum] 07:06:32   Tier 1 result: PARTIAL_SUCCESS (exit_code=1)
+[stratum] 07:06:32 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 07:06:32 Step 9: Writing final output ...
+[stratum] 07:06:32   Final status: PARTIAL_SUCCESS (tier=1, exit_code=1)
+[stratum] 07:07:26 ============================================
+[stratum] 07:07:26   Repo:        https://github.com/jayshenn/hello-langgraph
+[stratum] 07:07:26   Status:      PARTIAL_SUCCESS
+[stratum] 07:07:26   Tier:        1
+[stratum] 07:07:26   Entry:       /tmp/repo/Agents/04-Drafter.py
+[stratum] 07:07:26   Events:      12
+[stratum] 07:07:26   Duration:    221s
+[stratum] 07:07:26   Run ID:      9e9daa1623ef48ed
+[stratum] 07:07:26   Framework:   langgraph
+[stratum] 07:07:26   Run Number:  1
+[stratum] 07:07:26 ============================================

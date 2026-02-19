@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/nalbarr/hello-crewai-graphs",
+  "status": "SUCCESS",
+  "exit_code": 0,
+  "entry_point": "/tmp/repo/research_write_article.py",
+  "tier": 1,
+  "event_count": 20,
+  "duration_seconds": 204,
+  "run_id": "31b5a835354b47b9",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "    return self._export_serialized_spans(serialized_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/opentelemetry/exporter/otlp/proto/http/trace_exporter/__init__.py\", line 174, in _export_serialized_spans\n    resp = self._export(serialized_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/opentelemetry/exporter/otlp/proto/http/trace_exporter/__init__.py\", line 147, in _export\n    resp = self._session.post(\n           ^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/requests/sessions.py\", line 637, in post\n    return self.request(\"POST\", url, data=data, json=json, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/requests/sessions.py\", line 589, in request\n    resp = self.send(prep, **send_kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/requests/sessions.py\", line 703, in send\n    r = adapter.send(request, **kwargs)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/requests/adapters.py\", line 677, in send\n    raise ConnectionError(e, request=request)\nrequests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=6006): Max retries exceeded with url: /v1/traces (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=6006): Failed to establish a new connection: [Errno 111] Connection refused\"))\n"
+}

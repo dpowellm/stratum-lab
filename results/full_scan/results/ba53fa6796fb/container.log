@@ -1,0 +1,37 @@
+[stratum] 00:09:16 Step 1: Cloning https://github.com/Saad096/langgraph_data_analytics_multi_agents_app ...
+[stratum] 00:09:17 Phase 0: Scanning defensive patterns...
+[stratum] 00:09:40 Phase 0: Complete
+[stratum] 00:09:40 Step 2: Setting environment variables ...
+[stratum] 00:10:02   RUN_ID=6890bced20414df2  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 00:10:02 Step 3: Handling .env files ...
+[stratum] 00:10:02   Creating default /tmp/repo/.env
+[stratum] 00:10:02 Step 4: Installing dependencies ...
+[stratum] 00:10:02   Installing /tmp/repo/requirements.txt
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 00:12:29 Step 5: Detecting entry point ...
+[stratum] 00:12:31   Detection reasoning: 21 candidate(s) evaluated
+[stratum] 00:12:31   Winner: test_memory.py (score=10)
+[stratum] 00:12:31   Runner-up: demo_chat.py (score=10)
+[stratum] 00:12:31   Entry point: /tmp/repo/test_memory.py (score=10)
+[stratum] 00:12:31 Step 6: Configuring PYTHONPATH ...
+[stratum] 00:12:31   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 00:12:31 Step 7: Executing Tier 1 (native) ...
+[stratum] 00:12:31   Attempt 1/5: python test_memory.py
+[stratum] 00:13:13   Tier 1 result: SUCCESS (exit_code=0)
+[stratum] 00:13:13 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 00:13:13 Step 9: Writing final output ...
+[stratum] 00:13:13   Final status: SUCCESS (tier=1, exit_code=0)
+[stratum] 00:13:58 ============================================
+[stratum] 00:13:58   Repo:        https://github.com/Saad096/langgraph_data_analytics_multi_agents_app
+[stratum] 00:13:58   Status:      SUCCESS
+[stratum] 00:13:58   Tier:        1
+[stratum] 00:13:58   Entry:       /tmp/repo/test_memory.py
+[stratum] 00:13:58   Events:      18
+[stratum] 00:13:58   Duration:    259s
+[stratum] 00:13:58   Run ID:      6890bced20414df2
+[stratum] 00:13:58   Framework:   langgraph
+[stratum] 00:13:58   Run Number:  1
+[stratum] 00:13:58 ============================================

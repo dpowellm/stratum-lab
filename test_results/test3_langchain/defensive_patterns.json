@@ -1,0 +1,1173 @@
+{
+  "repo_full_name": "repo",
+  "scan_version": "1.0",
+  "scan_timestamp": "2026-02-18T04:53:07Z",
+  "files_scanned": 28,
+  "files_skipped": 0,
+  "total_patterns_found": 84,
+  "delegation_boundaries_found": 5,
+  "patterns": [
+    {
+      "file_path": "app/main.py",
+      "line_number": 94,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/main.py",
+      "line_number": 106,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/utills/firecrawl.py",
+      "line_number": 38,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/utills/firecrawl.py",
+      "line_number": 54,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/utills/firecrawl.py",
+      "line_number": 70,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/utills/firecrawl.py",
+      "line_number": 86,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/utills/firecrawl.py",
+      "line_number": 102,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/tools.py",
+      "line_number": 48,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "requests.exceptions.RequestException"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 3
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/tools.py",
+      "line_number": 73,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "requests.exceptions.RequestException"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/tools.py",
+      "line_number": 94,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/tools.py",
+      "line_number": 156,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/tools.py",
+      "line_number": 245,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 1
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/tools.py",
+      "line_number": 310,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 5
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/tools.py",
+      "line_number": 366,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "json.JSONDecodeError"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 1
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/tools.py",
+      "line_number": 344,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "regex_validation",
+        "structural_position": "internal"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/tools.py",
+      "line_number": 362,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "json_parse",
+        "structural_position": "internal"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/tools.py",
+      "line_number": 46,
+      "pattern_category": "rate_limiting_backoff",
+      "pattern_detail": {
+        "mechanism": "sleep",
+        "has_exponential": false,
+        "near_api_call": true
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/tools.py",
+      "line_number": 50,
+      "pattern_category": "rate_limiting_backoff",
+      "pattern_detail": {
+        "mechanism": "sleep",
+        "has_exponential": false,
+        "near_api_call": true
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/tools.py",
+      "line_number": 65,
+      "pattern_category": "rate_limiting_backoff",
+      "pattern_detail": {
+        "mechanism": "sleep",
+        "has_exponential": false,
+        "near_api_call": true
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/tools.py",
+      "line_number": 71,
+      "pattern_category": "rate_limiting_backoff",
+      "pattern_detail": {
+        "mechanism": "sleep",
+        "has_exponential": false,
+        "near_api_call": true
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/tools.py",
+      "line_number": 74,
+      "pattern_category": "rate_limiting_backoff",
+      "pattern_detail": {
+        "mechanism": "sleep",
+        "has_exponential": false,
+        "near_api_call": true
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/tools.py",
+      "line_number": 377,
+      "pattern_category": "input_sanitization",
+      "pattern_detail": {
+        "mechanism": "strip",
+        "target_variable": "",
+        "from_external_source": true
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/workflow.py",
+      "line_number": 61,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 1
+      },
+      "near_delegation_boundary": true
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/workflow.py",
+      "line_number": 94,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": false,
+        "has_reraise": false,
+        "except_body_lines": 4
+      },
+      "near_delegation_boundary": true
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/workflow.py",
+      "line_number": 105,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 1
+      },
+      "near_delegation_boundary": true
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/workflow.py",
+      "line_number": 132,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 1
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/workflow.py",
+      "line_number": 205,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 1
+      },
+      "near_delegation_boundary": true
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/workflow.py",
+      "line_number": 19,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "typed_dict",
+        "structural_position": "internal",
+        "model_name": "State"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/workflow.py",
+      "line_number": 127,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "regex_validation",
+        "structural_position": "internal"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/workflow.py",
+      "line_number": 130,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "json_parse",
+        "structural_position": "internal"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/main.py",
+      "line_number": 39,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/main.py",
+      "line_number": 53,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "json_parse",
+        "structural_position": "internal"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent_cronjob/main.py",
+      "line_number": 67,
+      "pattern_category": "input_sanitization",
+      "pattern_detail": {
+        "mechanism": "strip",
+        "target_variable": "",
+        "from_external_source": true
+      },
+      "near_delegation_boundary": true
+    },
+    {
+      "file_path": "app/chatbot/chatbot.py",
+      "line_number": 12,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "typed_dict",
+        "structural_position": "internal",
+        "model_name": "State"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/chatbot/models.py",
+      "line_number": 3,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "ChatRequest"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/chatbot/models.py",
+      "line_number": 6,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "ChatResponse"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/chatbot/models.py",
+      "line_number": 10,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "FirecrawlInput"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/chatbot/models.py",
+      "line_number": 15,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "ChatRequest2"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/chatbot/models.py",
+      "line_number": 19,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "UserChatHistory"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/main.py",
+      "line_number": 28,
+      "pattern_category": "input_sanitization",
+      "pattern_detail": {
+        "mechanism": "strip",
+        "target_variable": "",
+        "from_external_source": true
+      },
+      "near_delegation_boundary": true
+    },
+    {
+      "file_path": "app/tradingAgent/core/tools.py",
+      "line_number": 46,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "requests.exceptions.RequestException"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/core/tools.py",
+      "line_number": 68,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "requests.exceptions.RequestException"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 1
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/core/tools.py",
+      "line_number": 88,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/core/tools.py",
+      "line_number": 152,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/core/tools.py",
+      "line_number": 221,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 5
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/core/tools.py",
+      "line_number": 269,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 5
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/core/models.py",
+      "line_number": 4,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "UserPreferences"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/tradingAgents.py",
+      "line_number": 165,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 11
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/tradingAgents.py",
+      "line_number": 121,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "json.JSONDecodeError"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 3
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/tradingAgents.py",
+      "line_number": 334,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 3
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/tradingAgents.py",
+      "line_number": 428,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 3
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/tradingAgents.py",
+      "line_number": 370,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": true
+    },
+    {
+      "file_path": "app/tradingAgent/agents/tradingAgents.py",
+      "line_number": 120,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "json_parse",
+        "structural_position": "internal"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/tradingAgents.py",
+      "line_number": 104,
+      "pattern_category": "input_sanitization",
+      "pattern_detail": {
+        "mechanism": "strip",
+        "target_variable": "",
+        "from_external_source": false
+      },
+      "near_delegation_boundary": true
+    },
+    {
+      "file_path": "app/tradingAgent/agents/tradingAgents.py",
+      "line_number": 109,
+      "pattern_category": "input_sanitization",
+      "pattern_detail": {
+        "mechanism": "strip",
+        "target_variable": "",
+        "from_external_source": false
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/tradingAgents.py",
+      "line_number": 114,
+      "pattern_category": "input_sanitization",
+      "pattern_detail": {
+        "mechanism": "strip",
+        "target_variable": "",
+        "from_external_source": false
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/agents.py",
+      "line_number": 119,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 3
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/agents.py",
+      "line_number": 216,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 3
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/agents.py",
+      "line_number": 278,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 3
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/agents.py",
+      "line_number": 349,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 3
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/agents.py",
+      "line_number": 415,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 3
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/agents.py",
+      "line_number": 426,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 3
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/agents.py",
+      "line_number": 450,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "json.JSONDecodeError"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 5
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/agents.py",
+      "line_number": 456,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": true,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 2
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/agents.py",
+      "line_number": 507,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 4
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/agents.py",
+      "line_number": 14,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "typed_dict",
+        "structural_position": "internal",
+        "model_name": "State"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/agents.py",
+      "line_number": 447,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "json_parse",
+        "structural_position": "internal"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/agents.py",
+      "line_number": 438,
+      "pattern_category": "input_sanitization",
+      "pattern_detail": {
+        "mechanism": "strip",
+        "target_variable": "",
+        "from_external_source": true
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/agents.py",
+      "line_number": 442,
+      "pattern_category": "input_sanitization",
+      "pattern_detail": {
+        "mechanism": "strip",
+        "target_variable": "",
+        "from_external_source": true
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/tradingAgent/agents/agents.py",
+      "line_number": 444,
+      "pattern_category": "input_sanitization",
+      "pattern_detail": {
+        "mechanism": "strip",
+        "target_variable": "",
+        "from_external_source": true
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/multiAgent/tools.py",
+      "line_number": 92,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "specific",
+        "exception_classes": [
+          "requests.exceptions.RequestException"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 1
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/multiAgent/tools.py",
+      "line_number": 29,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "regex_validation",
+        "structural_position": "internal"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/multiAgent/tools.py",
+      "line_number": 30,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "regex_validation",
+        "structural_position": "internal"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/multiAgent/tools.py",
+      "line_number": 98,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "Question"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/multiAgent/tools.py",
+      "line_number": 103,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "Done"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/multiAgent/workflow.py",
+      "line_number": 92,
+      "pattern_category": "exception_handling_topology",
+      "pattern_detail": {
+        "except_type": "broad",
+        "exception_classes": [
+          "Exception"
+        ],
+        "has_logging": false,
+        "has_fallback": true,
+        "has_reraise": false,
+        "except_body_lines": 4
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/multiAgent/workflow.py",
+      "line_number": 20,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "typed_dict",
+        "structural_position": "internal",
+        "model_name": "State"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/multiAgent/models.py",
+      "line_number": 6,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "CompanyFinancialReviewAnalysis"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/multiAgent/models.py",
+      "line_number": 40,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "CompanyInfo"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/multiAgent/models.py",
+      "line_number": 58,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "ResearchState"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/multiAgent/models.py",
+      "line_number": 73,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "FinancialArticle"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/multiAgent/models.py",
+      "line_number": 84,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "RouterDecision"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/multiAgent/models.py",
+      "line_number": 93,
+      "pattern_category": "output_validation",
+      "pattern_detail": {
+        "validation_type": "pydantic_model",
+        "structural_position": "internal",
+        "model_name": "AgentResponse"
+      },
+      "near_delegation_boundary": false
+    },
+    {
+      "file_path": "app/multiAgent/multiAgent.py",
+      "line_number": 16,
+      "pattern_category": "input_sanitization",
+      "pattern_detail": {
+        "mechanism": "strip",
+        "target_variable": "",
+        "from_external_source": true
+      },
+      "near_delegation_boundary": true
+    }
+  ],
+  "summary": {
+    "timeout_iteration_guards": {
+      "count": 0,
+      "near_boundary_count": 0,
+      "effective_count": 0
+    },
+    "exception_handling_topology": {
+      "count": 42,
+      "near_boundary_count": 5,
+      "bare_except_count": 0,
+      "has_logging_count": 30
+    },
+    "output_validation": {
+      "count": 27,
+      "at_boundary_count": 0,
+      "pydantic_count": 14,
+      "typed_dict_count": 4
+    },
+    "concurrency_controls": {
+      "count": 0,
+      "near_shared_state_count": 0
+    },
+    "rate_limiting_backoff": {
+      "count": 5,
+      "has_exponential_count": 0
+    },
+    "input_sanitization": {
+      "count": 10,
+      "from_external_count": 7
+    },
+    "prompt_constraints": {
+      "count": 0,
+      "role_boundary_count": 0,
+      "prohibition_count": 0,
+      "uncertainty_instruction_count": 0
+    }
+  }
+}

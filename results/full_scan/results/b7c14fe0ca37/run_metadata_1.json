@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/ssrikantan/langgraph-multi-agent-travel-sample",
+  "repo_full_name": "ssrikantan/langgraph-multi-agent-travel-sample",
+  "run_number": 1,
+  "run_id": "964d2161a1dd4635",
+  "exit_code": 0,
+  "status": "SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/test_local.py",
+  "framework_detected": "langgraph",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 20,
+  "timestamp": "2026-02-17T22:56:46.506265+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

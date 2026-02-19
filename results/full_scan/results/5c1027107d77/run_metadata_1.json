@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/Ashish265/crewai_projects",
+  "repo_full_name": "Ashish265/crewai_projects",
+  "run_number": 1,
+  "run_id": "c0484334b73840b6",
+  "exit_code": 0,
+  "status": "SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/src/surprise_trip/main.py",
+  "framework_detected": "crewai",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 56,
+  "timestamp": "2026-02-17T09:44:11.915313+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

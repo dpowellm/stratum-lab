@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/parameterlab/MASEval",
+  "status": "PARTIAL_SUCCESS",
+  "exit_code": 1,
+  "entry_point": "/tmp/repo/examples/five_a_day_benchmark/five_a_day_benchmark.py",
+  "tier": 1,
+  "event_count": 18,
+  "duration_seconds": 459,
+  "run_id": "e49f439af69e4d7f",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "    result = self._run_agent(query)\n             ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/repo/maseval/interface/agents/smolagents.py\", line 407, in _run_agent\n    final_answer = self.agent.run(query)\n                   ^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/smolagents/agents.py\", line 498, in run\n    steps = list(self._run_stream(task=self.task, max_steps=max_steps, images=images))\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/smolagents/agents.py\", line 595, in _run_stream\n    raise e\n  File \"/usr/local/lib/python3.11/site-packages/smolagents/agents.py\", line 577, in _run_stream\n    for output in self._step_stream(action_step):\n  File \"/usr/local/lib/python3.11/site-packages/smolagents/agents.py\", line 1309, in _step_stream\n    raise AgentGenerationError(f\"Error while generating output:\\n{e}\", self.logger) from e\nsmolagents.utils.AgentGenerationError: Error while generating output:\nlitellm.BadRequestError: OpenAIException - 1 validation error for list[function-wrap[__log_extra_fields__()]]\n  Invalid JSON: expected value at line 1 column 2 [type=json_invalid, input_value=' Action:\\n{\\n  \"name\": \"...et_transactions\"\\n}\\n\\n', input_type=str]\n    For further information visit https://errors.pydantic.dev/2.12/v/json_invalid\n\nRunning FiveADayBenchmark:   0%|          | 0/5 [00:07<?, ?task/s]\n"
+}

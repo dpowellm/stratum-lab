@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/KataDavidXD/Agent-Git-Comparison",
+  "repo_full_name": "KataDavidXD/Agent-Git-Comparison",
+  "run_number": 1,
+  "run_id": "ca266fab162a4970",
+  "exit_code": 1,
+  "status": "PARTIAL_SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/src/llm_client.py",
+  "framework_detected": "autogen",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 17,
+  "timestamp": "2026-02-17T21:16:02.406174+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

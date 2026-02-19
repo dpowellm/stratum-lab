@@ -1,0 +1,50 @@
+[stratum] 15:43:43 Step 1: Cloning https://github.com/aimanyounises1/LangChainTutorial ...
+[stratum] 15:43:44 Phase 0: Scanning defensive patterns...
+[stratum] 15:44:06 Phase 0: Complete
+[stratum] 15:44:06 Step 2: Setting environment variables ...
+[stratum] 15:44:27   RUN_ID=b5509f20a81147ac  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 15:44:27 Step 3: Handling .env files ...
+[stratum] 15:44:27   Creating /tmp/repo/.env from /tmp/repo/.env.example
+[stratum] 15:44:27 Step 4: Installing dependencies ...
+[stratum] 15:44:27   Installing repo package (editable)
+
+note: This error originates from a subprocess, and is likely not a problem with pip.
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 15:45:28 Step 5: Detecting entry point ...
+[stratum] 15:45:35   Detection reasoning: 49 candidate(s) evaluated
+[stratum] 15:45:35   Winner: langgraph_examples/deep_research_agent/deep_research_simplified.py (score=10)
+[stratum] 15:45:35   Runner-up: reviewing/langgraph_review/main.py (score=10)
+[stratum] 15:45:35   Entry point: /tmp/repo/langgraph_examples/deep_research_agent/deep_research_simplified.py (score=10)
+[stratum] 15:45:35 Step 6: Configuring PYTHONPATH ...
+[stratum] 15:45:35   Installing package at /tmp/repo
+
+note: This error originates from a subprocess, and is likely not a problem with pip.
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 15:46:40   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 15:46:40 Step 7: Executing Tier 1 (native) ...
+[stratum] 15:46:40   Attempt 1/5: python deep_research_simplified.py
+[stratum] 15:47:04   Auto-installing: tavily -> pip install tavily-python
+[stratum] 15:47:38   Installed tavily-python -- retrying ...
+[stratum] 15:47:38   Attempt 2/5: python deep_research_simplified.py
+[stratum] 15:48:03   Auto-installing: deepagents -> pip install deepagents
+[stratum] 15:48:47   Installed deepagents -- retrying ...
+[stratum] 15:48:47   Attempt 3/5: python deep_research_simplified.py
+[stratum] 15:49:16   Tier 1 result: PARTIAL_SUCCESS (exit_code=1)
+[stratum] 15:49:16 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 15:49:16 Step 9: Writing final output ...
+[stratum] 15:49:16   Final status: PARTIAL_SUCCESS (tier=1, exit_code=1)
+[stratum] 15:50:06 ============================================
+[stratum] 15:50:06   Repo:        https://github.com/aimanyounises1/LangChainTutorial
+[stratum] 15:50:06   Status:      PARTIAL_SUCCESS
+[stratum] 15:50:06   Tier:        1
+[stratum] 15:50:06   Entry:       /tmp/repo/langgraph_examples/deep_research_agent/deep_research_simplified.py
+[stratum] 15:50:06   Events:      21
+[stratum] 15:50:06   Duration:    356s
+[stratum] 15:50:06   Run ID:      b5509f20a81147ac
+[stratum] 15:50:06   Framework:   langgraph
+[stratum] 15:50:07   Run Number:  1
+[stratum] 15:50:07 ============================================

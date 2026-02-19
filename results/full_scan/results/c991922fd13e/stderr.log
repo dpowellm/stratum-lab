@@ -1,0 +1,96 @@
+ERROR:root:OpenAI API call failed: Error code: 400 - {'error': {'message': "Unexpected role 'system' after role 'assistant'", 'type': 'BadRequestError', 'param': None, 'code': 400}}
+ERROR:root:OpenAI API call failed: Error code: 400 - {'error': {'message': "Unexpected role 'system' after role 'assistant'", 'type': 'BadRequestError', 'param': None, 'code': 400}}
+ERROR:root:OpenAI API call failed: Error code: 400 - {'error': {'message': "Unexpected role 'system' after role 'assistant'", 'type': 'BadRequestError', 'param': None, 'code': 400}}
+ERROR:root:OpenAI API call failed: Error code: 400 - {'error': {'message': "Unexpected role 'system' after role 'assistant'", 'type': 'BadRequestError', 'param': None, 'code': 400}}
+ERROR:root:OpenAI API call failed: Error code: 400 - {'error': {'message': 'Cannot set `add_generation_prompt` to True when the last message is from the assistant. Consider using `continue_final_message` instead.', 'type': 'BadRequestError', 'param': None, 'code': 400}}
+ERROR:root:OpenAI API call failed: Error code: 400 - {'error': {'message': 'Cannot set `add_generation_prompt` to True when the last message is from the assistant. Consider using `continue_final_message` instead.', 'type': 'BadRequestError', 'param': None, 'code': 400}}
+Traceback (most recent call last):
+  File "/tmp/repo/002_planning_stage_2.py", line 453, in <module>
+    run_planning_stage_2()
+  File "/tmp/repo/002_planning_stage_2.py", line 387, in run_planning_stage_2
+    review_result = review_crew.kickoff()
+                    ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/stratum_patcher/crewai_patch.py", line 77, in wrapper
+    result = original(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/crew.py", line 743, in kickoff
+    result = self._run_sequential_process()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/crew.py", line 1150, in _run_sequential_process
+    return self._execute_tasks(self.tasks)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/crew.py", line 1236, in _execute_tasks
+    task_output = task.execute_sync(
+                  ^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/task.py", line 499, in execute_sync
+    return self._execute_core(agent, context, tools)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/task.py", line 740, in _execute_core
+    raise e  # Re-raise the exception after emitting the event
+    ^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/task.py", line 671, in _execute_core
+    result = agent.execute_task(
+             ^^^^^^^^^^^^^^^^^^^
+  File "/opt/stratum_patcher/crewai_patch.py", line 159, in wrapper
+    result = original(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/agent/core.py", line 493, in execute_task
+    result = self.execute_task(task, context, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/stratum_patcher/crewai_patch.py", line 159, in wrapper
+    result = original(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/agent/core.py", line 493, in execute_task
+    result = self.execute_task(task, context, tools)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/stratum_patcher/crewai_patch.py", line 159, in wrapper
+    result = original(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/agent/core.py", line 492, in execute_task
+    raise e
+  File "/usr/local/lib/python3.11/site-packages/crewai/agent/core.py", line 459, in execute_task
+    result = self._execute_without_timeout(task_prompt, task)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/agent/core.py", line 568, in _execute_without_timeout
+    return self.agent_executor.invoke(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/agents/crew_agent_executor.py", line 207, in invoke
+    formatted_answer = self._invoke_loop()
+                       ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/agents/crew_agent_executor.py", line 305, in _invoke_loop
+    return self._invoke_loop_native_tools()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/agents/crew_agent_executor.py", line 579, in _invoke_loop_native_tools
+    raise e
+  File "/usr/local/lib/python3.11/site-packages/crewai/agents/crew_agent_executor.py", line 480, in _invoke_loop_native_tools
+    formatted_answer = handle_max_iterations_exceeded(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/utilities/agent_utils.py", line 246, in handle_max_iterations_exceeded
+    answer = llm.call(
+             ^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/llms/providers/openai/completion.py", line 410, in call
+    return self._call_completions(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/llms/providers/openai/completion.py", line 450, in _call_completions
+    return self._handle_completion(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/crewai/llms/providers/openai/completion.py", line 1687, in _handle_completion
+    raise e from e
+  File "/usr/local/lib/python3.11/site-packages/crewai/llms/providers/openai/completion.py", line 1585, in _handle_completion
+    response: ChatCompletion = self.client.chat.completions.create(**params)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/stratum_patcher/openai_patch.py", line 238, in wrapper
+    result = original(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/openai/_utils/_utils.py", line 287, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/openai/resources/chat/completions/completions.py", line 925, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/openai/_base_client.py", line 1242, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/openai/_base_client.py", line 1037, in request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': 'Cannot set `add_generation_prompt` to True when the last message is from the assistant. Consider using `continue_final_message` instead.', 'type': 'BadRequestError', 'param': None, 'code': 400}}

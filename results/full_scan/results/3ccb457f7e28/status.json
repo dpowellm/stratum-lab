@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/nerdzinha/agents",
+  "status": "SUCCESS",
+  "exit_code": 0,
+  "entry_point": "/tmp/repo/examples/trip_planner/src/main.py",
+  "tier": 1,
+  "event_count": 24,
+  "duration_seconds": 343,
+  "run_id": "219a7064c85d4a6a",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "\ud83d\udd87 AgentOps: [OPENAI INSTRUMENTOR] Error setting up OpenAI streaming wrappers: No module named 'openai.resources.beta.chat'\n\ud83d\udd87 AgentOps: \u001b[34mSession Replay for default trace: https://app.agentops.ai/sessions?trace_id=94a68a076038dae3ded33a0d9d8e63b7\u001b[0m\n\ud83d\udd87 AgentOps: \u001b[34mSession Replay for default.session trace: https://app.agentops.ai/sessions?trace_id=94a68a076038dae3ded33a0d9d8e63b7\u001b[0m\n"
+}

@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/exi-0/Multi-AI-Agent-Systems-with-crewAI",
+  "status": "SUCCESS",
+  "exit_code": 0,
+  "entry_point": "/tmp/repo/Project_Progress_Report.py",
+  "tier": 1,
+  "event_count": 20,
+  "duration_seconds": 409,
+  "run_id": "cd96171fb2b240c4",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "/usr/local/lib/python3.11/site-packages/pydantic/_internal/_generate_schema.py:918: UserWarning: Mixing V1 models and V2 models (or constructs, like `TypeAdapter`) is not supported. Please upgrade `CrewAgentExecutor` to V2.\n  warn(\n"
+}

@@ -1,0 +1,79 @@
+============================================================
+TEST 1: First turn with passenger_id in config
+============================================================
+
+👤 User: Hey there! What time is my flight?
+   Config: {'thread_id': 'test-thread-001', 'passenger_id': '3442 587242'}
+DEBUG user_info: passenger_id from state=None
+DEBUG user_info: passenger_id from config=3442 587242
+DEBUG user_info: Using passenger_id=3442 587242
+DEBUG user_info: Found passenger_id=3442 587242, flight_info count=2
+DEBUG route_to_workflow: dialog_state=[], routing to=primary_assistant
+DEBUG Assistant: Called with 1 messages, user_info=[{'ticket_no': '7240005432906569', 'book_ref': 'C46E9F', 'flight_id': 1459, 'flight_no': 'LX0002', 'departure_airport': 'BSL', 'arrival_airport': 'CDG', 'scheduled_departure': '2026-02-26 16:02:22.533657-04:00', 'scheduled_arrival': '2026-02-26 17:32:22.533657-04:00', 'seat_no': None, 'fare_conditions': 'Economy'}, {'ticket_no': '7240005432906569', 'book_ref': 'C46E9F', 'flight_id': 19250, 'flight_no': 'LX0112', 'departure_airport': 'CDG', 'arrival_airport': 'BSL', 'scheduled_departure': '2026-02-18 00:47:22.533657-04:00', 'scheduled_arrival': '2026-02-18 02:17:22.533657-04:00', 'seat_no': '18E', 'fare_conditions': 'Economy'}]...
+Error: DefaultAzureCredential failed to retrieve a token from the included credentials.
+Attempted credentials:
+	EnvironmentCredential: EnvironmentCredential authentication unavailable. Environment variables are not fully configured.
+Visit https://aka.ms/azsdk/python/identity/environmentcredential/troubleshoot to troubleshoot this issue.
+	WorkloadIdentityCredential: WorkloadIdentityCredential authentication unavailable. The workload options are not fully configured. See the troubleshooting guide for more information: https://aka.ms/azsdk/python/identity/workloadidentitycredential/troubleshoot. Missing required arguments: 'tenant_id', 'client_id', 'token_file_path'.
+	ManagedIdentityCredential: ManagedIdentityCredential authentication unavailable.
+	SharedTokenCacheCredential: SharedTokenCacheCredential authentication unavailable. No accounts were found in the cache.
+	VisualStudioCodeCredential: VisualStudioCodeCredential requires the 'azure-identity-broker' package to be installed. You must also ensure you have the Azure Resources extension installed and have signed in to Azure via Visual Studio Code.
+	AzureCliCredential: Azure CLI not found on path
+	AzurePowerShellCredential: PowerShell is not installed
+	AzureDeveloperCliCredential: Azure Developer CLI could not be found. Please visit https://aka.ms/azure-dev for installation instructions and then,once installed, authenticate to your Azure account using 'azd auth login'.
+	BrokerCredential: InteractiveBrowserBrokerCredential unavailable. The 'azure-identity-broker' package is required to use brokered authentication.
+To mitigate this issue, please refer to the troubleshooting guidelines here at https://aka.ms/azsdk/python/identity/defaultazurecredential/troubleshoot.
+
+============================================================
+TEST 2: Second turn - passenger_id should persist
+============================================================
+
+👤 User: Can you postpone my flight by 7 days?
+   Config: {'thread_id': 'test-thread-001'}
+DEBUG user_info: passenger_id from state=3442 587242
+DEBUG user_info: Using passenger_id=3442 587242
+DEBUG user_info: Found passenger_id=3442 587242, flight_info count=2
+DEBUG route_to_workflow: dialog_state=[], routing to=primary_assistant
+DEBUG Assistant: Called with 2 messages, user_info=[{'ticket_no': '7240005432906569', 'book_ref': 'C46E9F', 'flight_id': 1459, 'flight_no': 'LX0002', 'departure_airport': 'BSL', 'arrival_airport': 'CDG', 'scheduled_departure': '2026-02-26 16:02:22.533657-04:00', 'scheduled_arrival': '2026-02-26 17:32:22.533657-04:00', 'seat_no': None, 'fare_conditions': 'Economy'}, {'ticket_no': '7240005432906569', 'book_ref': 'C46E9F', 'flight_id': 19250, 'flight_no': 'LX0112', 'departure_airport': 'CDG', 'arrival_airport': 'BSL', 'scheduled_departure': '2026-02-18 00:47:22.533657-04:00', 'scheduled_arrival': '2026-02-18 02:17:22.533657-04:00', 'seat_no': '18E', 'fare_conditions': 'Economy'}]...
+Error: DefaultAzureCredential failed to retrieve a token from the included credentials.
+Attempted credentials:
+	EnvironmentCredential: EnvironmentCredential authentication unavailable. Environment variables are not fully configured.
+Visit https://aka.ms/azsdk/python/identity/environmentcredential/troubleshoot to troubleshoot this issue.
+	WorkloadIdentityCredential: WorkloadIdentityCredential authentication unavailable. The workload options are not fully configured. See the troubleshooting guide for more information: https://aka.ms/azsdk/python/identity/workloadidentitycredential/troubleshoot. Missing required arguments: 'tenant_id', 'client_id', 'token_file_path'.
+	ManagedIdentityCredential: ManagedIdentityCredential authentication unavailable.
+	SharedTokenCacheCredential: SharedTokenCacheCredential authentication unavailable. No accounts were found in the cache.
+	VisualStudioCodeCredential: VisualStudioCodeCredential requires the 'azure-identity-broker' package to be installed. You must also ensure you have the Azure Resources extension installed and have signed in to Azure via Visual Studio Code.
+	AzureCliCredential: Azure CLI not found on path
+	AzurePowerShellCredential: PowerShell is not installed
+	AzureDeveloperCliCredential: Azure Developer CLI could not be found. Please visit https://aka.ms/azure-dev for installation instructions and then,once installed, authenticate to your Azure account using 'azd auth login'.
+	BrokerCredential: InteractiveBrowserBrokerCredential unavailable. The 'azure-identity-broker' package is required to use brokered authentication.
+To mitigate this issue, please refer to the troubleshooting guidelines here at https://aka.ms/azsdk/python/identity/defaultazurecredential/troubleshoot.
+
+============================================================
+TEST 3: Third turn - still persisted?
+============================================================
+
+👤 User: What hotels are available near my destination?
+   Config: {'thread_id': 'test-thread-001'}
+DEBUG user_info: passenger_id from state=3442 587242
+DEBUG user_info: Using passenger_id=3442 587242
+DEBUG user_info: Found passenger_id=3442 587242, flight_info count=2
+DEBUG route_to_workflow: dialog_state=[], routing to=primary_assistant
+DEBUG Assistant: Called with 3 messages, user_info=[{'ticket_no': '7240005432906569', 'book_ref': 'C46E9F', 'flight_id': 1459, 'flight_no': 'LX0002', 'departure_airport': 'BSL', 'arrival_airport': 'CDG', 'scheduled_departure': '2026-02-26 16:02:22.533657-04:00', 'scheduled_arrival': '2026-02-26 17:32:22.533657-04:00', 'seat_no': None, 'fare_conditions': 'Economy'}, {'ticket_no': '7240005432906569', 'book_ref': 'C46E9F', 'flight_id': 19250, 'flight_no': 'LX0112', 'departure_airport': 'CDG', 'arrival_airport': 'BSL', 'scheduled_departure': '2026-02-18 00:47:22.533657-04:00', 'scheduled_arrival': '2026-02-18 02:17:22.533657-04:00', 'seat_no': '18E', 'fare_conditions': 'Economy'}]...
+Error: DefaultAzureCredential failed to retrieve a token from the included credentials.
+Attempted credentials:
+	EnvironmentCredential: EnvironmentCredential authentication unavailable. Environment variables are not fully configured.
+Visit https://aka.ms/azsdk/python/identity/environmentcredential/troubleshoot to troubleshoot this issue.
+	WorkloadIdentityCredential: WorkloadIdentityCredential authentication unavailable. The workload options are not fully configured. See the troubleshooting guide for more information: https://aka.ms/azsdk/python/identity/workloadidentitycredential/troubleshoot. Missing required arguments: 'tenant_id', 'client_id', 'token_file_path'.
+	ManagedIdentityCredential: ManagedIdentityCredential authentication unavailable.
+	SharedTokenCacheCredential: SharedTokenCacheCredential authentication unavailable. No accounts were found in the cache.
+	VisualStudioCodeCredential: VisualStudioCodeCredential requires the 'azure-identity-broker' package to be installed. You must also ensure you have the Azure Resources extension installed and have signed in to Azure via Visual Studio Code.
+	AzureCliCredential: Azure CLI not found on path
+	AzurePowerShellCredential: PowerShell is not installed
+	AzureDeveloperCliCredential: Azure Developer CLI could not be found. Please visit https://aka.ms/azure-dev for installation instructions and then,once installed, authenticate to your Azure account using 'azd auth login'.
+	BrokerCredential: InteractiveBrowserBrokerCredential unavailable. The 'azure-identity-broker' package is required to use brokered authentication.
+To mitigate this issue, please refer to the troubleshooting guidelines here at https://aka.ms/azsdk/python/identity/defaultazurecredential/troubleshoot.
+
+============================================================
+DONE
+============================================================

@@ -1,0 +1,59 @@
+stratum_patcher: langgraph_patch activating
+stratum_patcher: langgraph_patch: CompiledGraph.invoke patched
+stratum_patcher: langgraph_patch: CompiledGraph.stream patched
+stratum_patcher: langgraph_patch: CompiledGraph.ainvoke patched
+stratum_patcher: langgraph_patch: StateGraph.add_node patched
+stratum_patcher: langgraph_patch: StateGraph.add_conditional_edges patched
+stratum_patcher: langgraph_patch activated
+stratum_patcher: autogen_patch: found new API (BaseChatAgent)
+stratum_patcher: autogen_patch activating
+stratum_patcher: autogen_patch: receive FAILED: type object 'BaseChatAgent' has no attribute 'receive'
+stratum_patcher: autogen_patch: BaseChatAgent.on_messages patched (new API)
+stratum_patcher: autogen_patch: BaseChatAgent.on_messages_stream patched (new API)
+stratum_patcher: autogen_patch: AssistantAgent.on_messages_stream patched (new API)
+stratum_patcher: autogen_patch: BaseChatAgent.run patched (new API)
+stratum_patcher: autogen_patch activated
+stratum_patcher: langchain_patch activating
+stratum_patcher: langchain_patch: Chain.invoke patched
+stratum_patcher: langchain_patch: Chain.ainvoke patched
+stratum_patcher: langchain_patch: BaseChatModel._generate patched
+stratum_patcher: langchain_patch activated
+stratum_patcher: patcher.status: 8 ok, 0 skipped — {'generic': 'ok', 'openai': 'ok', 'anthropic': 'ok', 'litellm': 'ok', 'crewai': 'ok', 'langgraph': 'ok', 'autogen': 'ok', 'langchain': 'ok'}
+[synthetic] Scanning /tmp/repo for framework patterns...
+[synthetic] Detected: {'crewai': 5, 'langgraph': 11, 'openai': 7} -- using langgraph
+[synthetic] Selected variant: conditional (for langgraph)
+[synthetic] Extracted 7 graph nodes: ['planning', 'council_extraction', 'consensus', 'judge', 'validation', 'correction', 'finalize']
+[synthetic] Generated /tmp/synthetic_run.py (1898 bytes)
+[synthetic] Script preview:
+import os
+os.environ["OPENAI_BASE_URL"] = 'https://aishvbx8prhm6k-8000.proxy.runpod.net/v1'
+os.environ["OPENAI_API_KEY"] = 'sk-placeholder'
+os.environ["STRATUM_REPO_ROOT"] = '/tmp/repo'
+from langgraph.graph import StateGraph, START, END
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage, SystemMessage
+
+llm = ChatOpenAI(
+    model='mistralai/Mistral-7B-Instruct-v0.3',
+    base_url='https://aishvbx8prhm6k-8000.proxy.runpod.net/v1',
+    api_key='sk-placeholder'...
+[synthetic] Exit code: 0
+[synthetic] stdout: Graph completed (conditional variant): ['input', 'planning_output', 'needs_more', 'council_extraction_output']
+
+[synthetic] stderr: stratum_patcher: langgraph_patch activating
+stratum_patcher: langgraph_patch: CompiledGraph.invoke patched
+stratum_patcher: langgraph_patch: CompiledGraph.stream patched
+stratum_patcher: langgraph_patch: CompiledGraph.ainvoke patched
+stratum_patcher: langgraph_patch: StateGraph.add_node patched
+stratum_patcher: langgraph_patch: StateGraph.add_conditional_edges patched
+stratum_patcher: langgraph_patch activated
+stratum_patcher: autogen_patch: found new API (BaseChatAgent)
+stratum_patcher: autogen_patch activating
+stratum_patcher: autogen_patch: receive FAILED: type object 'BaseChatAgent' has no attribute 'receive'
+stratum_patcher: autogen_patch: BaseChatAgent.on_messages patched (new API)
+stratum_patcher: autogen_patch: BaseChatAgent.on_messages_stream patched (new API)
+stratum_patcher: autogen_patch: AssistantAgent.on_messages_stream patched (new API)
+stratum_patcher: autogen_patch: BaseChatAgent.run patched (new API)
+stratum_patcher: autogen_patch activated
+stratum_patcher: langchain_
+[synthetic] Captured 14 events

@@ -1,0 +1,48 @@
+[stratum] 04:32:46 Step 1: Cloning https://github.com/nalbarr/hello-crewai-graphs ...
+[stratum] 04:32:47 Phase 0: Scanning defensive patterns...
+[stratum] 04:33:12 Phase 0: Complete
+[stratum] 04:33:12 Step 2: Setting environment variables ...
+[stratum] 04:33:37   RUN_ID=bc756a9c5f9a4398  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 04:33:37 Step 3: Handling .env files ...
+[stratum] 04:33:37   Creating default /tmp/repo/.env
+[stratum] 04:33:37 Step 4: Installing dependencies ...
+[stratum] 04:33:37   Installing /tmp/repo/requirements.txt
+litellm 1.81.13 requires openai>=2.8.0, but you have openai 1.83.0 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 04:34:59   Installing repo package (editable)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 04:36:52 Step 5: Detecting entry point ...
+[stratum] 04:36:53   Detection reasoning: 9 candidate(s) evaluated
+[stratum] 04:36:53   Winner: research_write_article.py (score=10)
+[stratum] 04:36:53   Runner-up: customer_support.py (score=10)
+[stratum] 04:36:53   Entry point: /tmp/repo/research_write_article.py (score=10)
+[stratum] 04:36:53 Step 6: Configuring PYTHONPATH ...
+[stratum] 04:36:53   Installing package at /tmp/repo
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 04:38:19   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 04:38:19 Step 7: Executing Tier 1 (native) ...
+[stratum] 04:38:19   Attempt 1/5: python research_write_article.py
+[stratum] 04:39:45   Tier 1 result: SUCCESS (exit_code=0)
+[stratum] 04:39:45 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 04:39:45 Step 9: Writing final output ...
+[stratum] 04:39:45   Final status: SUCCESS (tier=1, exit_code=0)
+[stratum] 04:40:36 ============================================
+[stratum] 04:40:36   Repo:        https://github.com/nalbarr/hello-crewai-graphs
+[stratum] 04:40:36   Status:      SUCCESS
+[stratum] 04:40:36   Tier:        1
+[stratum] 04:40:36   Entry:       /tmp/repo/research_write_article.py
+[stratum] 04:40:36   Events:      25
+[stratum] 04:40:36   Duration:    445s
+[stratum] 04:40:36   Run ID:      bc756a9c5f9a4398
+[stratum] 04:40:36   Framework:   crewai
+[stratum] 04:40:36   Run Number:  1
+[stratum] 04:40:36 ============================================

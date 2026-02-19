@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/nitishkthakur/Langchain",
+  "repo_full_name": "nitishkthakur/Langchain",
+  "run_number": 1,
+  "run_id": "baf3c427f9e1443b",
+  "exit_code": 0,
+  "status": "SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/long_running_coding_agents/gemini-agent.py",
+  "framework_detected": "langgraph",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 16,
+  "timestamp": "2026-02-17T08:28:57.106002+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

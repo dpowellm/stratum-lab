@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/nitishkthakur/Langchain",
+  "status": "SUCCESS",
+  "exit_code": 0,
+  "entry_point": "/tmp/repo/long_running_coding_agents/gemini-agent.py",
+  "tier": 1,
+  "event_count": 12,
+  "duration_seconds": 394,
+  "run_id": "baf3c427f9e1443b",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": ""
+}

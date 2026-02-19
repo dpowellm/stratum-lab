@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/Yakvenalex/LangGraphExample",
+  "repo_full_name": "Yakvenalex/LangGraphExample",
+  "run_number": 1,
+  "run_id": "e714e75b3102409b",
+  "exit_code": 1,
+  "status": "PARTIAL_SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/topic_1/llm_init_example.py",
+  "framework_detected": "langgraph",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 11,
+  "timestamp": "2026-02-17T15:55:24.801398+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

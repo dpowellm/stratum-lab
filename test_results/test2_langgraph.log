@@ -1,0 +1,47 @@
+[stratum] 05:21:40 Step 1: Cloning https://github.com/DevJadhav/agentic-doc-extraction-system ...
+[stratum] 05:21:41 Phase 0: Scanning defensive patterns...
+[stratum] 05:21:52 Phase 0: Complete
+[stratum] 05:21:52 Step 2: Setting environment variables ...
+[stratum] 05:22:01   RUN_ID=7f416bbc039a4b39  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 05:22:01 Step 3: Handling .env files ...
+[stratum] 05:22:01   Creating /tmp/repo/.env from /tmp/repo/.env.example
+[stratum] 05:22:01 Step 4: Installing dependencies ...
+[stratum] 05:22:01   Installing repo package (editable)
+instructor 1.12.0 requires openai<2.0.0,>=1.70.0, but you have openai 2.21.0 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 05:26:36 Step 5: Detecting entry point ...
+[stratum] 05:26:39   Detection reasoning: 14 candidate(s) evaluated
+[stratum] 05:26:39   Winner: scripts/test_modules.py (score=2)
+[stratum] 05:26:39   Runner-up: scripts/test_syntax.py (score=2)
+[stratum] 05:26:39   Entry point: /tmp/repo/scripts/test_modules.py (score=2)
+[stratum] 05:26:39 Step 6: Configuring PYTHONPATH ...
+[stratum] 05:26:39   Installing package at /tmp/repo
+stratum_patcher: patcher.status: 8 ok, 0 skipped — {'generic': 'ok', 'openai': 'ok', 'anthropic': 'ok', 'litellm': 'ok', 'crewai': 'ok', 'langgraph': 'ok', 'autogen': 'ok', 'langchain': 'ok'}
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 05:27:58   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 05:27:58 Step 7: Executing Tier 1 (native) ...
+[stratum] 05:27:58   Attempt 1/5: python test_modules.py
+[stratum] 05:28:11   Auto-installing: src -> pip install src
+[stratum] 05:29:00   Failed to install src -- unresolvable
+[stratum] 05:29:00   Tier 1 result: UNRESOLVABLE_IMPORT (exit_code=1)
+[stratum] 05:29:00 Step 8: Tier 1 failed (UNRESOLVABLE_IMPORT) -- invoking Tier 2 synthetic harness ...
+[stratum] 05:29:57   Tier 2 succeeded! (events captured)
+[stratum] 05:29:57 Step 9: Writing final output ...
+[stratum] 05:29:57   Final status: TIER2_SUCCESS (tier=2, exit_code=0)
+[stratum] 05:30:23 ============================================
+[stratum] 05:30:23   Repo:        https://github.com/DevJadhav/agentic-doc-extraction-system
+[stratum] 05:30:23   Status:      TIER2_SUCCESS
+[stratum] 05:30:23   Tier:        2
+[stratum] 05:30:23   Entry:       /tmp/repo/scripts/test_modules.py
+[stratum] 05:30:23   Events:      9
+[stratum] 05:30:23   Duration:    510s
+[stratum] 05:30:23   Run ID:      7f416bbc039a4b39
+[stratum] 05:30:23   Framework:   langgraph
+[stratum] 05:30:23   Run Number:  1
+[stratum] 05:30:23 ============================================

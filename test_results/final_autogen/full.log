@@ -1,0 +1,78 @@
+[stratum] 18:53:53 Step 1: Cloning https://github.com/Sonlux/ESCAI ...
+[stratum] 18:53:54 Phase 0: Scanning defensive patterns...
+[stratum] 18:54:08 Phase 0: Complete
+[stratum] 18:54:08 Step 2: Setting environment variables ...
+[stratum] 18:54:17   RUN_ID=b60c440912744a5c  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 18:54:17 Step 3: Handling .env files ...
+[stratum] 18:54:17   Creating /tmp/repo/.env from /tmp/repo/.env.example
+[stratum] 18:54:17 Step 4: Installing dependencies ...
+[stratum] 18:54:17   Installing /tmp/repo/requirements-dev.txt
+stratum_patcher: patcher.status: 8 ok, 0 skipped — {'generic': 'ok', 'openai': 'ok', 'anthropic': 'ok', 'litellm': 'ok', 'crewai': 'ok', 'langgraph': 'ok', 'autogen': 'ok', 'langchain': 'ok'}
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 18:55:19   Installing /tmp/repo/requirements.txt
+stratum_patcher: patcher.status: 8 ok, 0 skipped — {'generic': 'ok', 'openai': 'ok', 'anthropic': 'ok', 'litellm': 'ok', 'crewai': 'ok', 'langgraph': 'ok', 'autogen': 'ok', 'langchain': 'ok'}
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 18:59:36   Installing repo package (editable)
+cvxpy 1.8.1 requires numpy>=2.0.0, but you have numpy 1.26.4 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 19:00:52 Step 5: Detecting entry point ...
+[stratum] 19:00:58   Detection reasoning: 89 candidate(s) evaluated
+[stratum] 19:00:58   Winner: examples/cli_documentation_example.py (score=2)
+[stratum] 19:00:58   Runner-up: scripts/validate-deployment.py (score=2)
+[stratum] 19:00:58   Entry point: /tmp/repo/examples/cli_documentation_example.py (score=2)
+[stratum] 19:00:58 Step 6: Configuring PYTHONPATH ...
+[stratum] 19:00:58   Installing package at /tmp/repo
+stratum_patcher: patcher.status: 8 ok, 0 skipped — {'generic': 'ok', 'openai': 'ok', 'anthropic': 'ok', 'litellm': 'ok', 'crewai': 'ok', 'langgraph': 'ok', 'autogen': 'ok', 'langchain': 'ok'}
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 19:02:00   PYTHONPATH=/tmp/repo:/tmp/repo/src:/opt/stratum:
+[stratum] 19:02:00 Step 7: Executing Tier 1 (native) ...
+[stratum] 19:02:00   Attempt 1/5: python cli_documentation_example.py
+[stratum] 19:02:27   Tier 1 result: NO_EVENTS (exit_code=0)
+[stratum] 19:02:27 Step 8: Tier 1 failed (NO_EVENTS) -- invoking Tier 2 synthetic harness ...
+[stratum] 19:03:40   Tier 2 succeeded! (events captured)
+[stratum] 19:03:40 Step 9: Writing final output ...
+[stratum] 19:03:40   Final status: TIER2_SUCCESS (tier=2, exit_code=0)
+stratum_patcher: langgraph_patch activating
+stratum_patcher: langgraph_patch: CompiledGraph.invoke patched
+stratum_patcher: langgraph_patch: CompiledGraph.stream patched
+stratum_patcher: langgraph_patch: CompiledGraph.ainvoke patched
+stratum_patcher: langgraph_patch: StateGraph.add_node patched
+stratum_patcher: langgraph_patch: StateGraph.add_conditional_edges patched
+stratum_patcher: langgraph_patch activated
+stratum_patcher: autogen_patch: found new API (BaseChatAgent)
+stratum_patcher: autogen_patch activating
+stratum_patcher: autogen_patch: receive FAILED: type object 'BaseChatAgent' has no attribute 'receive'
+stratum_patcher: autogen_patch: BaseChatAgent.on_messages patched (new API)
+stratum_patcher: autogen_patch: BaseChatAgent.on_messages_stream patched (new API)
+stratum_patcher: autogen_patch: AssistantAgent.on_messages_stream patched (new API)
+stratum_patcher: autogen_patch: BaseChatAgent.run patched (new API)
+stratum_patcher: autogen_patch activated
+stratum_patcher: langchain_patch activating
+stratum_patcher: langchain_patch: Chain.invoke patched
+stratum_patcher: langchain_patch: Chain.ainvoke patched
+stratum_patcher: langchain_patch: BaseChatModel._generate patched
+stratum_patcher: langchain_patch activated
+stratum_patcher: patcher.status: 8 ok, 0 skipped — {'generic': 'ok', 'openai': 'ok', 'anthropic': 'ok', 'litellm': 'ok', 'crewai': 'ok', 'langgraph': 'ok', 'autogen': 'ok', 'langchain': 'ok'}
+[stratum] 19:04:28 ============================================
+[stratum] 19:04:28   Repo:        https://github.com/Sonlux/ESCAI
+[stratum] 19:04:28   Status:      TIER2_SUCCESS
+[stratum] 19:04:28   Tier:        2
+[stratum] 19:04:28   Entry:       /tmp/repo/examples/cli_documentation_example.py
+[stratum] 19:04:28   Events:      18
+[stratum] 19:04:28   Duration:    611s
+[stratum] 19:04:28   Run ID:      b60c440912744a5c
+[stratum] 19:04:28   Framework:   autogen
+[stratum] 19:04:28   Run Number:  1
+[stratum] 19:04:28 ============================================

@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/Ashish265/crewai_projects",
+  "status": "SUCCESS",
+  "exit_code": 0,
+  "entry_point": "/tmp/repo/src/surprise_trip/main.py",
+  "tier": 1,
+  "event_count": 53,
+  "duration_seconds": 681,
+  "run_id": "c0484334b73840b6",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "ERROR:root:Context window exceeded: Error code: 400 - {'error': {'message': \"This model's maximum context length is 4096 tokens. However, your request has 4506 input tokens. Please reduce the length of the input messages. (parameter=input_tokens, value=4506)\", 'type': 'BadRequestError', 'param': 'input_tokens', 'code': 400}}\nERROR:root:OpenAI API call failed: LLM context length exceeded. Original error: Error code: 400 - {'error': {'message': \"This model's maximum context length is 4096 tokens. However, your request has 4506 input tokens. Please reduce the length of the input messages. (parameter=input_tokens, value=4506)\", 'type': 'BadRequestError', 'param': 'input_tokens', 'code': 400}}\nConsider using a smaller input or implementing a text splitting strategy.\n"
+}

@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/ashharr/CrewAI-Implementation",
+  "status": "SUCCESS",
+  "exit_code": 0,
+  "entry_point": "/tmp/repo/src/workflows/official/content_creation/content_creation_crew.py",
+  "tier": 1,
+  "event_count": 22,
+  "duration_seconds": 361,
+  "run_id": "e5e81bcb104b4581",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": ""
+}

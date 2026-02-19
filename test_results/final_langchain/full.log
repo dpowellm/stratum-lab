@@ -1,0 +1,61 @@
+[stratum] 18:51:29 Step 1: Cloning https://github.com/itay601/langGraph ...
+[stratum] 18:51:30 Phase 0: Scanning defensive patterns...
+[stratum] 18:51:40 Phase 0: Complete
+[stratum] 18:51:40 Step 2: Setting environment variables ...
+[stratum] 18:51:49   RUN_ID=01ebec5e683a452d  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 18:51:49 Step 3: Handling .env files ...
+[stratum] 18:51:49   Creating default /tmp/repo/.env
+[stratum] 18:51:49 Step 4: Installing dependencies ...
+[stratum] 18:51:49   Installing /tmp/repo/app/requirements.txt
+langchain-openai 0.3.35 requires openai<3.0.0,>=1.104.2, but you have openai 1.97.1 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 18:52:36 Step 5: Detecting entry point ...
+[stratum] 18:52:37   Detection reasoning: 8 candidate(s) evaluated
+[stratum] 18:52:37   Winner: app/multiAgent/multiAgent.py (score=7)
+[stratum] 18:52:37   Runner-up: app/chatbot/chatbot.py (score=7)
+[stratum] 18:52:37   Entry point: /tmp/repo/app/multiAgent/multiAgent.py (score=7)
+[stratum] 18:52:37 Step 6: Configuring PYTHONPATH ...
+[stratum] 18:52:37   PYTHONPATH=/tmp/repo:/tmp/repo/src:/opt/stratum:
+[stratum] 18:52:37 Step 7: Executing Tier 1 (native) ...
+[stratum] 18:52:37   Attempt 1/5: python multiAgent.py
+[stratum] 18:52:46   Tier 1 result: RUNTIME_ERROR (exit_code=1)
+[stratum] 18:52:46 Step 8: Tier 1 failed (RUNTIME_ERROR) -- invoking Tier 2 synthetic harness ...
+[stratum] 18:53:33   Tier 2 succeeded! (events captured)
+[stratum] 18:53:33 Step 9: Writing final output ...
+[stratum] 18:53:33   Final status: TIER2_SUCCESS (tier=2, exit_code=0)
+stratum_patcher: langgraph_patch activating
+stratum_patcher: langgraph_patch: CompiledGraph.invoke patched
+stratum_patcher: langgraph_patch: CompiledGraph.stream patched
+stratum_patcher: langgraph_patch: CompiledGraph.ainvoke patched
+stratum_patcher: langgraph_patch: StateGraph.add_node patched
+stratum_patcher: langgraph_patch: Graph.add_node patched
+stratum_patcher: langgraph_patch: StateGraph.add_conditional_edges patched
+stratum_patcher: langgraph_patch activated
+stratum_patcher: autogen_patch: found new API (BaseChatAgent)
+stratum_patcher: autogen_patch activating
+stratum_patcher: autogen_patch: receive FAILED: type object 'BaseChatAgent' has no attribute 'receive'
+stratum_patcher: autogen_patch: BaseChatAgent.on_messages patched (new API)
+stratum_patcher: autogen_patch: BaseChatAgent.on_messages_stream patched (new API)
+stratum_patcher: autogen_patch: AssistantAgent.on_messages_stream patched (new API)
+stratum_patcher: autogen_patch: BaseChatAgent.run patched (new API)
+stratum_patcher: autogen_patch activated
+stratum_patcher: langchain_patch activating
+stratum_patcher: langchain_patch: Chain.invoke patched
+stratum_patcher: langchain_patch: Chain.ainvoke patched
+stratum_patcher: langchain_patch: BaseChatModel._generate patched
+stratum_patcher: langchain_patch activated
+stratum_patcher: patcher.status: 8 ok, 0 skipped — {'generic': 'ok', 'openai': 'ok', 'anthropic': 'ok', 'litellm': 'ok', 'crewai': 'ok', 'langgraph': 'ok', 'autogen': 'ok', 'langchain': 'ok'}
+[stratum] 18:53:52 ============================================
+[stratum] 18:53:52   Repo:        https://github.com/itay601/langGraph
+[stratum] 18:53:52   Status:      TIER2_SUCCESS
+[stratum] 18:53:52   Tier:        2
+[stratum] 18:53:52   Entry:       /tmp/repo/app/multiAgent/multiAgent.py
+[stratum] 18:53:52   Events:      29
+[stratum] 18:53:52   Duration:    133s
+[stratum] 18:53:52   Run ID:      01ebec5e683a452d
+[stratum] 18:53:52   Framework:   langgraph
+[stratum] 18:53:52   Run Number:  1
+[stratum] 18:53:52 ============================================

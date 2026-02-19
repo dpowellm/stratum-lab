@@ -1,0 +1,60 @@
+[stratum] 18:39:43 Step 1: Cloning https://github.com/binbakhsh/QBO-CrewAI ...
+[stratum] 18:39:44 Phase 0: Scanning defensive patterns...
+[stratum] 18:39:54 Phase 0: Complete
+[stratum] 18:39:54 Step 2: Setting environment variables ...
+[stratum] 18:40:05   RUN_ID=dc1adf8ada034577  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 18:40:05 Step 3: Handling .env files ...
+[stratum] 18:40:05   Creating /tmp/repo/.env from /tmp/repo/.env.example
+[stratum] 18:40:05 Step 4: Installing dependencies ...
+[stratum] 18:40:05   Installing /tmp/repo/requirements.txt
+stratum_patcher: patcher.status: 8 ok, 0 skipped — {'generic': 'ok', 'openai': 'ok', 'anthropic': 'ok', 'litellm': 'ok', 'crewai': 'ok', 'langgraph': 'ok', 'autogen': 'ok', 'langchain': 'ok'}
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 18:40:55 Step 5: Detecting entry point ...
+[stratum] 18:40:56   Detection reasoning: 3 candidate(s) evaluated
+[stratum] 18:40:56   Winner: app/agents/orchestrator.py (score=7)
+[stratum] 18:40:56   Runner-up: setup_oauth.py (score=2)
+[stratum] 18:40:56   Entry point: /tmp/repo/app/agents/orchestrator.py (score=7)
+[stratum] 18:40:56 Step 6: Configuring PYTHONPATH ...
+[stratum] 18:40:56   PYTHONPATH=/tmp/repo:/tmp/repo/src:/opt/stratum:
+[stratum] 18:40:56 Step 7: Executing Tier 1 (native) ...
+[stratum] 18:40:56   Attempt 1/5: python orchestrator.py
+[stratum] 18:41:08   Tier 1 result: NO_EVENTS (exit_code=0)
+[stratum] 18:41:08 Step 8: Tier 1 failed (NO_EVENTS) -- invoking Tier 2 synthetic harness ...
+[stratum] 18:41:43   Tier 2 succeeded! (events captured)
+[stratum] 18:41:43 Step 9: Writing final output ...
+[stratum] 18:41:43   Final status: TIER2_SUCCESS (tier=2, exit_code=0)
+stratum_patcher: langgraph_patch activating
+stratum_patcher: langgraph_patch: CompiledGraph.invoke patched
+stratum_patcher: langgraph_patch: CompiledGraph.stream patched
+stratum_patcher: langgraph_patch: CompiledGraph.ainvoke patched
+stratum_patcher: langgraph_patch: StateGraph.add_node patched
+stratum_patcher: langgraph_patch: StateGraph.add_conditional_edges patched
+stratum_patcher: langgraph_patch activated
+stratum_patcher: autogen_patch: found new API (BaseChatAgent)
+stratum_patcher: autogen_patch activating
+stratum_patcher: autogen_patch: receive FAILED: type object 'BaseChatAgent' has no attribute 'receive'
+stratum_patcher: autogen_patch: BaseChatAgent.on_messages patched (new API)
+stratum_patcher: autogen_patch: BaseChatAgent.on_messages_stream patched (new API)
+stratum_patcher: autogen_patch: AssistantAgent.on_messages_stream patched (new API)
+stratum_patcher: autogen_patch: BaseChatAgent.run patched (new API)
+stratum_patcher: autogen_patch activated
+stratum_patcher: langchain_patch activating
+stratum_patcher: langchain_patch: Chain.invoke patched
+stratum_patcher: langchain_patch: Chain.ainvoke patched
+stratum_patcher: langchain_patch: BaseChatModel._generate patched
+stratum_patcher: langchain_patch activated
+stratum_patcher: patcher.status: 8 ok, 0 skipped — {'generic': 'ok', 'openai': 'ok', 'anthropic': 'ok', 'litellm': 'ok', 'crewai': 'ok', 'langgraph': 'ok', 'autogen': 'ok', 'langchain': 'ok'}
+[stratum] 18:42:02 ============================================
+[stratum] 18:42:02   Repo:        https://github.com/binbakhsh/QBO-CrewAI
+[stratum] 18:42:02   Status:      TIER2_SUCCESS
+[stratum] 18:42:02   Tier:        2
+[stratum] 18:42:02   Entry:       /tmp/repo/app/agents/orchestrator.py
+[stratum] 18:42:02   Events:      11
+[stratum] 18:42:02   Duration:    129s
+[stratum] 18:42:02   Run ID:      dc1adf8ada034577
+[stratum] 18:42:02   Framework:   crewai
+[stratum] 18:42:02   Run Number:  1
+[stratum] 18:42:02 ============================================

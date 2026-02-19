@@ -1,0 +1,42 @@
+[stratum] 22:47:23 Step 1: Cloning https://github.com/ssrikantan/langgraph-multi-agent-travel-sample ...
+[stratum] 22:47:25 Phase 0: Scanning defensive patterns...
+[stratum] 22:47:49 Phase 0: Complete
+[stratum] 22:47:49 Step 2: Setting environment variables ...
+[stratum] 22:48:13   RUN_ID=964d2161a1dd4635  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 22:48:13 Step 3: Handling .env files ...
+[stratum] 22:48:13   Creating /tmp/repo/agent-client/.env from /tmp/repo/agent-client/.env.example
+[stratum] 22:48:14   Creating /tmp/repo/.env from /tmp/repo/.env.example
+[stratum] 22:48:14 Step 4: Installing dependencies ...
+[stratum] 22:48:14   Installing /tmp/repo/requirements.txt
+litellm 1.81.13 requires openai>=2.8.0, but you have openai 1.109.1 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 22:50:47 Step 5: Detecting entry point ...
+[stratum] 22:50:48   Detection reasoning: 7 candidate(s) evaluated
+[stratum] 22:50:48   Winner: test_local.py (score=7)
+[stratum] 22:50:48   Runner-up: container.py (score=2)
+[stratum] 22:50:48   Entry point: /tmp/repo/test_local.py (score=7)
+[stratum] 22:50:48 Step 6: Configuring PYTHONPATH ...
+[stratum] 22:50:48   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 22:50:48 Step 7: Executing Tier 1 (native) ...
+[stratum] 22:50:48   Attempt 1/5: python test_local.py
+[stratum] 22:52:19   Auto-installing: pytz -> pip install pytz
+[stratum] 22:52:51   Installed pytz -- retrying ...
+[stratum] 22:52:51   Attempt 2/5: python test_local.py
+[stratum] 22:56:02   Tier 1 result: SUCCESS (exit_code=0)
+[stratum] 22:56:02 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 22:56:02 Step 9: Writing final output ...
+[stratum] 22:56:02   Final status: SUCCESS (tier=1, exit_code=0)
+[stratum] 22:56:49 ============================================
+[stratum] 22:56:49   Repo:        https://github.com/ssrikantan/langgraph-multi-agent-travel-sample
+[stratum] 22:56:49   Status:      SUCCESS
+[stratum] 22:56:49   Tier:        1
+[stratum] 22:56:49   Entry:       /tmp/repo/test_local.py
+[stratum] 22:56:49   Events:      20
+[stratum] 22:56:49   Duration:    544s
+[stratum] 22:56:49   Run ID:      964d2161a1dd4635
+[stratum] 22:56:49   Framework:   langgraph
+[stratum] 22:56:49   Run Number:  1
+[stratum] 22:56:49 ============================================

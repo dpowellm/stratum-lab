@@ -1,0 +1,38 @@
+[stratum] 04:52:58 Step 1: Cloning https://github.com/itay601/langGraph ...
+[stratum] 04:52:58 Phase 0: Scanning defensive patterns...
+[stratum] 04:53:08 Phase 0: Complete
+[stratum] 04:53:08 Step 2: Setting environment variables ...
+[stratum] 04:53:17   RUN_ID=48af1352dbca4626  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 04:53:17 Step 3: Handling .env files ...
+[stratum] 04:53:17   Creating default /tmp/repo/.env
+[stratum] 04:53:17 Step 4: Installing dependencies ...
+[stratum] 04:53:17   Installing /tmp/repo/app/requirements.txt
+litellm 1.81.13 requires openai>=2.8.0, but you have openai 1.97.1 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 04:54:25 Step 5: Detecting entry point ...
+[stratum] 04:54:26   Detection reasoning: 8 candidate(s) evaluated
+[stratum] 04:54:26   Winner: app/multiAgent/multiAgent.py (score=7)
+[stratum] 04:54:26   Runner-up: app/chatbot/chatbot.py (score=7)
+[stratum] 04:54:26   Entry point: /tmp/repo/app/multiAgent/multiAgent.py (score=7)
+[stratum] 04:54:26 Step 6: Configuring PYTHONPATH ...
+[stratum] 04:54:26   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 04:54:26 Step 7: Executing Tier 1 (native) ...
+[stratum] 04:54:26   Attempt 1/5: python multiAgent.py
+[stratum] 04:54:35   Tier 1 result: PARTIAL_SUCCESS (exit_code=1)
+[stratum] 04:54:35 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 04:54:35 Step 9: Writing final output ...
+[stratum] 04:54:35   Final status: PARTIAL_SUCCESS (tier=1, exit_code=1)
+[stratum] 04:54:53 ============================================
+[stratum] 04:54:53   Repo:        https://github.com/itay601/langGraph
+[stratum] 04:54:53   Status:      PARTIAL_SUCCESS
+[stratum] 04:54:53   Tier:        1
+[stratum] 04:54:53   Entry:       /tmp/repo/app/multiAgent/multiAgent.py
+[stratum] 04:54:53   Events:      8
+[stratum] 04:54:53   Duration:    106s
+[stratum] 04:54:53   Run ID:      48af1352dbca4626
+[stratum] 04:54:53   Framework:   langgraph
+[stratum] 04:54:53   Run Number:  1
+[stratum] 04:54:53 ============================================

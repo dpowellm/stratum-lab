@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/Mar-Issah/langchain-agents",
+  "repo_full_name": "Mar-Issah/langchain-agents",
+  "run_number": 1,
+  "run_id": "b14be374f59c42d9",
+  "exit_code": 1,
+  "status": "PARTIAL_SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/simple_chatbot.py",
+  "framework_detected": "langgraph",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 15,
+  "timestamp": "2026-02-18T01:28:35.037064+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

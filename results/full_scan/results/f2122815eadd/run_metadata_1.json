@@ -1,0 +1,16 @@
+{
+  "repo_url": "https://github.com/nuglifeleoji/Options-Analytics-Agent",
+  "repo_full_name": "nuglifeleoji/Options-Analytics-Agent",
+  "run_number": 1,
+  "run_id": "96edfa26f0ba45ca",
+  "exit_code": 0,
+  "status": "SUCCESS",
+  "tier": 1,
+  "entry_point": "/tmp/repo/evaluation/llm_judge.py",
+  "framework_detected": "langgraph",
+  "events_file": "events_run_1.jsonl",
+  "event_count": 17,
+  "timestamp": "2026-02-17T19:49:47.500775+00:00",
+  "timeout_seconds": 300,
+  "model_name": "mistralai/Mistral-7B-Instruct-v0.3"
+}

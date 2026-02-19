@@ -1,0 +1,45 @@
+/usr/local/lib/python3.11/site-packages/lagent/llms/openai.py:403: DeprecationWarning: `top_k` parameter is deprecated in OpenAI APIs.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/tmp/repo/poc_files/custom_gpt_google.py", line 325, in <module>
+    final = graph.invoke({})
+            ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/langgraph/pregel/main.py", line 3071, in invoke
+    for chunk in self.stream(
+  File "/usr/local/lib/python3.11/site-packages/langgraph/pregel/main.py", line 2646, in stream
+    for _ in runner.tick(
+  File "/usr/local/lib/python3.11/site-packages/langgraph/pregel/_runner.py", line 167, in tick
+    run_with_retry(
+  File "/usr/local/lib/python3.11/site-packages/langgraph/pregel/_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/langgraph/_internal/_runnable.py", line 656, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/langgraph/_internal/_runnable.py", line 400, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/repo/poc_files/custom_gpt_google.py", line 266, in reason_json
+    response = llm_agent.call_llm(state["context"])
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/repo/poc_files/custom_gpt_google.py", line 228, in call_llm
+    result = self.llm.chat(messages)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/lagent/llms/openai.py", line 121, in chat
+    ret = [task.result() for task in tasks]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/lagent/llms/openai.py", line 121, in <listcomp>
+    ret = [task.result() for task in tasks]
+           ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/lagent/llms/openai.py", line 245, in _chat
+    raise RuntimeError('Calling OpenAI failed after retrying for '
+RuntimeError: Calling OpenAI failed after retrying for 2 times. Check the logs for details.
+During task with name 'reason' and id 'f4c96337-89b3-6e50-ad61-102880c938de'

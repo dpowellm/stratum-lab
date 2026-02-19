@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/itay601/langGraph",
+  "status": "PARTIAL_SUCCESS",
+  "exit_code": 1,
+  "entry_point": "/tmp/repo/app/multiAgent/multiAgent.py",
+  "tier": 1,
+  "event_count": 5,
+  "duration_seconds": 97,
+  "run_id": "48af1352dbca4626",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "Traceback (most recent call last):\n  File \"/tmp/repo/app/multiAgent/multiAgent.py\", line 4, in <module>\n    from .workflow import Workflow\nImportError: attempted relative import with no known parent package\n"
+}

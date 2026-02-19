@@ -1,0 +1,38 @@
+[stratum] 09:37:15 Step 1: Cloning https://github.com/Ahmad-Nayfeh/crewai-multi-phase-workshop ...
+[stratum] 09:37:16 Phase 0: Scanning defensive patterns...
+[stratum] 09:37:43 Phase 0: Complete
+[stratum] 09:37:43 Step 2: Setting environment variables ...
+[stratum] 09:38:08   RUN_ID=2d0844d1e9184cc6  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 09:38:08 Step 3: Handling .env files ...
+[stratum] 09:38:08   Creating /tmp/repo/.env from /tmp/repo/.env.example
+[stratum] 09:38:08 Step 4: Installing dependencies ...
+[stratum] 09:38:08   Installing /tmp/repo/requirements.txt
+litellm 1.81.13 requires openai>=2.8.0, but you have openai 1.83.0 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 09:39:04 Step 5: Detecting entry point ...
+[stratum] 09:39:05   Detection reasoning: 7 candidate(s) evaluated
+[stratum] 09:39:05   Winner: phases/phase0_hello_crew.py (score=10)
+[stratum] 09:39:05   Runner-up: phases/phase2_flows_custom_tool.py (score=10)
+[stratum] 09:39:05   Entry point: /tmp/repo/phases/phase0_hello_crew.py (score=10)
+[stratum] 09:39:05 Step 6: Configuring PYTHONPATH ...
+[stratum] 09:39:05   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 09:39:05 Step 7: Executing Tier 1 (native) ...
+[stratum] 09:39:05   Attempt 1/5: python phase0_hello_crew.py
+[stratum] 09:39:38   Tier 1 result: PARTIAL_SUCCESS (exit_code=1)
+[stratum] 09:39:38 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 09:39:38 Step 9: Writing final output ...
+[stratum] 09:39:38   Final status: PARTIAL_SUCCESS (tier=1, exit_code=1)
+[stratum] 09:40:27 ============================================
+[stratum] 09:40:27   Repo:        https://github.com/Ahmad-Nayfeh/crewai-multi-phase-workshop
+[stratum] 09:40:27   Status:      PARTIAL_SUCCESS
+[stratum] 09:40:27   Tier:        1
+[stratum] 09:40:27   Entry:       /tmp/repo/phases/phase0_hello_crew.py
+[stratum] 09:40:27   Events:      22
+[stratum] 09:40:27   Duration:    169s
+[stratum] 09:40:27   Run ID:      2d0844d1e9184cc6
+[stratum] 09:40:27   Framework:   crewai
+[stratum] 09:40:27   Run Number:  1
+[stratum] 09:40:27 ============================================

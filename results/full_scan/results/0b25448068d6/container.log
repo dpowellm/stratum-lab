@@ -1,0 +1,47 @@
+[stratum] 00:44:29 Step 1: Cloning https://github.com/BirenMer/agentic-ai-learning ...
+[stratum] 00:44:30 Phase 0: Scanning defensive patterns...
+[stratum] 00:44:42 Phase 0: Complete
+[stratum] 00:44:42 Step 2: Setting environment variables ...
+[stratum] 00:44:56   RUN_ID=e2bf0c869c0743be  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 00:44:56 Step 3: Handling .env files ...
+[stratum] 00:44:56   Creating default /tmp/repo/.env
+[stratum] 00:44:56 Step 4: Installing dependencies ...
+[stratum] 00:44:56   Installing repo package (editable)
+  ERROR: Failed building editable for agentic-ai-learning
+ERROR: Could not build wheels for agentic-ai-learning, which is required to install pyproject.toml-based projects
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 00:49:23 Step 5: Detecting entry point ...
+[stratum] 00:49:26   Detection reasoning: 31 candidate(s) evaluated
+[stratum] 00:49:26   Winner: multi-agent-architectures/supervisor-agent-with-agent-as-tools/invoke_supervisor_agent.py (score=10)
+[stratum] 00:49:26   Runner-up: LATS_Agent/invoke_initial_chain.py (score=7)
+[stratum] 00:49:26   Entry point: /tmp/repo/multi-agent-architectures/supervisor-agent-with-agent-as-tools/invoke_supervisor_agent.py (score=10)
+[stratum] 00:49:26 Step 6: Configuring PYTHONPATH ...
+[stratum] 00:49:26   Installing package at /tmp/repo
+  ERROR: Failed building editable for agentic-ai-learning
+ERROR: Could not build wheels for agentic-ai-learning, which is required to install pyproject.toml-based projects
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 00:52:48   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 00:52:48 Step 7: Executing Tier 1 (native) ...
+[stratum] 00:52:48   Attempt 1/5: python invoke_supervisor_agent.py
+[stratum] 00:53:07   Auto-installing: langchain_tavily -> pip install langchain-tavily
+[stratum] 00:53:30   Installed langchain-tavily -- retrying ...
+[stratum] 00:53:30   Attempt 2/5: python invoke_supervisor_agent.py
+[stratum] 00:54:02   Tier 1 result: SUCCESS (exit_code=0)
+[stratum] 00:54:02 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 00:54:02 Step 9: Writing final output ...
+[stratum] 00:54:02   Final status: SUCCESS (tier=1, exit_code=0)
+[stratum] 00:54:27 ============================================
+[stratum] 00:54:27   Repo:        https://github.com/BirenMer/agentic-ai-learning
+[stratum] 00:54:27   Status:      SUCCESS
+[stratum] 00:54:27   Tier:        1
+[stratum] 00:54:27   Entry:       /tmp/repo/multi-agent-architectures/supervisor-agent-with-agent-as-tools/invoke_supervisor_agent.py
+[stratum] 00:54:27   Events:      26
+[stratum] 00:54:27   Duration:    586s
+[stratum] 00:54:27   Run ID:      e2bf0c869c0743be
+[stratum] 00:54:27   Framework:   langgraph
+[stratum] 00:54:27   Run Number:  1
+[stratum] 00:54:27 ============================================

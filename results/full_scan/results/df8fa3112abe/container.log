@@ -1,0 +1,48 @@
+[stratum] 08:21:15 Step 1: Cloning https://github.com/nitishkthakur/Langchain ...
+[stratum] 08:21:16 Phase 0: Scanning defensive patterns...
+[stratum] 08:21:45 Phase 0: Complete
+[stratum] 08:21:45 Step 2: Setting environment variables ...
+[stratum] 08:22:12   RUN_ID=baf3c427f9e1443b  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 08:22:12 Step 3: Handling .env files ...
+[stratum] 08:22:12   Creating default /tmp/repo/.env
+[stratum] 08:22:12 Step 4: Installing dependencies ...
+[stratum] 08:22:12   Installing /tmp/repo/SQL Agent/requirements.txt
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 08:22:47   Installing /tmp/repo/requirements.txt
+WARNING: bleach 4.1.0 does not provide the extra 'css'
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 08:26:16   Installing /tmp/repo/SQL Agent 2/requirements.txt
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 08:27:06 Step 5: Detecting entry point ...
+[stratum] 08:27:09   Detection reasoning: 17 candidate(s) evaluated
+[stratum] 08:27:09   Winner: long_running_coding_agents/gemini-agent.py (score=10)
+[stratum] 08:27:09   Runner-up: abinitio_to_sql_claude_agent.py (score=5)
+[stratum] 08:27:09   Entry point: /tmp/repo/long_running_coding_agents/gemini-agent.py (score=10)
+[stratum] 08:27:09 Step 6: Configuring PYTHONPATH ...
+[stratum] 08:27:09   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 08:27:09 Step 7: Executing Tier 1 (native) ...
+[stratum] 08:27:09   Attempt 1/5: python gemini-agent.py
+[stratum] 08:27:49   Tier 1 result: SUCCESS (exit_code=0)
+[stratum] 08:27:49 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 08:27:49 Step 9: Writing final output ...
+[stratum] 08:27:49   Final status: SUCCESS (tier=1, exit_code=0)
+[stratum] 08:29:01 ============================================
+[stratum] 08:29:01   Repo:        https://github.com/nitishkthakur/Langchain
+[stratum] 08:29:01   Status:      SUCCESS
+[stratum] 08:29:01   Tier:        1
+[stratum] 08:29:01   Entry:       /tmp/repo/long_running_coding_agents/gemini-agent.py
+[stratum] 08:29:01   Events:      16
+[stratum] 08:29:01   Duration:    430s
+[stratum] 08:29:01   Run ID:      baf3c427f9e1443b
+[stratum] 08:29:01   Framework:   langgraph
+[stratum] 08:29:01   Run Number:  1
+[stratum] 08:29:01 ============================================

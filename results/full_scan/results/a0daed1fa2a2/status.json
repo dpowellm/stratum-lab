@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/AteetVatan/ai-global-signal-grid",
+  "status": "PARTIAL_SUCCESS",
+  "exit_code": 1,
+  "entry_point": "/tmp/repo/poc_files/custom_gpt_google.py",
+  "tier": 1,
+  "event_count": 42,
+  "duration_seconds": 1829,
+  "run_id": "1cef03ca6848425d",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "    result = self.llm.chat(messages)\n             ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/lagent/llms/openai.py\", line 121, in chat\n    ret = [task.result() for task in tasks]\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/lagent/llms/openai.py\", line 121, in <listcomp>\n    ret = [task.result() for task in tasks]\n           ^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/concurrent/futures/_base.py\", line 449, in result\n    return self.__get_result()\n           ^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/concurrent/futures/_base.py\", line 401, in __get_result\n    raise self._exception\n  File \"/usr/local/lib/python3.11/concurrent/futures/thread.py\", line 58, in run\n    result = self.fn(*self.args, **self.kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/lagent/llms/openai.py\", line 245, in _chat\n    raise RuntimeError('Calling OpenAI failed after retrying for '\nRuntimeError: Calling OpenAI failed after retrying for 2 times. Check the logs for details.\nDuring task with name 'reason' and id 'f4c96337-89b3-6e50-ad61-102880c938de'\n"
+}

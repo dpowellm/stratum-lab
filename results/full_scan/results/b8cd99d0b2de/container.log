@@ -1,0 +1,56 @@
+[stratum] 09:15:21 Step 1: Cloning https://github.com/JhonSanz/langgraph_tutorial ...
+[stratum] 09:15:22 Phase 0: Scanning defensive patterns...
+[stratum] 09:15:48 Phase 0: Complete
+[stratum] 09:15:48 Step 2: Setting environment variables ...
+[stratum] 09:16:12   RUN_ID=fe8509e2cf394759  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 09:16:12 Step 3: Handling .env files ...
+[stratum] 09:16:12   Creating default /tmp/repo/.env
+[stratum] 09:16:12 Step 4: Installing dependencies ...
+[stratum] 09:16:12   Installing /tmp/repo/projects/rag_with_tools/requirements.txt
+ERROR: Cannot install -r /tmp/repo/projects/rag_with_tools/requirements.txt (line 57), -r /tmp/repo/projects/rag_with_tools/requirements.txt (line 58) and langchain-core==0.3.75 because these package versions have conflicting dependencies.
+ERROR: ResolutionImpossible: for help visit https://pip.pypa.io/en/latest/topics/dependency-resolution/#dealing-with-dependency-conflicts
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 09:18:56   Installing /tmp/repo/requirements.txt
+litellm 1.81.13 requires openai>=2.8.0, but you have openai 1.102.0 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 09:23:26   Installing repo package (editable)
+
+note: This error originates from a subprocess, and is likely not a problem with pip.
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 09:24:27 Step 5: Detecting entry point ...
+[stratum] 09:24:31   Detection reasoning: 26 candidate(s) evaluated
+[stratum] 09:24:31   Winner: freecodecamp/agents/04_drafter.py (score=10)
+[stratum] 09:24:31   Runner-up: projects/rag_with_tools/main.py (score=7)
+[stratum] 09:24:31   Entry point: /tmp/repo/freecodecamp/agents/04_drafter.py (score=10)
+[stratum] 09:24:31 Step 6: Configuring PYTHONPATH ...
+[stratum] 09:24:31   Installing package at /tmp/repo
+
+note: This error originates from a subprocess, and is likely not a problem with pip.
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 09:25:31   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 09:25:31 Step 7: Executing Tier 1 (native) ...
+[stratum] 09:25:31   Attempt 1/5: python 04_drafter.py
+[stratum] 09:26:00   Tier 1 result: PARTIAL_SUCCESS (exit_code=1)
+[stratum] 09:26:01 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 09:26:01 Step 9: Writing final output ...
+[stratum] 09:26:01   Final status: PARTIAL_SUCCESS (tier=1, exit_code=1)
+[stratum] 09:26:43 ============================================
+[stratum] 09:26:43   Repo:        https://github.com/JhonSanz/langgraph_tutorial
+[stratum] 09:26:43   Status:      PARTIAL_SUCCESS
+[stratum] 09:26:43   Tier:        1
+[stratum] 09:26:43   Entry:       /tmp/repo/freecodecamp/agents/04_drafter.py
+[stratum] 09:26:43   Events:      18
+[stratum] 09:26:43   Duration:    661s
+[stratum] 09:26:43   Run ID:      fe8509e2cf394759
+[stratum] 09:26:43   Framework:   langgraph
+[stratum] 09:26:43   Run Number:  1
+[stratum] 09:26:43 ============================================

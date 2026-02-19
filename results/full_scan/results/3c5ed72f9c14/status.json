@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/Ahmad-Nayfeh/crewai-multi-phase-workshop",
+  "status": "PARTIAL_SUCCESS",
+  "exit_code": 1,
+  "entry_point": "/tmp/repo/phases/phase0_hello_crew.py",
+  "tier": 1,
+  "event_count": 19,
+  "duration_seconds": 143,
+  "run_id": "2d0844d1e9184cc6",
+  "vllm_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "error_log_tail": "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/crewai/agents/crew_agent_executor.py\", line 579, in _invoke_loop_native_tools\n    raise e\n  File \"/usr/local/lib/python3.11/site-packages/crewai/agents/crew_agent_executor.py\", line 498, in _invoke_loop_native_tools\n    answer = get_llm_response(\n             ^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/crewai/utilities/agent_utils.py\", line 372, in get_llm_response\n    raise e\n  File \"/usr/local/lib/python3.11/site-packages/crewai/utilities/agent_utils.py\", line 362, in get_llm_response\n    answer = llm.call(\n             ^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/crewai/llms/providers/openai/completion.py\", line 410, in call\n    return self._call_completions(\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/crewai/llms/providers/openai/completion.py\", line 450, in _call_completions\n    return self._handle_completion(\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/site-packages/crewai/llms/providers/openai/completion.py\", line 1668, in _handle_completion\n    raise ValueError(error_msg) from e\nValueError: Model your OPENAI_MODEL_NAME here not found: Error code: 404 - {'error': {'message': 'The model `your OPENAI_MODEL_NAME here` does not exist.', 'type': 'NotFoundError', 'param': 'model', 'code': 404}}\n"
+}

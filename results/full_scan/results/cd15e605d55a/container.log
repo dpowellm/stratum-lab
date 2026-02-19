@@ -1,0 +1,39 @@
+[stratum] 19:28:38 Step 1: Cloning https://github.com/parameterlab/MASEval ...
+[stratum] 19:28:39 Phase 0: Scanning defensive patterns...
+[stratum] 19:29:09 Phase 0: Complete
+[stratum] 19:29:09 Step 2: Setting environment variables ...
+[stratum] 19:29:37   RUN_ID=e49f439af69e4d7f  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 19:29:37 Step 3: Handling .env files ...
+[stratum] 19:29:37   Creating default /tmp/repo/.env
+[stratum] 19:29:37 Step 4: Installing dependencies ...
+[stratum] 19:29:37   Installing repo package (editable)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 19:31:01 Step 5: Detecting entry point ...
+[stratum] 19:31:13   Detection reasoning: 12 candidate(s) evaluated
+[stratum] 19:31:13   Winner: examples/five_a_day_benchmark/five_a_day_benchmark.py (score=5)
+[stratum] 19:31:13   Runner-up: examples/tau2_benchmark/tau2_benchmark.py (score=5)
+[stratum] 19:31:13   Entry point: /tmp/repo/examples/five_a_day_benchmark/five_a_day_benchmark.py (score=5)
+[stratum] 19:31:13 Step 6: Configuring PYTHONPATH ...
+[stratum] 19:31:13   Installing package at /tmp/repo
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 19:32:33   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 19:32:33 Step 7: Executing Tier 1 (native) ...
+[stratum] 19:32:33   Attempt 1/5: python five_a_day_benchmark.py
+[stratum] 19:32:55   Auto-installing: RestrictedPython -> pip install RestrictedPython
+[stratum] 19:33:30   Installed RestrictedPython -- retrying ...
+[stratum] 19:33:30   Attempt 2/5: python five_a_day_benchmark.py
+[stratum] 19:34:32   Auto-installing: smolagents -> pip install smolagents
+[stratum] 19:35:12   Installed smolagents -- retrying ...
+[stratum] 19:35:12   Attempt 3/5: python five_a_day_benchmark.py
+[stratum] 19:36:17   Tier 1 result: PARTIAL_SUCCESS (exit_code=1)
+[stratum] 19:36:17 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 19:36:17 Step 9: Writing final output ...
+[stratum] 19:36:17   Final status: PARTIAL_SUCCESS (tier=1, exit_code=1)
+
+got 3 SIGTERM/SIGINTs, forcefully exiting

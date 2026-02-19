@@ -1,0 +1,535 @@
+🚀 Kicking off flow with inputs: {
+  "search_criteria": {
+    "location": "Ojodu, Lagos, Nigeria",
+    "property_type": "apartment, Flat",
+    "bedrooms": 2,
+    "max_price": 3000000,
+    "rent_frequency": "yearly/annually"
+  },
+  "design_style": "modern minimalist"
+}
+Flow started with ID: 66717827-808e-4f8f-b8dd-a2867b119231
+╭─────────────────────────── 🔄 Flow Method Running ───────────────────────────╮
+│                                                                              │
+│  Method: initialize_search                                                   │
+│  Status: Running                                                             │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+============================================================
+🏠 AI Real Estate Agent - Find & Redesign
+============================================================
+   Location: Ojodu, Lagos, Nigeria
+   Bedrooms: 2
+------------------------------------------------------------
+╭───────────────────────────── 🌊 Flow Execution ──────────────────────────────╮
+│                                                                              │
+│  Starting Flow Execution                                                     │
+│  Name:                                                                       │
+│  RealEstateFlow                                                              │
+│  ID:                                                                         │
+│  66717827-808e-4f8f-b8dd-a2867b119231                                        │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭─────────────────────────── 🔄 Flow Method Running ───────────────────────────╮
+│                                                                              │
+│  Method: run_research_phase                                                  │
+│  Status: Running                                                             │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────── ✅ Flow Method Completed ──────────────────────────╮
+│                                                                              │
+│  Method: initialize_search                                                   │
+│  Status: Completed                                                           │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── 🌊 Flow Started ───────────────────────────────╮
+│                                                                              │
+│  Flow Started                                                                │
+│  Name: RealEstateFlow                                                        │
+│  ID: 66717827-808e-4f8f-b8dd-a2867b119231                                    │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+🔍 Phase 1: Property Research
+╭───────────────────────── 🚀 Crew Execution Started ──────────────────────────╮
+│                                                                              │
+│  Crew Execution Started                                                      │
+│  Name:                                                                       │
+│  crew                                                                        │
+│  ID:                                                                         │
+│  07fdbde7-e541-4a08-a1c2-5e503e37a3cb                                        │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── 📋 Task Started ───────────────────────────────╮
+│                                                                              │
+│  Task Started                                                                │
+│  Name: search_listings                                                       │
+│  ID: 83940e49-9fdb-4bcc-9fe9-a9682457d79d                                    │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── 🤖 Agent Started ──────────────────────────────╮
+│                                                                              │
+│  Agent: Real Estate URL Finder                                               │
+│                                                                              │
+│  Task: Use the Tavily Search tool to find REAL, individual rental property   │
+│  listing URLs that match the user's search criteria exactly.                 │
+│  USER SEARCH CRITERIA (USE THIS): 2 bedroom apartment, Flat in Ojodu,        │
+│  Lagos, Nigeria under 3000000.0 (yearly/annually rent)                       │
+│  TOOL USAGE (MANDATORY): - You MUST use the Tavily Search tool. - Construct  │
+│  a natural search query based on the user's criteria. - DO NOT search on     │
+│  zillow.com (blocked).                                                       │
+│  URL SELECTION RULES (STRICT): - Return ONLY URLs that point to individual   │
+│  rental listing pages. - Listings MUST be rentals (not sales). - DO NOT      │
+│  return:                                                                     │
+│      - Search result pages                                                   │
+│      - Category pages                                                        │
+│      - Blog posts                                                            │
+│      - Market reports                                                        │
+│      - Aggregation pages                                                     │
+│  - Minimum: 3 URLs - Maximum: 6 URLs - NEVER invent, guess, or modify URLs.  │
+│  RENTAL-ONLY FILTER (MANDATORY): - ONLY include URLs for properties          │
+│  explicitly marked "For Rent" - EXCLUDE any property that is:                │
+│      - For Sale                                                              │
+│      - Sold                                                                  │
+│      - Pending                                                               │
+│      - Off Market                                                            │
+│      - Under Contract                                                        │
+│  - If unsure whether a listing is for rent, SKIP it.                         │
+│  OUTPUT FORMAT (ABSOLUTE): - Your FINAL answer MUST contain ONLY a valid     │
+│  JSON object. - The JSON MUST have EXACTLY two root keys: "urls" and         │
+│  "platforms". - Do NOT include any text, explanations, comments, or          │
+│  instructions. - Do NOT wrap the JSON in markdown code blocks. - Do NOT      │
+│  repeat task instructions. - Do NOT include trailing characters before or    │
+│  after the JSON.                                                             │
+│  JSON SCHEMA (STRICT): {                                                     │
+│    "urls": ["https://..."],                                                  │
+│    "platforms": ["realtor", "apartments", "trulia", "rent", "hotpads"]       │
+│  }                                                                           │
+│  PLATFORM RULES: - "platforms" must only include platforms that appear in    │
+│  "urls". - BLOCKED: zillow.com (do NOT include). - Allowed: realtor,         │
+│  apartments, trulia, rent, hotpads, or other legitimate rental sites. - No   │
+│  duplicates.                                                                 │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭──────────────────────────────── ❌ LLM Error ────────────────────────────────╮
+│                                                                              │
+│  LLM Call Failed                                                             │
+│  Error: AWS Bedrock API call failed: Bedrock connection error: Unable to     │
+│  locate credentials                                                          │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭──────────────────────────────── ❌ LLM Error ────────────────────────────────╮
+│                                                                              │
+│  LLM Call Failed                                                             │
+│  Error: AWS Bedrock API call failed: Bedrock connection error: Unable to     │
+│  locate credentials                                                          │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭────────────────────────────── 🤖 Agent Started ──────────────────────────────╮
+│                                                                              │
+│  Agent: Real Estate URL Finder                                               │
+│                                                                              │
+│  Task: Use the Tavily Search tool to find REAL, individual rental property   │
+│  listing URLs that match the user's search criteria exactly.                 │
+│  USER SEARCH CRITERIA (USE THIS): 2 bedroom apartment, Flat in Ojodu,        │
+│  Lagos, Nigeria under 3000000.0 (yearly/annually rent)                       │
+│  TOOL USAGE (MANDATORY): - You MUST use the Tavily Search tool. - Construct  │
+│  a natural search query based on the user's criteria. - DO NOT search on     │
+│  zillow.com (blocked).                                                       │
+│  URL SELECTION RULES (STRICT): - Return ONLY URLs that point to individual   │
+│  rental listing pages. - Listings MUST be rentals (not sales). - DO NOT      │
+│  return:                                                                     │
+│      - Search result pages                                                   │
+│      - Category pages                                                        │
+│      - Blog posts                                                            │
+│      - Market reports                                                        │
+│      - Aggregation pages                                                     │
+│  - Minimum: 3 URLs - Maximum: 6 URLs - NEVER invent, guess, or modify URLs.  │
+│  RENTAL-ONLY FILTER (MANDATORY): - ONLY include URLs for properties          │
+│  explicitly marked "For Rent" - EXCLUDE any property that is:                │
+│      - For Sale                                                              │
+│      - Sold                                                                  │
+│      - Pending                                                               │
+│      - Off Market                                                            │
+│      - Under Contract                                                        │
+│  - If unsure whether a listing is for rent, SKIP it.                         │
+│  OUTPUT FORMAT (ABSOLUTE): - Your FINAL answer MUST contain ONLY a valid     │
+│  JSON object. - The JSON MUST have EXACTLY two root keys: "urls" and         │
+│  "platforms". - Do NOT include any text, explanations, comments, or          │
+│  instructions. - Do NOT wrap the JSON in markdown code blocks. - Do NOT      │
+│  repeat task instructions. - Do NOT include trailing characters before or    │
+│  after the JSON.                                                             │
+│  JSON SCHEMA (STRICT): {                                                     │
+│    "urls": ["https://..."],                                                  │
+│    "platforms": ["realtor", "apartments", "trulia", "rent", "hotpads"]       │
+│  }                                                                           │
+│  PLATFORM RULES: - "platforms" must only include platforms that appear in    │
+│  "urls". - BLOCKED: zillow.com (do NOT include). - Allowed: realtor,         │
+│  apartments, trulia, rent, hotpads, or other legitimate rental sites. - No   │
+│  duplicates.                                                                 │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+╭────────────────────────────── 🤖 Agent Started ──────────────────────────────╮
+│                                                                              │
+│  Agent: Real Estate URL Finder                                               │
+│                                                                              │
+│  Task: Use the Tavily Search tool to find REAL, individual rental property   │
+│  listing URLs that match the user's search criteria exactly.                 │
+│  USER SEARCH CRITERIA (USE THIS): 2 bedroom apartment, Flat in Ojodu,        │
+│  Lagos, Nigeria under 3000000.0 (yearly/annually rent)                       │
+│  TOOL USAGE (MANDATORY): - You MUST use the Tavily Search tool. - Construct  │
+│  a natural search query based on the user's criteria. - DO NOT search on     │
+│  zillow.com (blocked).                                                       │
+│  URL SELECTION RULES (STRICT): - Return ONLY URLs that point to individual   │
+│  rental listing pages. - Listings MUST be rentals (not sales). - DO NOT      │
+│  return:                                                                     │
+│      - Search result pages                                                   │
+│      - Category pages                                                        │
+│      - Blog posts                                                            │
+│      - Market reports                                                        │
+│      - Aggregation pages                                                     │
+│  - Minimum: 3 URLs - Maximum: 6 URLs - NEVER invent, guess, or modify URLs.  │
+│  RENTAL-ONLY FILTER (MANDATORY): - ONLY include URLs for properties          │
+│  explicitly marked "For Rent" - EXCLUDE any property that is:                │
+│      - For Sale                                                              │
+│      - Sold                                                                  │
+│      - Pending                                                               │
+│      - Off Market                                                            │
+│      - Under Contract                                                        │
+│  - If unsure whether a listing is for rent, SKIP it.                         │
+│  OUTPUT FORMAT (ABSOLUTE): - Your FINAL answer MUST contain ONLY a valid     │
+│  JSON object. - The JSON MUST have EXACTLY two root keys: "urls" and         │
+│  "platforms". - Do NOT include any text, explanations, comments, or          │
+│  instructions. - Do NOT wrap the JSON in markdown code blocks. - Do NOT      │
+│  repeat task instructions. - Do NOT include trailing characters before or    │
+│  after the JSON.                                                             │
+│  JSON SCHEMA (STRICT): {                                                     │
+│    "urls": ["https://..."],                                                  │
+│    "platforms": ["realtor", "apartments", "trulia", "rent", "hotpads"]       │
+│  }                                                                           │
+│  PLATFORM RULES: - "platforms" must only include platforms that appear in    │
+│  "urls". - BLOCKED: zillow.com (do NOT include). - Allowed: realtor,         │
+│  apartments, trulia, rent, hotpads, or other legitimate rental sites. - No   │
+│  duplicates.                                                                 │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭────────────────────────────── 🤖 Agent Started ──────────────────────────────╮
+│                                                                              │
+│  Agent: Real Estate URL Finder                                               │
+│                                                                              │
+│  Task: Use the Tavily Search tool to find REAL, individual rental property   │
+│  listing URLs that match the user's search criteria exactly.                 │
+│  USER SEARCH CRITERIA (USE THIS): 2 bedroom apartment, Flat in Ojodu,        │
+│  Lagos, Nigeria under 3000000.0 (yearly/annually rent)                       │
+│  TOOL USAGE (MANDATORY): - You MUST use the Tavily Search tool. - Construct  │
+│  a natural search query based on the user's criteria. - DO NOT search on     │
+│  zillow.com (blocked).                                                       │
+│  URL SELECTION RULES (STRICT): - Return ONLY URLs that point to individual   │
+│  rental listing pages. - Listings MUST be rentals (not sales). - DO NOT      │
+│  return:                                                                     │
+│      - Search result pages                                                   │
+│      - Category pages                                                        │
+│      - Blog posts                                                            │
+│      - Market reports                                                        │
+│      - Aggregation pages                                                     │
+│  - Minimum: 3 URLs - Maximum: 6 URLs - NEVER invent, guess, or modify URLs.  │
+│  RENTAL-ONLY FILTER (MANDATORY): - ONLY include URLs for properties          │
+│  explicitly marked "For Rent" - EXCLUDE any property that is:                │
+│      - For Sale                                                              │
+│      - Sold                                                                  │
+│      - Pending                                                               │
+│      - Off Market                                                            │
+│      - Under Contract                                                        │
+│  - If unsure whether a listing is for rent, SKIP it.                         │
+│  OUTPUT FORMAT (ABSOLUTE): - Your FINAL answer MUST contain ONLY a valid     │
+│  JSON object. - The JSON MUST have EXACTLY two root keys: "urls" and         │
+│  "platforms". - Do NOT include any text, explanations, comments, or          │
+│  instructions. - Do NOT wrap the JSON in markdown code blocks. - Do NOT      │
+│  repeat task instructions. - Do NOT include trailing characters before or    │
+│  after the JSON.                                                             │
+│  JSON SCHEMA (STRICT): {                                                     │
+│    "urls": ["https://..."],                                                  │
+│    "platforms": ["realtor", "apartments", "trulia", "rent", "hotpads"]       │
+│  }                                                                           │
+│  PLATFORM RULES: - "platforms" must only include platforms that appear in    │
+│  "urls". - BLOCKED: zillow.com (do NOT include). - Allowed: realtor,         │
+│  apartments, trulia, rent, hotpads, or other legitimate rental sites. - No   │
+│  duplicates.                                                                 │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────── ❌ LLM Error ────────────────────────────────╮
+│                                                                              │
+│  LLM Call Failed                                                             │
+│  Error: AWS Bedrock API call failed: Bedrock connection error: Unable to     │
+│  locate credentials                                                          │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭──────────────────────────────── ❌ LLM Error ────────────────────────────────╮
+│                                                                              │
+│  LLM Call Failed                                                             │
+│  Error: AWS Bedrock API call failed: Bedrock connection error: Unable to     │
+│  locate credentials                                                          │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── 🤖 Agent Started ──────────────────────────────╮
+│                                                                              │
+│  Agent: Real Estate URL Finder                                               │
+│                                                                              │
+│  Task: Use the Tavily Search tool to find REAL, individual rental property   │
+│  listing URLs that match the user's search criteria exactly.                 │
+│  USER SEARCH CRITERIA (USE THIS): 2 bedroom apartment, Flat in Ojodu,        │
+│  Lagos, Nigeria under 3000000.0 (yearly/annually rent)                       │
+│  TOOL USAGE (MANDATORY): - You MUST use the Tavily Search tool. - Construct  │
+│  a natural search query based on the user's criteria. - DO NOT search on     │
+│  zillow.com (blocked).                                                       │
+│  URL SELECTION RULES (STRICT): - Return ONLY URLs that point to individual   │
+│  rental listing pages. - Listings MUST be rentals (not sales). - DO NOT      │
+│  return:                                                                     │
+│      - Search result pages                                                   │
+│      - Category pages                                                        │
+│      - Blog posts                                                            │
+│      - Market reports                                                        │
+│      - Aggregation pages                                                     │
+│  - Minimum: 3 URLs - Maximum: 6 URLs - NEVER invent, guess, or modify URLs.  │
+│  RENTAL-ONLY FILTER (MANDATORY): - ONLY include URLs for properties          │
+│  explicitly marked "For Rent" - EXCLUDE any property that is:                │
+│      - For Sale                                                              │
+│      - Sold                                                                  │
+│      - Pending                                                               │
+│      - Off Market                                                            │
+│      - Under Contract                                                        │
+│  - If unsure whether a listing is for rent, SKIP it.                         │
+│  OUTPUT FORMAT (ABSOLUTE): - Your FINAL answer MUST contain ONLY a valid     │
+│  JSON object. - The JSON MUST have EXACTLY two root keys: "urls" and         │
+│  "platforms". - Do NOT include any text, explanations, comments, or          │
+│  instructions. - Do NOT wrap the JSON in markdown code blocks. - Do NOT      │
+│  repeat task instructions. - Do NOT include trailing characters before or    │
+│  after the JSON.                                                             │
+│  JSON SCHEMA (STRICT): {                                                     │
+│    "urls": ["https://..."],                                                  │
+│    "platforms": ["realtor", "apartments", "trulia", "rent", "hotpads"]       │
+│  }                                                                           │
+│  PLATFORM RULES: - "platforms" must only include platforms that appear in    │
+│  "urls". - BLOCKED: zillow.com (do NOT include). - Allowed: realtor,         │
+│  apartments, trulia, rent, hotpads, or other legitimate rental sites. - No   │
+│  duplicates.                                                                 │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭──────────────────────────────── ❌ LLM Error ────────────────────────────────╮
+│                                                                              │
+│  LLM Call Failed                                                             │
+│  Error: AWS Bedrock API call failed: Bedrock connection error: Unable to     │
+│  locate credentials                                                          │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── 🤖 Agent Started ──────────────────────────────╮
+│                                                                              │
+│  Agent: Real Estate URL Finder                                               │
+│                                                                              │
+│  Task: Use the Tavily Search tool to find REAL, individual rental property   │
+│  listing URLs that match the user's search criteria exactly.                 │
+│  USER SEARCH CRITERIA (USE THIS): 2 bedroom apartment, Flat in Ojodu,        │
+│  Lagos, Nigeria under 3000000.0 (yearly/annually rent)                       │
+│  TOOL USAGE (MANDATORY): - You MUST use the Tavily Search tool. - Construct  │
+│  a natural search query based on the user's criteria. - DO NOT search on     │
+│  zillow.com (blocked).                                                       │
+│  URL SELECTION RULES (STRICT): - Return ONLY URLs that point to individual   │
+│  rental listing pages. - Listings MUST be rentals (not sales). - DO NOT      │
+│  return:                                                                     │
+│      - Search result pages                                                   │
+│      - Category pages                                                        │
+│      - Blog posts                                                            │
+│      - Market reports                                                        │
+│      - Aggregation pages                                                     │
+│  - Minimum: 3 URLs - Maximum: 6 URLs - NEVER invent, guess, or modify URLs.  │
+│  RENTAL-ONLY FILTER (MANDATORY): - ONLY include URLs for properties          │
+│  explicitly marked "For Rent" - EXCLUDE any property that is:                │
+│      - For Sale                                                              │
+│      - Sold                                                                  │
+│      - Pending                                                               │
+│      - Off Market                                                            │
+│      - Under Contract                                                        │
+│  - If unsure whether a listing is for rent, SKIP it.                         │
+│  OUTPUT FORMAT (ABSOLUTE): - Your FINAL answer MUST contain ONLY a valid     │
+│  JSON object. - The JSON MUST have EXACTLY two root keys: "urls" and         │
+│  "platforms". - Do NOT include any text, explanations, comments, or          │
+│  instructions. - Do NOT wrap the JSON in markdown code blocks. - Do NOT      │
+│  repeat task instructions. - Do NOT include trailing characters before or    │
+│  after the JSON.                                                             │
+│  JSON SCHEMA (STRICT): {                                                     │
+│    "urls": ["https://..."],                                                  │
+│    "platforms": ["realtor", "apartments", "trulia", "rent", "hotpads"]       │
+│  }                                                                           │
+│  PLATFORM RULES: - "platforms" must only include platforms that appear in    │
+│  "urls". - BLOCKED: zillow.com (do NOT include). - Allowed: realtor,         │
+│  apartments, trulia, rent, hotpads, or other legitimate rental sites. - No   │
+│  duplicates.                                                                 │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭──────────────────────────────── ❌ LLM Error ────────────────────────────────╮
+│                                                                              │
+│  LLM Call Failed                                                             │
+│  Error: AWS Bedrock API call failed: Bedrock connection error: Unable to     │
+│  locate credentials                                                          │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭────────────────────────────── 🤖 Agent Started ──────────────────────────────╮
+│                                                                              │
+│  Agent: Real Estate URL Finder                                               │
+│                                                                              │
+│  Task: Use the Tavily Search tool to find REAL, individual rental property   │
+│  listing URLs that match the user's search criteria exactly.                 │
+│  USER SEARCH CRITERIA (USE THIS): 2 bedroom apartment, Flat in Ojodu,        │
+│  Lagos, Nigeria under 3000000.0 (yearly/annually rent)                       │
+│  TOOL USAGE (MANDATORY): - You MUST use the Tavily Search tool. - Construct  │
+│  a natural search query based on the user's criteria. - DO NOT search on     │
+│  zillow.com (blocked).                                                       │
+│  URL SELECTION RULES (STRICT): - Return ONLY URLs that point to individual   │
+│  rental listing pages. - Listings MUST be rentals (not sales). - DO NOT      │
+│  return:                                                                     │
+│      - Search result pages                                                   │
+│      - Category pages                                                        │
+│      - Blog posts                                                            │
+│      - Market reports                                                        │
+│      - Aggregation pages                                                     │
+│  - Minimum: 3 URLs - Maximum: 6 URLs - NEVER invent, guess, or modify URLs.  │
+│  RENTAL-ONLY FILTER (MANDATORY): - ONLY include URLs for properties          │
+│  explicitly marked "For Rent" - EXCLUDE any property that is:                │
+│      - For Sale                                                              │
+│      - Sold                                                                  │
+│      - Pending                                                               │
+│      - Off Market                                                            │
+│      - Under Contract                                                        │
+│  - If unsure whether a listing is for rent, SKIP it.                         │
+│  OUTPUT FORMAT (ABSOLUTE): - Your FINAL answer MUST contain ONLY a valid     │
+│  JSON object. - The JSON MUST have EXACTLY two root keys: "urls" and         │
+│  "platforms". - Do NOT include any text, explanations, comments, or          │
+│  instructions. - Do NOT wrap the JSON in markdown code blocks. - Do NOT      │
+│  repeat task instructions. - Do NOT include trailing characters before or    │
+│  after the JSON.                                                             │
+│  JSON SCHEMA (STRICT): {                                                     │
+│    "urls": ["https://..."],                                                  │
+│    "platforms": ["realtor", "apartments", "trulia", "rent", "hotpads"]       │
+│  }                                                                           │
+│  PLATFORM RULES: - "platforms" must only include platforms that appear in    │
+│  "urls". - BLOCKED: zillow.com (do NOT include). - Allowed: realtor,         │
+│  apartments, trulia, rent, hotpads, or other legitimate rental sites. - No   │
+│  duplicates.                                                                 │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭──────────────────────────────── ❌ LLM Error ────────────────────────────────╮
+│                                                                              │
+│  LLM Call Failed                                                             │
+│  Error: AWS Bedrock API call failed: Bedrock connection error: Unable to     │
+│  locate credentials                                                          │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+[CrewAIEventsBus] Warning: Event pairing mismatch. 'task_failed' closed 
+'agent_execution_started' (expected 'task_started')
+[CrewAIEventsBus] Warning: Event pairing mismatch. 'crew_kickoff_failed' closed 
+'agent_execution_started' (expected 'crew_kickoff_started')
+╭────────────────────────────── 📋 Task Failure ───────────────────────────────╮
+│                                                                              │
+│  Task Failed                                                                 │
+│  Name:                                                                       │
+│  search_listings                                                             │
+│  Agent:                                                                      │
+│  Real Estate URL Finder                                                      │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭──────────────────────────────── Crew Failure ────────────────────────────────╮
+│                                                                              │
+│  Crew Execution Failed                                                       │
+│  Name:                                                                       │
+│  crew                                                                        │
+│  ID:                                                                         │
+│  07fdbde7-e541-4a08-a1c2-5e503e37a3cb                                        │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+╭─────────────────────────────── Tracing Status ───────────────────────────────╮
+│                                                                              │
+│  Info: Tracing is disabled.                                                  │
+│                                                                              │
+│  To enable tracing, do any one of these:                                     │
+│  • Set tracing=True in your Crew/Flow code                                   │
+│  • Set CREWAI_TRACING_ENABLED=true in your project's .env file               │
+│  • Run: crewai traces enable                                                 │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─────────────────────────── ❌ Flow Method Failed ────────────────────────────╮
+│                                                                              │
+│  Method: run_research_phase                                                  │
+│  Status: Failed                                                              │
+│                                                                              │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+
+╭────────────────────────────── Execution Traces ──────────────────────────────╮
+│                                                                              │
+│  🔍 Detailed execution traces are available!                                 │
+│                                                                              │
+│  View insights including:                                                    │
+│    • Agent decision-making process                                           │
+│    • Task execution flow and timing                                          │
+│    • Tool usage details                                                      │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+Would you like to view your execution traces? [y/N] (20s timeout): 
+
+╭────────────────────────── Tracing Preference Saved ──────────────────────────╮
+│                                                                              │
+│  Info: Tracing has been disabled.                                            │
+│                                                                              │
+│  Your preference has been saved. Future Crew/Flow executions will not        │
+│  collect traces.                                                             │
+│                                                                              │
+│  To enable tracing later, do any one of these:                               │
+│  • Set tracing=True in your Crew/Flow code                                   │
+│  • Set CREWAI_TRACING_ENABLED=true in your project's .env file               │
+│  • Run: crewai traces enable                                                 │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+

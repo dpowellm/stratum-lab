@@ -1,0 +1,38 @@
+[stratum] 14:55:10 Step 1: Cloning https://github.com/parasmahajan31/ClaimAdjudicationAgenticAI ...
+[stratum] 14:55:13 Phase 0: Scanning defensive patterns...
+[stratum] 14:55:37 Phase 0: Complete
+[stratum] 14:55:37 Step 2: Setting environment variables ...
+[stratum] 14:56:03   RUN_ID=890c4132719443ee  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 14:56:03 Step 3: Handling .env files ...
+[stratum] 14:56:03   Creating default /tmp/repo/.env
+[stratum] 14:56:03 Step 4: Installing dependencies ...
+[stratum] 14:56:03   Installing /tmp/repo/requirements.txt
+crewai 1.9.3 requires openai~=1.83.0, but you have openai 2.21.0 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 14:59:05 Step 5: Detecting entry point ...
+[stratum] 14:59:06   Detection reasoning: 5 candidate(s) evaluated
+[stratum] 14:59:06   Winner: test_local.py (score=5)
+[stratum] 14:59:06   Runner-up: simple_adjudication_agent.py (score=5)
+[stratum] 14:59:06   Entry point: /tmp/repo/test_local.py (score=5)
+[stratum] 14:59:06 Step 6: Configuring PYTHONPATH ...
+[stratum] 14:59:06   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 14:59:06 Step 7: Executing Tier 1 (native) ...
+[stratum] 14:59:06   Attempt 1/5: python test_local.py
+[stratum] 14:59:41   Tier 1 result: SUCCESS (exit_code=0)
+[stratum] 14:59:41 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 14:59:41 Step 9: Writing final output ...
+[stratum] 14:59:41   Final status: SUCCESS (tier=1, exit_code=0)
+[stratum] 15:00:34 ============================================
+[stratum] 15:00:34   Repo:        https://github.com/parasmahajan31/ClaimAdjudicationAgenticAI
+[stratum] 15:00:34   Status:      SUCCESS
+[stratum] 15:00:34   Tier:        1
+[stratum] 15:00:34   Entry:       /tmp/repo/test_local.py
+[stratum] 15:00:34   Events:      18
+[stratum] 15:00:34   Duration:    297s
+[stratum] 15:00:34   Run ID:      890c4132719443ee
+[stratum] 15:00:34   Framework:   langgraph
+[stratum] 15:00:34   Run Number:  1
+[stratum] 15:00:34 ============================================

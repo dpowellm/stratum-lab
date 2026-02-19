@@ -1,0 +1,38 @@
+[stratum] 15:48:03 Step 1: Cloning https://github.com/abhihyder/langgraph-multi-agent-system ...
+[stratum] 15:48:04 Phase 0: Scanning defensive patterns...
+[stratum] 15:48:29 Phase 0: Complete
+[stratum] 15:48:29 Step 2: Setting environment variables ...
+[stratum] 15:48:54   RUN_ID=2f551d8e3a1e48af  MODEL=mistralai/Mistral-7B-Instruct-v0.3
+[stratum] 15:48:54 Step 3: Handling .env files ...
+[stratum] 15:48:54   Creating /tmp/repo/.env from /tmp/repo/.env.example
+[stratum] 15:48:54 Step 4: Installing dependencies ...
+[stratum] 15:48:54   Installing /tmp/repo/requirements.txt
+instructor 1.12.0 requires openai<2.0.0,>=1.70.0, but you have openai 2.21.0 which is incompatible.
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+[notice] A new release of pip is available: 24.0 -> 26.0.1
+[notice] To update, run: pip install --upgrade pip
+[stratum] 15:58:17 Step 5: Detecting entry point ...
+[stratum] 15:58:23   Detection reasoning: 15 candidate(s) evaluated
+[stratum] 15:58:23   Winner: scripts/test_llm_config.py (score=10)
+[stratum] 15:58:23   Runner-up: app/main.py (score=10)
+[stratum] 15:58:23   Entry point: /tmp/repo/scripts/test_llm_config.py (score=10)
+[stratum] 15:58:23 Step 6: Configuring PYTHONPATH ...
+[stratum] 15:58:23   PYTHONPATH=/tmp/repo:/tmp/repo/src:
+[stratum] 15:58:23 Step 7: Executing Tier 1 (native) ...
+[stratum] 15:58:23   Attempt 1/5: python test_llm_config.py
+[stratum] 15:59:14   Tier 1 result: SUCCESS (exit_code=0)
+[stratum] 15:59:14 Step 8: Skipping Tier 2 (Tier 1 succeeded)
+[stratum] 15:59:14 Step 9: Writing final output ...
+[stratum] 15:59:14   Final status: SUCCESS (tier=1, exit_code=0)
+[stratum] 15:59:58 ============================================
+[stratum] 15:59:58   Repo:        https://github.com/abhihyder/langgraph-multi-agent-system
+[stratum] 15:59:58   Status:      SUCCESS
+[stratum] 15:59:58   Tier:        1
+[stratum] 15:59:58   Entry:       /tmp/repo/scripts/test_llm_config.py
+[stratum] 15:59:58   Events:      10
+[stratum] 15:59:58   Duration:    694s
+[stratum] 15:59:58   Run ID:      2f551d8e3a1e48af
+[stratum] 15:59:58   Framework:   langgraph
+[stratum] 15:59:58   Run Number:  1
+[stratum] 15:59:58 ============================================

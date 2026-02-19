@@ -1,0 +1,19 @@
+
+Tool Chaining Demonstration
+==================================================
+See how tools work together to solve complex problems.
+
+Available tools:
+- Web fetching + Text analysis
+- Weather data + Agricultural advice
+- Multi-step problem decomposition
+
+Type 'quit' to exit
+==================================================
+
+============================================================
+Example 1: Multi-Step Web Analysis
+============================================================
+Watch how the agent uses multiple tools in sequence...
+
+Error: '_Ns' object has no attribute 'model_dump'
