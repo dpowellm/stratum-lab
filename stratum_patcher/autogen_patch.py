@@ -30,12 +30,14 @@ from stratum_patcher.event_logger import (
 _PATCHED = False
 _FRAMEWORK = "autogen"
 
+OUTPUT_TEXT_LIMIT = 8000  # chars, ~2000 words — captures full agent output for judge evaluation
+
 
 def _stderr(msg: str) -> None:
     print(f"stratum_patcher: {msg}", file=sys.stderr, flush=True)
 
 
-def _truncate(text: Any, limit: int = 2000) -> str:
+def _truncate(text: Any, limit: int = OUTPUT_TEXT_LIMIT) -> str:
     s = str(text)
     return s[:limit] if len(s) > limit else s
 
@@ -636,7 +638,7 @@ def patch() -> None:
                                 payload["error_type"] = type(error).__name__
                             if result is not None:
                                 payload["result_shape"] = get_data_shape(result)
-                                _sig = capture_output_signature(str(result)[:2000])
+                                _sig = capture_output_signature(str(result)[:OUTPUT_TEXT_LIMIT])
                                 payload["output_hash"] = _sig["hash"]
                                 payload["output_type"] = _sig["type"]
                                 payload["output_size_bytes"] = _sig["size_bytes"]
@@ -700,7 +702,7 @@ def patch() -> None:
                                 payload["error_type"] = type(error).__name__
                             if last_item is not None:
                                 payload["result_shape"] = get_data_shape(last_item)
-                                _sig = capture_output_signature(str(last_item)[:2000])
+                                _sig = capture_output_signature(str(last_item)[:OUTPUT_TEXT_LIMIT])
                                 payload["output_hash"] = _sig["hash"]
                                 payload["output_type"] = _sig["type"]
                                 payload["output_size_bytes"] = _sig["size_bytes"]
@@ -766,7 +768,7 @@ def patch() -> None:
                                 payload["error_type"] = type(error).__name__
                             if last_item is not None:
                                 payload["result_shape"] = get_data_shape(last_item)
-                                _sig = capture_output_signature(str(last_item)[:2000])
+                                _sig = capture_output_signature(str(last_item)[:OUTPUT_TEXT_LIMIT])
                                 payload["output_hash"] = _sig["hash"]
                                 payload["output_type"] = _sig["type"]
                                 payload["output_size_bytes"] = _sig["size_bytes"]

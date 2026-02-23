@@ -29,6 +29,8 @@ from stratum_patcher.event_logger import (
 _PATCHED = False
 _FRAMEWORK = "langgraph"
 
+OUTPUT_TEXT_LIMIT = 8000  # chars, ~2000 words — captures full agent output for judge evaluation
+
 
 def _stderr(msg: str) -> None:
     print(f"stratum_patcher: {msg}", file=sys.stderr, flush=True)
@@ -61,7 +63,7 @@ def _state_diff_keys(before: Any, after: Any) -> list[str]:
     return []
 
 
-def _truncate(text: Any, limit: int = 2000) -> str:
+def _truncate(text: Any, limit: int = OUTPUT_TEXT_LIMIT) -> str:
     """Truncate text to limit characters."""
     s = str(text)
     return s[:limit] if len(s) > limit else s
