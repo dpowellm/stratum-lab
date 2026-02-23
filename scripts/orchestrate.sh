@@ -269,6 +269,7 @@ declare -A BG_PIDS         # bg_pid -> repo_url
 declare -A BG_REPO_DIRS    # bg_pid -> output_dir_name
 declare -A BG_START_TIMES  # bg_pid -> epoch seconds
 declare -A BG_RUN_NUMBERS  # bg_pid -> run number
+declare -A BG_CONTAINERS   # bg_pid -> container_name
 
 # Generate a run UUID for this orchestration run
 RUN_UUID=$(python3 -c "import uuid; print(uuid.uuid4())" 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || echo "run-$(date +%s)")
@@ -300,8 +301,20 @@ echo ""
 # ── SIGINT / SIGTERM handler ─────────────────────────────────────────────
 cleanup() {
     echo ""
-    echo "[orchestrate] Shutting down — waiting for running containers..."
+    echo "[orchestrate] Shutting down — stopping running containers..."
     SHUTDOWN=true
+
+    # Stop the watchdog first
+    stop_watchdog
+
+    # Force-stop all tracked containers
+    for pid in "${!BG_CONTAINERS[@]}"; do
+        local cname="${BG_CONTAINERS[$pid]}"
+        if [ -n "$cname" ]; then
+            docker stop -t 10 "$cname" 2>/dev/null || true
+            docker rm -f "$cname" 2>/dev/null || true
+        fi
+    done
 
     for pid in "${!BG_PIDS[@]}"; do
         wait "$pid" 2>/dev/null || true
@@ -478,10 +491,18 @@ except Exception:
             timestamp=$(date -u +"%Y-%m-%dT%H:%M:%S")
             echo "$timestamp $repo_dir run=$run_number status=$status tier=$tier_num behavioral=$behavioral_status $repo_url" >> "$OUTPUT_DIR/scan_log.txt"
 
+            # Ensure container is stopped (belt-and-suspenders with subshell cleanup)
+            local cname="${BG_CONTAINERS[$pid]:-}"
+            if [ -n "$cname" ] && docker inspect "$cname" >/dev/null 2>&1; then
+                docker stop -t 5 "$cname" 2>/dev/null || true
+                docker rm -f "$cname" 2>/dev/null || true
+            fi
+
             unset "BG_PIDS[$pid]"
             unset "BG_REPO_DIRS[$pid]"
             unset "BG_START_TIMES[$pid]"
             unset "BG_RUN_NUMBERS[$pid]"
+            unset "BG_CONTAINERS[$pid]"
         fi
     done
 }
@@ -504,6 +525,49 @@ drain_jobs() {
         sleep 2
     done
     collect_finished
+}
+
+# ── Container watchdog — kills any container exceeding max allowed age ─
+WATCHDOG_PID=""
+
+container_watchdog() {
+    local max_age=$((TIMEOUT + 180))
+    while true; do
+        sleep 60
+        local now
+        now=$(date +%s)
+        # Find stratum containers by name prefix
+        docker ps --filter "name=stratum-" --format "{{.ID}} {{.Names}}" 2>/dev/null | while IFS=' ' read -r cid cname; do
+            [ -z "$cid" ] && continue
+            local started
+            started=$(docker inspect --format '{{.State.StartedAt}}' "$cid" 2>/dev/null) || continue
+            local start_epoch
+            start_epoch=$(date -d "$started" +%s 2>/dev/null) || continue
+            local age=$((now - start_epoch))
+            if [ "$age" -gt "$max_age" ]; then
+                echo "[watchdog] Container $cname ($cid) running for ${age}s (limit: ${max_age}s) — killing"
+                echo "[watchdog] $(date -u +%Y-%m-%dT%H:%M:%S) Killed $cname age=${age}s limit=${max_age}s" >> "$OUTPUT_DIR/watchdog.log"
+                docker stop -t 10 "$cid" 2>/dev/null || true
+                sleep 12
+                docker kill "$cid" 2>/dev/null || true
+                docker rm -f "$cid" 2>/dev/null || true
+            fi
+        done
+    done
+}
+
+start_watchdog() {
+    container_watchdog &
+    WATCHDOG_PID=$!
+    echo "[orchestrate] Container watchdog started (PID=$WATCHDOG_PID, max_age=$((TIMEOUT + 180))s)"
+}
+
+stop_watchdog() {
+    if [ -n "$WATCHDOG_PID" ] && kill -0 "$WATCHDOG_PID" 2>/dev/null; then
+        kill "$WATCHDOG_PID" 2>/dev/null || true
+        wait "$WATCHDOG_PID" 2>/dev/null || true
+        WATCHDOG_PID=""
+    fi
 }
 
 # ── Launch a container for a single repo+run ─────────────────────────────
@@ -533,8 +597,17 @@ launch_container() {
         MOUNT_ARGS+=(-v "$INJECT_MAIN_PY:/app/inject_main.py:ro")
     fi
 
+    # Unique container name for tracking and cleanup
+    local container_name="stratum-${repo_dir}-r${run_number}"
+
+    # Remove any leftover container with this name (e.g., from a crashed prior run)
+    docker rm -f "$container_name" 2>/dev/null || true
+
     (
-        timeout $((TIMEOUT + 120)) docker run --rm \
+        timeout --foreground --kill-after=30 $((TIMEOUT + 120)) \
+            docker run --rm \
+            --name "$container_name" \
+            --init \
             --network=host \
             --entrypoint bash \
             --memory=4g \
@@ -553,7 +626,15 @@ launch_container() {
             -e "RUN_NUMBER=$run_number" \
             "$IMAGE" \
             /app/run_repo.sh "$repo_url" "$VLLM_HOST" "/app/output" "$TIMEOUT" \
-            > "$RESULTS_DIR/$repo_dir/container.log" 2>&1 || true
+            > "$RESULTS_DIR/$repo_dir/container.log" 2>&1
+        local rc=$?
+
+        # If timeout fired (124=SIGTERM, 137=SIGKILL) or any abnormal exit,
+        # the container may still be running — force-stop it.
+        if [ $rc -ne 0 ]; then
+            docker stop -t 10 "$container_name" 2>/dev/null || true
+            docker rm -f "$container_name" 2>/dev/null || true
+        fi
     ) &
     local bg_pid=$!
 
@@ -561,6 +642,7 @@ launch_container() {
     BG_REPO_DIRS[$bg_pid]="$repo_dir"
     BG_START_TIMES[$bg_pid]=$(date +%s)
     BG_RUN_NUMBERS[$bg_pid]="$run_number"
+    BG_CONTAINERS[$bg_pid]="$container_name"
 
     # Docker system prune every 100 repos to reclaim disk space
     if [ $((LAUNCHED % 100)) -eq 0 ]; then
@@ -686,6 +768,9 @@ fi
 # PHASE 1: DISCOVERY (all repos x 1 run each)
 # ============================================================================
 echo "=== PHASE 1: DISCOVERY ($TOTAL repos x $PHASE1_RUNS run) ==="
+
+# Start the container watchdog safety net
+start_watchdog
 
 # Reset counters for Phase 1 (pilot repos with existing metadata will be skipped via resume)
 COMPLETED=0; SKIPPED=0; LAUNCHED=0
@@ -1009,6 +1094,9 @@ if [ -f "$SCRIPT_DIR/compute_risk_model.py" ]; then
 else
     echo "[orchestrate] Skipping Phase 5b: compute_risk_model.py not found"
 fi
+
+# ── Stop the watchdog ──────────────────────────────────────────────────
+stop_watchdog
 
 # ── Final summary and post-processing ────────────────────────────────────
 echo ""
