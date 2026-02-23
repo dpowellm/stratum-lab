@@ -60,6 +60,7 @@ def build_behavioral_record(
     """
     return {
         "repo_full_name": repo_full_name,
+        "repo_hash": repo_full_name,
         "schema_version": "v6",
         "execution_metadata": execution_metadata,
         "edge_validation": edge_validation,

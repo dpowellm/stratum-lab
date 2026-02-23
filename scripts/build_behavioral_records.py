@@ -430,6 +430,7 @@ def build_behavioral_record(
 
     return {
         "repo_full_name": runs[0]["metadata"].get("repo_full_name", repo_hash),
+        "repo_hash": runs[0]["metadata"].get("repo_full_name", repo_hash),
         "schema_version": "v6",
         "execution_metadata": execution_metadata,
         "edge_validation": edge_validation,
