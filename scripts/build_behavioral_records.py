@@ -814,17 +814,47 @@ def classify_node_activation(all_nodes: set[str], runs: list[dict]) -> dict:
 # Error propagation tracing
 # ---------------------------------------------------------------------------
 def trace_error_propagation(structural_graph: dict, runs: list[dict]) -> list[dict]:
-    """Trace how errors propagate through the agent topology."""
+    """Trace how errors propagate through the agent topology.
+
+    Seeds from ALL error indicators:
+    - error.occurred (unhandled exceptions via sys.excepthook)
+    - agent.task_end with status "error" (framework-caught agent failures)
+    - tool.completed with status "error" (tool-level failures)
+    - error.propagated (causal propagation events from instrumentation)
+    """
+    # Try the overlay module which also detects error laundering (STRAT-SI-001)
+    try:
+        from stratum_lab.overlay.error_propagation import (
+            trace_error_propagation as _overlay_trace,
+        )
+        _has_overlay = True
+    except ImportError:
+        _has_overlay = False
+
     traces: list[dict] = []
 
     for run in runs:
         events = run["events"]
-        error_events = [e for e in events if e["event_type"] == "error.occurred"]
+
+        # If the overlay module is available and we have a structural graph,
+        # use the more sophisticated version that detects error laundering
+        if _has_overlay and structural_graph:
+            overlay_traces = _overlay_trace(structural_graph, events)
+            traces.extend(overlay_traces)
+            continue
+
+        # Fallback: inline version with broadened error seeding
+        error_events = _collect_error_seeds(events)
 
         for error in error_events:
             source_node_name = error.get("source_node", {}).get("node_name", "unknown")
-            error_type = error.get("payload", {}).get("error_type", "unknown")
+            error_type = (error.get("payload", {}).get("error_type")
+                          or error.get("payload", {}).get("error", "unknown"))
             source_node_id = error.get("source_node", {}).get("node_id", "")
+
+            # For agent.task_end errors, extract node_id from payload
+            if not source_node_id:
+                source_node_id = error.get("payload", {}).get("node_id", "")
 
             # Find structural predicted path (BFS from error source)
             predicted_path = bfs_from_node(structural_graph, source_node_id)
@@ -855,6 +885,40 @@ def trace_error_propagation(structural_graph: dict, runs: list[dict]) -> list[di
             })
 
     return traces
+
+
+def _collect_error_seeds(events: list[dict]) -> list[dict]:
+    """Collect all events that indicate an error origin.
+
+    Broadened beyond just error.occurred to catch framework-caught errors.
+    Deduplicates by node_id to avoid double-counting the same agent failure.
+    """
+    seeds: list[dict] = []
+    seen_node_ids: set[str] = set()
+
+    for e in events:
+        et = e.get("event_type", "")
+        payload = e.get("payload", {})
+        node_id = (e.get("source_node", {}).get("node_id", "")
+                   or payload.get("node_id", ""))
+
+        is_error = False
+        if et == "error.occurred":
+            is_error = True
+        elif et == "agent.task_end" and payload.get("status") == "error":
+            is_error = True
+        elif et == "tool.completed" and payload.get("status") == "error":
+            is_error = True
+        elif et == "error.propagated":
+            is_error = True
+
+        if is_error and node_id and node_id not in seen_node_ids:
+            seeds.append(e)
+            seen_node_ids.add(node_id)
+        elif is_error and not node_id:
+            seeds.append(e)
+
+    return seeds
 
 
 def bfs_from_node(structural_graph: dict, start_node_id: str) -> list[str]:
@@ -893,8 +957,8 @@ def trace_actual_error_path(events: list[dict], error_event: dict) -> list[str]:
     Starting from the error event, walks forward through subsequent events
     looking for error-related activity or degraded outputs.
     """
-    error_ts = error_event.get("timestamp", "")
-    error_source_id = error_event.get("source_node", {}).get("node_id", "")
+    error_source_id = (error_event.get("source_node", {}).get("node_id", "")
+                       or error_event.get("payload", {}).get("node_id", ""))
 
     path: list[str] = []
     if error_source_id:
@@ -912,15 +976,21 @@ def trace_actual_error_path(events: list[dict], error_event: dict) -> list[str]:
             continue
 
         et = event.get("event_type", "")
-        node_id = event.get("source_node", {}).get("node_id", "")
+        node_id = (event.get("source_node", {}).get("node_id", "")
+                   or event.get("payload", {}).get("node_id", ""))
+
+        if not node_id or node_id in seen:
+            continue
 
         # Downstream error or task failure
-        if et in ("error.occurred", "agent.task_end") and node_id and node_id not in seen:
-            payload = event.get("payload", {})
-            status = payload.get("status", "")
-            if et == "error.occurred" or status in ("failed", "error"):
-                path.append(node_id)
-                seen.add(node_id)
+        payload = event.get("payload", {})
+        status = payload.get("status", "")
+        if et in ("error.occurred", "error.propagated"):
+            path.append(node_id)
+            seen.add(node_id)
+        elif et in ("agent.task_end", "tool.completed") and status in ("failed", "error"):
+            path.append(node_id)
+            seen.add(node_id)
 
     return path
 
@@ -961,8 +1031,14 @@ def count_downstream_errors(events: list[dict], error_event: dict) -> int:
         if event is error_event:
             past_error = True
             continue
-        if past_error and event.get("event_type") == "error.occurred":
+        if not past_error:
+            continue
+        et = event.get("event_type", "")
+        if et in ("error.occurred", "error.propagated"):
             count += 1
+        elif et in ("agent.task_end", "tool.completed"):
+            if event.get("payload", {}).get("status") in ("error", "failed"):
+                count += 1
     return count
 
 
@@ -986,10 +1062,9 @@ def is_error_swallowed(events: list[dict], error_event: dict) -> bool:
 
     An error is considered swallowed if:
     - The error occurred
-    - No subsequent error.occurred events reference related nodes
+    - No subsequent error events reference related nodes
     - Downstream tasks continued as if nothing happened
     """
-    error_source_id = error_event.get("source_node", {}).get("node_id", "")
     past_error = False
     saw_downstream_error = False
     saw_downstream_success = False
@@ -1002,9 +1077,12 @@ def is_error_swallowed(events: list[dict], error_event: dict) -> bool:
             continue
 
         et = event.get("event_type", "")
-        if et == "error.occurred":
+        payload = event.get("payload", {})
+        if et in ("error.occurred", "error.propagated"):
             saw_downstream_error = True
-        if et == "agent.task_end" and event.get("payload", {}).get("status") == "success":
+        elif et in ("agent.task_end", "tool.completed") and payload.get("status") in ("error", "failed"):
+            saw_downstream_error = True
+        if et == "agent.task_end" and payload.get("status") == "success":
             saw_downstream_success = True
 
     # Error is swallowed if it occurred but no downstream errors propagated

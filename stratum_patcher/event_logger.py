@@ -7,6 +7,7 @@ the container.  Thread-safe via threading.Lock.
 
 from __future__ import annotations
 
+import atexit
 import hashlib
 import inspect
 import json
@@ -186,6 +187,7 @@ class EventLogger:
         self._active_node_stack: list[str] = []
         self._error_context_stack: list[dict[str, Any]] = []
         self._edge_activations: list[dict[str, Any]] = []
+        self._finalized = False
         # Ensure directory exists
         try:
             parent = os.path.dirname(self._file_path)
@@ -193,6 +195,7 @@ class EventLogger:
                 os.makedirs(parent, exist_ok=True)
         except Exception:
             pass
+        atexit.register(self.finalize)
 
     # -- singleton accessor ---------------------------------------------------
 
@@ -295,7 +298,7 @@ class EventLogger:
     def record_error_context(self, node_id: str, error_type: str, error_msg: str,
                              upstream_node: str = "", upstream_output_hash: str = "") -> None:
         """Record error with causal context for propagation tracing."""
-        self._error_context_stack.append({
+        ctx = {
             "node_id": node_id,
             "error_type": error_type,
             "error_msg": error_msg[:500],
@@ -303,7 +306,54 @@ class EventLogger:
             "upstream_output_hash": upstream_output_hash,
             "timestamp": time.time(),
             "active_stack": list(self._active_node_stack),
-        })
+        }
+        self._error_context_stack.append(ctx)
+
+        # Emit error.propagated immediately when causal upstream is known
+        if upstream_node:
+            downstream = self._active_node_stack[-1] if self._active_node_stack else node_id
+            self.log_event(
+                "error.propagated",
+                payload={
+                    "propagation_path": [upstream_node, downstream],
+                    "error_type": error_type,
+                    "error_message": error_msg[:500],
+                    "source_agent": upstream_node,
+                    "downstream_agent": downstream,
+                    "chain_depth": len(self._active_node_stack),
+                    "downstream_impact": True,
+                },
+            )
+
+    def finalize(self) -> None:
+        """Persist in-memory error context and edge activations to JSONL before exit."""
+        if self._finalized:
+            return
+        self._finalized = True
+
+        # Write remaining error context entries as error.context events
+        for ctx in self._error_context_stack:
+            self.log_event(
+                "error.context",
+                payload={
+                    "node_id": ctx.get("node_id", ""),
+                    "upstream_node": ctx.get("upstream_node", ""),
+                    "active_stack": ctx.get("active_stack", []),
+                    "error_type": ctx.get("error_type", ""),
+                    "error_message": ctx.get("error_msg", ""),
+                },
+            )
+
+        # Write edge activations
+        for activation in self._edge_activations:
+            self.log_event(
+                "edge.activation",
+                payload={
+                    "source": activation.get("source", ""),
+                    "target": activation.get("target", ""),
+                    "data_hash": activation.get("data_hash", ""),
+                },
+            )
 
 
 def classify_error(error: BaseException) -> str:
